@@ -1,0 +1,149 @@
+/* Reset and OBS transparency defaults */
+body {
+    background: transparent;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    padding: 15px;
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* CONTAINER FOR THE FEED */
+.feed-container {
+    width: 320px;
+    background: rgba(16, 12, 34, 0.85);
+    border: 1.5px solid rgba(255, 0, 127, 0.4);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 0 20px rgba(255, 0, 127, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 8px;
+    margin-bottom: 2px;
+}
+
+.feed-title {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    background: linear-gradient(90deg, #ff007f, #00f0ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.feed-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* LIST CONTENT HOLDER */
+.gifts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+}
+
+/* SINGLE GIFT ROW ITEM */
+.gift-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 8px 12px;
+    transition: all 0.35s ease;
+    animation: slide-in-top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+}
+
+@keyframes slide-in-top {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.9);
+        background: rgba(255, 0, 127, 0.2);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Gift item entry fading out at index 10 */
+.gift-item.fade-out {
+    opacity: 0;
+    transform: translateY(15px) scale(0.9);
+}
+
+.gift-emoji-badge {
+    font-size: 24px;
+    min-width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
+}
+
+.gift-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.gift-sender {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffd700;
+    text-shadow: 0 0 4px rgba(255, 215, 0, 0.15);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gift-action {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+}
+
+.gift-name-label {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.gift-multiplier {
+    font-size: 12px;
+    font-weight: 800;
+    color: #ff007f;
+    background: rgba(255, 0, 127, 0.12);
+    border: 1px solid rgba(255, 0, 127, 0.25);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 6px rgba(255, 0, 127, 0.4);
+}
+
+/* Empty placeholder text */
+.empty-placeholder {
+    text-align: center;
+    padding: 30px 10px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.35);
+    font-style: italic;
+}

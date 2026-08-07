@@ -1,0 +1,130 @@
+/* Reset and OBS transparency defaults */
+body {
+    background: transparent;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* GIFT POPUP CARD CONTAINER */
+.alert-card {
+    background: linear-gradient(135deg, rgba(16, 12, 34, 0.9), rgba(30, 10, 52, 0.9));
+    border: 2px solid #ffd700;
+    border-radius: 20px;
+    padding: 24px 36px;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 420px;
+    transform: scale(0);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.alert-card.show {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Gift Icon / Animation */
+.gift-icon-container {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gift-emoji {
+    font-size: 56px;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+    animation: bounce-rotate 1.2s infinite ease-in-out;
+}
+
+@keyframes bounce-rotate {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.15) rotate(15deg); }
+}
+
+/* Sparkles surrounding the icon */
+.sparkles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+/* User & Gift Info Text */
+.alert-user {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffd700;
+    margin-bottom: 4px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    letter-spacing: -0.3px;
+}
+
+.alert-action {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.alert-gift-name {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #ffd700, #ff007f, #00f0ff);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine-text 3s linear infinite;
+    text-shadow: 0 0 8px rgba(255, 0, 127, 0.25);
+    margin-bottom: 6px;
+}
+
+@keyframes shine-text {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.alert-combo {
+    font-size: 18px;
+    font-weight: 800;
+    color: #ff007f;
+    text-shadow: 0 0 8px rgba(255, 0, 127, 0.6);
+    background: rgba(255, 0, 127, 0.15);
+    border: 1px solid rgba(255, 0, 127, 0.3);
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-top: 5px;
+    animation: pop-combo 0.3s ease;
+}
+
+@keyframes pop-combo {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}

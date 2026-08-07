@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Poll Countdown Timer Overlay</title>
+    <link rel="stylesheet" href="timer-overlay-style.css">
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- TIMER CONTAINER (SHOWN WHEN ACTIVE & HAS EXPIRY) -->
+    <div class="timer-overlay-container hidden" id="timer-container">
+        <div class="glass-card timer-card">
+            <div class="timer-header">
+                <span class="timer-icon">⏱️</span>
+                <span class="timer-title" id="poll-title">Voting Time Remaining</span>
+            </div>
+            <div class="timer-countdown" id="countdown-clock">00:00</div>
+            <div class="timer-progress-track">
+                <div class="timer-progress-fill" id="countdown-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INACTIVE CONTAINER (SHOWN WHEN NO TIMER IS ACTIVE) -->
+    <div class="inactive-state glass-card" id="inactive-container">
+        <p>⏱️ Waiting for timer...</p>
+    </div>
+
+    <script src="timer-overlay.js"></script>
+</body>
+</html>

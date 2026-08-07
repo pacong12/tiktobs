@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Vote Overlay</title>
+    <link rel="stylesheet" href="vote-overlay-style.css">
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="overlay-container hidden" id="poll-container">
+        <!-- POLL HEADER -->
+        <div class="poll-header glass-card">
+            <span class="poll-badge">🗳️ Live Poll</span>
+            <h1 id="poll-title" style="margin-top: 8px;">Loading poll...</h1>
+            <p class="poll-instruction">Vote in chat by typing option number (e.g. 1, 2) or option name</p>
+        </div>
+
+        <!-- CANDIDATES LIST -->
+        <div class="candidates-list" id="candidates-list">
+            <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- TOTAL VOTES FOOTER -->
+        <div class="poll-footer glass-card">
+            Total Votes: <span id="total-votes">0</span>
+        </div>
+    </div>
+
+    <!-- EMPTY STATE / INACTIVE POLL -->
+    <div class="inactive-state glass-card" id="inactive-container">
+        <p>🗳️ Waiting for poll to start...</p>
+    </div>
+
+    <script src="vote-overlay.js"></script>
+</body>
+</html>

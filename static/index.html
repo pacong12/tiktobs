@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok LIVE Data Collector</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: Outfit and Fira Code for logs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="icon">📊</span>
+                <h1>TikTok LIVE <span>Collector</span></h1>
+            </div>
+            <div class="status-bar">
+                <div id="status-indicator" class="status-bulb disconnected"></div>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="app-body">
+            
+            <!-- LEFT COLUMN: CONTROLS & COUNTERS -->
+            <section class="control-sidebar">
+                
+                <!-- CONNECTION PANEL -->
+                <div class="glass-card connection-card">
+                    <h2>Connection Manager</h2>
+                    <div class="input-group">
+                        <label for="username-input">TikTok Username</label>
+                        <div class="input-wrapper">
+                            <span class="prefix">@</span>
+                            <input type="text" id="username-input" placeholder="username" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button id="connect-btn" class="btn primary">Connect</button>
+                        <button id="disconnect-btn" class="btn danger" disabled>Disconnect</button>
+                    </div>
+                    <div style="margin-top: 12px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        <a href="/overlay.html" target="_blank" style="color: #00f0ff; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                            💎 OBS Gift Leaderboard Overlay
+                        </a>
+                        <a href="/gift-alert.html" target="_blank" style="color: #ff007f; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                            🎁 OBS Gift Alert Overlay (with Sound)
+                        </a>
+                        <a href="/recent-gifts.html" target="_blank" style="color: #00ff87; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                            🎉 OBS Recent Gifts Feed Ticker
+                        </a>
+                        <a href="/poll-admin.html" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                            🗳️ Open Poll/Voting Manager
+                        </a>
+                    </div>
+                    
+                    <div class="session-info hidden" id="session-info">
+                        <div class="info-row">
+                            <span class="label">Session ID:</span>
+                            <span class="value" id="info-session-id">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Live Creator:</span>
+                            <span class="value" id="info-username">-</span>
+                        </div>
+                        <div class="info-row" id="info-anchor-row" style="display: none;">
+                            <span class="label">Creator ID:</span>
+                            <span class="value" id="info-anchor-id">-</span>
+                        </div>
+                        <button id="view-rankings-btn" class="btn primary" style="width: 100%; margin-top: 10px; font-size: 11px; padding: 6px; letter-spacing: 0.5px; border-radius: 6px; display: none;">
+                            🏅 View Creator Leaderboards
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SOUND SETTINGS CARD -->
+                <div class="glass-card" style="margin-top: 20px;">
+                    <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <span>🎵</span> Gift Alert Sound
+                    </h2>
+                    
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 10px;">
+                        Upload custom MP3/WAV audio for gift alert sound effects.
+                    </div>
+
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="file" id="sound-upload-input-main" accept="audio/*" style="font-size: 11px; color: #fff; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 8px; flex: 1; width: 100%;">
+                        <button id="upload-sound-btn-main" class="btn secondary" style="font-size: 11px; font-weight: 600; padding: 6px 12px;">Upload</button>
+                    </div>
+
+                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 10px;">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px;">
+                            Active: <strong id="current-sound-name-main" style="color: #00f0ff;">Default</strong>
+                        </div>
+                        <button id="test-sound-btn-main" class="btn secondary" style="font-size: 10px; font-weight: 600; padding: 4px 8px; border-color: rgba(0, 240, 255, 0.4); color: #00f0ff;">🔊 Test Play</button>
+                    </div>
+                </div>
+
+                <!-- COUNTERS PANEL -->
+                <div class="counters-grid">
+                    <div class="glass-card counter-card" data-type="gift">
+                        <div class="counter-header">
+                            <span class="badge">🎁</span>
+                            <h3>Gifts</h3>
+                        </div>
+                        <p class="counter-value" id="counter-gifts">0</p>
+                    </div>
+                    <div class="glass-card counter-card" data-type="comment">
+                        <div class="counter-header">
+                            <span class="badge">💬</span>
+                            <h3>Comments</h3>
+                        </div>
+                        <p class="counter-value" id="counter-comments">0</p>
+                    </div>
+                    <div class="glass-card counter-card" data-type="like">
+                        <div class="counter-header">
+                            <span class="badge">❤️</span>
+                            <h3>Likes</h3>
+                        </div>
+                        <p class="counter-value" id="counter-likes">0</p>
+                    </div>
+                    <div class="glass-card counter-card" data-type="follow">
+                        <div class="counter-header">
+                            <span class="badge">👤</span>
+                            <h3>Follows</h3>
+                        </div>
+                        <p class="counter-value" id="counter-follows">0</p>
+                    </div>
+                    <div class="glass-card counter-card" data-type="share">
+                        <div class="counter-header">
+                            <span class="badge">🔄</span>
+                            <h3>Shares</h3>
+                        </div>
+                        <p class="counter-value" id="counter-shares">0</p>
+                    </div>
+                    <div class="glass-card counter-card" data-type="viewer">
+                        <div class="counter-header">
+                            <span class="badge">👀</span>
+                            <h3>Viewers</h3>
+                        </div>
+                        <p class="counter-value" id="counter-viewers">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: STREAM & DEBUG PANELS -->
+            <section class="content-area">
+                
+                <!-- STREAM CARD -->
+                <div class="glass-card stream-card">
+                    <div class="card-header">
+                        <h2>Event Stream</h2>
+                        <div class="stream-filters" id="filter-tabs">
+                            <button class="filter-tab active" data-filter="all">ALL</button>
+                            <button class="filter-tab" data-filter="gift">🎁 GIFTS</button>
+                            <button class="filter-tab" data-filter="comment">💬 COMMENTS</button>
+                            <button class="filter-tab" data-filter="like">❤️ LIKES</button>
+                            <button class="filter-tab" data-filter="follow">👤 FOLLOWS</button>
+                            <button class="filter-tab" data-filter="share">🔄 SHARES</button>
+                            <button class="filter-tab" data-filter="viewer">👀 VIEWERS</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="event-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">Type</th>
+                                    <th style="width: 25%;">User</th>
+                                    <th style="width: 45%;">Data</th>
+                                    <th style="width: 15%;">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="event-stream-body">
+                                <tr class="empty-state">
+                                    <td colspan="4">No events received yet. Connect to a stream to begin collecting data.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DEBUG & INSPECTOR DOUBLE CARDS -->
+                <div class="debug-grid">
+                    
+                    <!-- LOG PANEL -->
+                    <div class="glass-card debug-card">
+                        <div class="card-header">
+                            <h3>Connection Log</h3>
+                            <button id="clear-logs" class="btn text-btn">Clear</button>
+                        </div>
+                        <div class="console-box" id="console-logs">
+                            <div class="console-line system">[System] Logger initialized. Ready.</div>
+                        </div>
+                    </div>
+
+                    <!-- INSPECTOR PANEL -->
+                    <div class="glass-card debug-card">
+                        <div class="card-header">
+                            <h3>Event Inspector</h3>
+                            <span class="helper-text" id="inspector-event-id">No event selected</span>
+                        </div>
+                        <div class="inspector-box">
+                            <pre><code id="inspector-json" class="json-code">Select an event from the stream above to inspect its properties and payload structure.</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- DEVELOPER PANEL: RAW REALTIME EVENT -->
+                    <div class="glass-card debug-card raw-event-card">
+                        <div class="card-header">
+                            <h3>Raw Event Debug</h3>
+                            <span class="helper-text" id="raw-event-type">Waiting for data...</span>
+                        </div>
+                        <div class="inspector-box">
+                            <pre><code id="raw-event-json" class="json-code">Raw data packets received from the TikTok provider will populate here in real-time.</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+    <!-- MODAL FOR DETAILED INSPECTION (Optional fallback) -->
+    <div class="modal-overlay hidden" id="detail-modal">
+        <div class="modal-card glass-card">
+            <div class="modal-header">
+                <h2 id="modal-title">Event Details</h2>
+                <button class="close-modal" id="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-row">
+                    <span class="detail-label">Event ID:</span>
+                    <span class="detail-value text-glow" id="modal-event-id">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Type:</span>
+                    <span class="detail-value" id="modal-event-type">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">User:</span>
+                    <span class="detail-value" id="modal-event-user">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Time:</span>
+                    <span class="detail-value" id="modal-event-time">-</span>
+                </div>
+                <div class="detail-row json-row">
+                    <span class="detail-label">Normalized Payload:</span>
+                    <pre><code id="modal-event-json" class="json-code">{}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+ 
+    <!-- RANKINGS MODAL -->
+    <div class="modal-overlay hidden" id="rankings-modal">
+        <div class="modal-card glass-card">
+            <div class="modal-header">
+                <h2>Creator Rankings Catalog</h2>
+                <button class="close-modal" id="close-rankings-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                <div id="rankings-loading" class="empty-state" style="padding: 20px 0;">Loading creator rankings...</div>
+                <div id="rankings-content" class="hidden">
+                    <table class="event-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">Region</th>
+                                <th style="width: 70%;">Leaderboard / Rank Types</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankings-table-body">
+                            <!-- Rows inserted dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

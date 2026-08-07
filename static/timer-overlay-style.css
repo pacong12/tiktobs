@@ -1,0 +1,129 @@
+/* Reset and OBS transparency defaults */
+body {
+    background: transparent;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    padding: 15px;
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Glassmorphism base card styling */
+.glass-card {
+    background: linear-gradient(135deg, rgba(16, 12, 34, 0.85), rgba(30, 10, 52, 0.85));
+    border: 2px solid rgba(255, 0, 127, 0.2);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 0 25px rgba(255, 0, 127, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    text-align: center;
+    max-width: 320px;
+    margin: 0 auto;
+    animation: overlay-border-glow 6s infinite ease-in-out;
+}
+
+@keyframes overlay-border-glow {
+    0%, 100% { border-color: rgba(255, 0, 127, 0.2); box-shadow: 0 0 20px rgba(255, 0, 127, 0.15); }
+    50% { border-color: rgba(0, 240, 255, 0.35); box-shadow: 0 0 30px rgba(0, 240, 255, 0.25); }
+}
+
+/* Inactive state */
+.inactive-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Timer Header */
+.timer-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.timer-icon {
+    font-size: 16px;
+}
+
+.timer-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Big Countdown Numbers */
+.timer-countdown {
+    font-size: 48px;
+    font-weight: 800;
+    color: #ff007f;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    text-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
+    font-variant-numeric: tabular-nums;
+    transition: all 0.3s ease;
+}
+
+/* ALERT STATE FOR LAST 10 SECONDS */
+.timer-countdown.warning {
+    color: #ff3333;
+    text-shadow: 0 0 25px rgba(255, 51, 51, 0.85);
+    animation: clock-alert-shake 0.5s infinite ease-in-out;
+}
+
+@keyframes clock-alert-shake {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.1) rotate(-2deg); }
+    75% { transform: scale(1.1) rotate(2deg); }
+}
+
+/* Progress bar for timer */
+.timer-progress-track {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.timer-progress-fill {
+    height: 100%;
+    background: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent
+    ), linear-gradient(90deg, #ff007f, #ff5e62);
+    background-size: 20px 20px, 100% 100%;
+    border-radius: 4px;
+    width: 100%;
+    transition: width 1s linear;
+    animation: move-stripes 2s linear infinite;
+    box-shadow: 0 0 8px rgba(255, 0, 127, 0.5);
+}
+
+@keyframes move-stripes {
+    from { background-position: 0 0, 0 0; }
+    to { background-position: 20px 0, 0 0; }
+}

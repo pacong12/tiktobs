@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok LIVE - Poll & Voting Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: Outfit and Fira Code for logs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="icon">🗳️</span>
+                <h1>Poll & Voting <span>Manager</span></h1>
+            </div>
+            <div class="status-bar">
+                <a href="/" style="color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    ⬅️ Back to Live Dashboard
+                </a>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="app-body">
+            
+            <!-- LEFT COLUMN: POLL CONFIGURATION -->
+            <section class="control-sidebar">
+                <div class="glass-card">
+                    <h2>Poll Configuration</h2>
+                    <p style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; margin-bottom: 20px; line-height: 1.4;">
+                        Create a real-time vote session. Viewers vote by sending the option number (e.g. 1, 2) or option name in the chat.
+                    </p>
+                    
+                    <div id="poll-setup-section">
+                        <div class="input-group">
+                            <label for="poll-title-input">Poll Question/Title</label>
+                            <input type="text" id="poll-title-input" placeholder="e.g. Siapa karakter favoritmu?" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 10px 12px; color: #fff; font-family: inherit; font-size: 13px; margin-top: 5px;">
+                        </div>
+                        
+                        <div class="input-group" style="margin-top: 15px;">
+                            <label style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Candidates (Pilihan)</span>
+                                <button id="add-candidate-btn" class="btn secondary" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 600;">➕ Add Option</button>
+                            </label>
+                            <div id="candidates-input-list" style="margin-top: 8px;">
+                                <div class="candidate-input-row" style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                    <input type="text" class="candidate-name-input" placeholder="Pilihan 1 (Contoh: Alice)" style="flex: 1; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 12px; font-family: inherit;">
+                                    <input type="text" class="candidate-image-input" placeholder="URL Foto (opsional)" style="flex: 1; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 12px; font-family: inherit;">
+                                    <input type="text" class="candidate-gift-input" placeholder="Gift Boost (Contoh: Rose)" style="flex: 1; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 12px; font-family: inherit;">
+                                </div>
+                                <div class="candidate-input-row" style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                    <input type="text" class="candidate-name-input" placeholder="Pilihan 2 (Contoh: Bob)" style="flex: 1; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 12px; font-family: inherit;">
+                                    <input type="text" class="candidate-image-input" placeholder="URL Foto (opsional)" style="flex: 1; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 12px; font-family: inherit;">
+                                    <input type="text" class="candidate-gift-input" placeholder="Gift Boost (Contoh: TikTok)" style="flex: 1; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px; color: #fff; font-size: 12px; font-family: inherit;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group" style="margin-top: 15px;">
+                            <label for="poll-duration-input">Duration in Seconds (optional)</label>
+                            <input type="number" id="poll-duration-input" min="5" placeholder="e.g. 60 (blank for no limit)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 10px 12px; color: #fff; font-family: inherit; font-size: 13px; margin-top: 5px;">
+                        </div>
+                        
+                        <button id="start-poll-btn" class="btn primary" style="width: 100%; margin-top: 20px; padding: 12px; font-size: 14px; font-weight: 700;">🚀 Start Live Poll</button>
+                    </div>
+
+                    <div id="poll-active-config-hint" class="hidden" style="text-align: center; padding: 20px 0; color: rgba(255,255,255,0.5);">
+                        <p>🗳️ Voting is currently active.</p>
+                        <p style="font-size: 11px; margin-top: 4px;">To make changes, stop the active poll first.</p>
+                    </div>
+                </div>
+
+                <!-- SOUND SETTINGS CARD -->
+                <div class="glass-card" style="margin-top: 20px;">
+                    <h2 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <span>🎵</span> Gift Alert Sound Settings
+                    </h2>
+                    
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 12px;">
+                        Upload your own custom MP3 or WAV audio file for gift alerts.
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="file" id="sound-upload-input" accept="audio/*" style="font-size: 12px; color: #fff; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 10px; flex: 1;">
+                        <button id="upload-sound-btn" class="btn secondary" style="font-size: 12px; font-weight: 600; padding: 8px 14px;">📤 Upload</button>
+                    </div>
+
+                    <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 12px;">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">
+                            Active Sound: <strong id="current-sound-name" style="color: #00f0ff;">Default Sound</strong>
+                        </div>
+                        <button id="test-sound-btn" class="btn secondary" style="font-size: 11px; font-weight: 600; padding: 4px 10px; border-color: rgba(0, 240, 255, 0.4); color: #00f0ff;">🔊 Test Play</button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- RIGHT COLUMN: LIVE RESULTS & OBS OVERLAY LINK -->
+            <section class="content-area">
+                <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; box-sizing: border-box;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; margin-bottom: 15px;">
+                        <h2 style="margin: 0;">Live Poll Status & Results</h2>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <a href="/vote-overlay.html" target="_blank" class="btn secondary" style="font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px;">
+                                🗳️ OBS Poll Overlay
+                            </a>
+                            <a href="/timer-overlay.html" target="_blank" class="btn secondary" style="font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border-color: rgba(255, 0, 127, 0.3); color: #ff007f;">
+                                ⏱️ OBS Timer Overlay
+                            </a>
+                            <a href="/vote-gift-alert.html" target="_blank" class="btn secondary" style="font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border-color: rgba(255, 215, 0, 0.3); color: #ffd700;">
+                                🎁 OBS Vote Boost Alert
+                            </a>
+                            <a href="/recent-gifts.html" target="_blank" class="btn secondary" style="font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border-color: rgba(0, 255, 135, 0.3); color: #00ff87;">
+                                🎉 OBS Recent Gifts
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- POLL INACTIVE PREVIEW STATE -->
+                    <div id="poll-setup-preview" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px; color: rgba(255,255,255,0.4); text-align: center;">
+                        <span style="font-size: 48px; margin-bottom: 10px;">🗳️</span>
+                        <p style="margin: 0; font-weight: 500; font-size: 16px; color: #fff;">No active poll session</p>
+                        <p style="margin: 6px 0 0 0; font-size: 12px; color: rgba(255,255,255,0.5);">Configure candidates on the left and click "Start Live Poll" to begin.</p>
+                    </div>
+                    
+                    <!-- POLL ACTIVE STATUS & PREVIEW -->
+                    <div id="poll-active-section" class="hidden" style="flex-grow: 1; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <span class="status-badge" style="background: rgba(0,255,135,0.15); border: 1px solid rgba(0,255,135,0.3); color: #00ff87; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Voting Active</span>
+                            <span style="font-size: 13px; color: rgba(255,255,255,0.5);">Total: <strong id="poll-active-total" style="color: #00f0ff; font-size: 15px;">0</strong> suara</span>
+                        </div>
+                        <h3 id="poll-active-title" style="margin: 0 0 15px 0; font-size: 18px; font-weight: 600; color: #fff;">-</h3>
+                        
+                        <div id="poll-active-countdown" class="hidden" style="font-size: 13px; font-weight: 700; color: #ff007f; margin-bottom: 15px; display: flex; align-items: center; gap: 6px;">
+                            <span>⏱️ Time Remaining:</span>
+                            <span id="poll-active-timer" style="font-size: 15px;">00:00</span>
+                        </div>
+                        
+                        <div id="poll-active-results" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; flex-grow: 1;">
+                            <!-- Progress rows inserted dynamically -->
+                        </div>
+                        
+                        <button id="stop-poll-btn" class="btn danger" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700;">🛑 Stop & Reset Poll</button>
+                        
+                        <!-- TEST SIMULATION PANEL -->
+                        <div id="simulation-panel" class="hidden" style="margin-top: 20px; border-top: 1.5px dashed rgba(255,255,255,0.08); padding-top: 20px;">
+                            <h4 style="margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #ffd700;">🧪 Simulated Testing Tool</h4>
+                            <p style="margin: 0 0 12px 0; font-size: 11px; color: rgba(255,255,255,0.45);">Test your overlays in OBS before going live. Click the buttons below to trigger simulated actions.</p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <button id="test-comment-vote-btn" class="btn secondary" style="font-size: 11px; padding: 8px 6px;">💬 Test Comment Vote</button>
+                                <button id="test-gift-vote-btn" class="btn secondary" style="font-size: 11px; padding: 8px 6px; border-color: rgba(255,215,0,0.25); color: #ffd700;">🎁 Test Gift Vote Boost</button>
+                            </div>
+                            <button id="test-gift-normal-btn" class="btn secondary" style="font-size: 11px; width: 100%; margin-top: 10px; border-color: rgba(0,240,255,0.25); color: #00f0ff;">💎 Test Regular Gift (Alert/Leaderboard)</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="poll-admin.js"></script>
+</body>
+</html>

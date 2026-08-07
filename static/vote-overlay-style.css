@@ -1,0 +1,327 @@
+/* Reset and OBS transparency defaults */
+body {
+    background: transparent;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    padding: 15px;
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* HIGHLY DRAMATIC GLOWING OVERLAY CONTAINER */
+.overlay-container {
+    width: 390px;
+    background: linear-gradient(135deg, rgba(16, 12, 34, 0.9), rgba(30, 10, 52, 0.9));
+    border: 2.5px solid #00f0ff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.15);
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: overlay-border-glow 5s infinite ease-in-out;
+}
+
+@keyframes overlay-border-glow {
+    0%, 100% { border-color: #00f0ff; box-shadow: 0 0 25px rgba(0, 240, 255, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.1); }
+    50% { border-color: #ff007f; box-shadow: 0 0 35px rgba(255, 0, 127, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.1); }
+}
+
+/* Glassmorphism base card styling */
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    padding: 14px 18px;
+}
+
+/* Poll Header */
+.poll-header {
+    text-align: center;
+}
+
+.poll-badge {
+    display: inline-block;
+    background: linear-gradient(90deg, #00f0ff, #ff007f);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+    animation: badge-shine 2s infinite alternate ease-in-out;
+}
+
+@keyframes badge-shine {
+    0% { filter: brightness(1); }
+    100% { filter: brightness(1.2) drop-shadow(0 0 5px rgba(255, 0, 127, 0.5)); }
+}
+
+.poll-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.poll-instruction {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Candidates List */
+.candidates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* CANDIDATE CARD ROW */
+.candidate-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: visible;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: card-pop-in 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes card-pop-in {
+    from { opacity: 0; transform: scale(0.9) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* DRAMATIC HIGH-IMPACT LEADING CARD */
+.candidate-card.leading {
+    border: 2px solid #ffd700;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(22, 16, 40, 0.9) 50%, rgba(255, 215, 0, 0.15) 100%);
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.45), inset 0 0 10px rgba(255, 215, 0, 0.2);
+    transform: scale(1.04);
+    z-index: 5;
+}
+
+/* FLOATING CROWN */
+.candidate-card.leading::before {
+    content: "👑";
+    position: absolute;
+    top: -18px;
+    left: -12px;
+    font-size: 28px;
+    z-index: 10;
+    transform: rotate(-25deg);
+    filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.95));
+    animation: crown-float-anim 1.5s infinite ease-in-out;
+}
+
+@keyframes crown-float-anim {
+    0%, 100% { transform: rotate(-25deg) translateY(0); }
+    50% { transform: rotate(-16deg) translateY(-5px); }
+}
+
+/* Number badge */
+.candidate-number {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.candidate-card.leading .candidate-number {
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+    color: #12121c;
+    border-color: #ffd700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+/* Candidate image/avatar */
+.candidate-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.candidate-card.leading .candidate-avatar {
+    border-color: #ffd700;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
+/* Candidate Main Info and Progress Bar */
+.candidate-main {
+    flex-grow: 1;
+}
+
+.candidate-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.candidate-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.candidate-card.leading .candidate-name {
+    color: #ffd700;
+    font-weight: 800;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+.candidate-percentage {
+    font-size: 16px;
+    font-weight: 800;
+    color: #00f0ff;
+}
+
+.candidate-card.leading .candidate-percentage {
+    color: #ffd700;
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+}
+
+/* Progress bar track */
+.progress-track {
+    height: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* CANDY STRIPE ANIMATED PROGRESS FILLS */
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent
+    ), linear-gradient(90deg, #00f0ff, #0072ff);
+    background-size: 20px 20px, 100% 100%;
+    border-radius: 6px;
+    transition: width 0.8s cubic-bezier(0.1, 0.8, 0.25, 1);
+    animation: move-stripes 1.2s linear infinite;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+.candidate-card.leading .progress-fill {
+    background: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.2) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.2) 75%,
+        transparent 75%,
+        transparent
+    ), linear-gradient(90deg, #ffd700, #ff8c00);
+    background-size: 20px 20px, 100% 100%;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+}
+
+@keyframes move-stripes {
+    from { background-position: 0 0, 0 0; }
+    to { background-position: 20px 0, 0 0; }
+}
+
+/* Vote Count indicator on the right */
+.candidate-votes {
+    text-align: right;
+    min-width: 65px;
+}
+
+.votes-value {
+    display: block;
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+}
+
+/* FLICKERING FIRE EFFECT FOR LEADER */
+.candidate-card.leading .votes-value::after {
+    content: " 🔥";
+    font-size: 13px;
+    display: inline-block;
+    animation: fire-flicker-anim 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes fire-flicker-anim {
+    0% { transform: scale(1); filter: drop-shadow(0 0 2px #ff4500); }
+    100% { transform: scale(1.2); filter: drop-shadow(0 0 8px #ff8c00); }
+}
+
+.votes-label {
+    display: block;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Footer Info */
+.poll-footer {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 12px 0 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#total-votes {
+    color: #00f0ff;
+    font-weight: 800;
+    text-shadow: 0 0 4px rgba(0, 240, 255, 0.3);
+}
+
+/* Inactive State waiting indicator */
+.inactive-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 120px;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}

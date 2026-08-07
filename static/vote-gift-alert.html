@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Vote Gift Alert Overlay</title>
+    <link rel="stylesheet" href="vote-gift-alert-style.css">
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- VOTE GIFT POPUP CARD -->
+    <div class="vote-alert-card" id="alert-card">
+        <div class="vote-icon-container">
+            <span class="gift-emoji" id="gift-emoji">🎁</span>
+        </div>
+        <div class="sender-name" id="sender-name">SenderName</div>
+        <div class="gift-detail">sent <span class="gift-name-highlight" id="gift-name">Rose</span></div>
+        <div class="vote-boost-badge" id="boost-count">+15 VOTES</div>
+        <div class="boost-target">credited to <span class="candidate-name-highlight" id="candidate-name">Alice 👑</span></div>
+    </div>
+
+    <!-- Sounds folder configuration details: -->
+    <!-- Custom sounds priority: -->
+    <!-- 1. sounds/dragon-studio-thud-sound-effect-405470.mp3 (Default bawaan user) -->
+    <!-- 2. sounds/vote-gift-alert.wav -->
+    <!-- 3. sounds/vote-gift-alert.mp3 -->
+
+    <script src="vote-gift-alert.js"></script>
+</body>
+</html>

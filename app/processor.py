@@ -1,0 +1,228 @@
+import hashlib
+import json
+import logging
+from datetime import datetime, timezone
+
+from app import database
+from app.bus import event_bus
+from app.models import TikTokEvent
+from app.poll import poll_manager
+
+logger = logging.getLogger("app.processor")
+
+class EventProcessor:
+    def __init__(self):
+        self.session_id: str | None = None
+
+    def set_session_id(self, session_id: str | None):
+        """Sets the active database session ID for incoming events."""
+        self.session_id = session_id
+        logger.info(f"EventProcessor active session updated to: {session_id}")
+
+    async def process_raw_event(self, event_type: str, raw_data: dict) -> None:
+        """Processes a raw event: normalizes, validates, persists, and publishes it."""
+        # Connection status events are not stored as standard TikTokEvents in the DB
+        if event_type in ("sys_log", "connect", "disconnect", "connection_failed"):
+            # These will be broadcast/handled separately by the main server loop
+            return
+
+        try:
+            if not self.session_id:
+                logger.warning(f"No active session ID set. Ignoring incoming '{event_type}' event.")
+                return
+
+            # 1. Normalize raw event data into standard model
+            event = self._normalize(event_type, raw_data)
+            if not event:
+                logger.debug(f"Normalization skipped or failed for '{event_type}' event.")
+                return
+
+            # 2. Validate
+            if not event.id or not event.event_type:
+                logger.error(f"Event validation failed: missing id or type: {event}")
+                return
+
+            # 3. Persist to SQLite
+            is_new = await database.insert_event(
+                session_id=self.session_id,
+                event_id=event.id,
+                event_type=event.event_type,
+                username=event.username,
+                nickname=event.nickname,
+                payload=event.model_dump(mode='json'),
+                created_at=event.timestamp.isoformat()
+            )
+
+            # 4. Publish if not a duplicate
+            if is_new:
+                logger.debug(f"Successfully processed new event: {event.event_type} - {event.id}")
+                await event_bus.publish(event)
+
+                # Check if this comment registers a valid vote in the active poll
+                if event.event_type == "comment":
+                    comment_text = event.data.get("comment", "")
+                    is_vote_registered = await poll_manager.record_vote(event.username, comment_text)
+                    if is_vote_registered:
+                        from app.main import (
+                            manager,  # import locally to avoid circular dependencies
+                        )
+                        poll_status = await poll_manager.get_status()
+                        await manager.broadcast({
+                            "type": "poll_update",
+                            "poll": poll_status
+                        })
+                elif event.event_type == "gift":
+                    gift_name = event.data.get("gift_name", "")
+                    diamond_count = int(event.data.get("diamond_count") or 0)
+                    success, candidate_name, votes_added = await poll_manager.record_gift_vote(gift_name, diamond_count)
+                    if success:
+                        from app.main import (
+                            manager,
+                        )
+                        poll_status = await poll_manager.get_status()
+                        await manager.broadcast({
+                            "type": "poll_update",
+                            "poll": poll_status
+                        })
+                        await manager.broadcast({
+                            "type": "poll_gift_vote",
+                            "username": event.username,
+                            "nickname": event.nickname or event.username,
+                            "gift_name": gift_name,
+                            "diamond_count": diamond_count,
+                            "candidate_name": candidate_name,
+                            "votes_added": votes_added
+                        })
+            else:
+                logger.debug(f"Duplicate event ignored: {event.event_type} - {event.id}")
+
+        except Exception:
+            logger.exception(f"Error processing raw event '{event_type}'")
+
+    def _normalize(self, event_type: str, raw_data: dict) -> TikTokEvent | None:
+        """Normalizes a raw provider event into a standard TikTokEvent model."""
+        # Extract user information
+        user_info = raw_data.get("user") if isinstance(raw_data.get("user"), dict) else {}
+        username = (
+            user_info.get("unique_id") or 
+            user_info.get("uniqueId") or 
+            user_info.get("display_id") or 
+            user_info.get("displayId") or 
+            raw_data.get("username") or
+            "anonymous"
+        )
+        nickname = user_info.get("nickname") or user_info.get("nickName") or raw_data.get("nickname") or username
+
+        # Parse timestamp (fallback to current time if missing or invalid)
+        timestamp = datetime.now(timezone.utc)
+        if "timestamp" in raw_data:
+            try:
+                ts = raw_data["timestamp"]
+                # Convert milliseconds to seconds if needed
+                if ts > 1e11:
+                    ts = ts / 1000.0
+                timestamp = datetime.fromtimestamp(ts, timezone.utc)
+            except Exception:  # noqa: BLE001, S110
+                pass
+
+        # Parse type-specific data
+        data = {}
+        if event_type == "comment":
+            data["comment"] = raw_data.get("comment") or raw_data.get("content") or ""
+        elif event_type == "gift":
+            gift_obj = raw_data.get("gift") if isinstance(raw_data.get("gift"), dict) else {}
+            gift_details = raw_data.get("giftDetails") if isinstance(raw_data.get("giftDetails"), dict) else (raw_data.get("gift_details") if isinstance(raw_data.get("gift_details"), dict) else {})
+            
+            gift_id = str(
+                raw_data.get("gift_id") or 
+                raw_data.get("giftId") or 
+                gift_obj.get("gift_id") or 
+                gift_obj.get("giftId") or 
+                gift_obj.get("id") or 
+                gift_details.get("giftId") or 
+                "0"
+            )
+            
+            gift_name = (
+                raw_data.get("gift_name") or 
+                raw_data.get("giftName") or 
+                gift_obj.get("name") or 
+                gift_obj.get("gift_name") or 
+                gift_obj.get("giftName") or 
+                gift_obj.get("describe") or 
+                gift_obj.get("describe_str") or 
+                gift_details.get("name") or 
+                gift_details.get("giftName") or 
+                raw_data.get("describe") or 
+                raw_data.get("name") or 
+                f"Gift #{gift_id}"
+            )
+            
+            quantity = int(
+                raw_data.get("quantity") or 
+                raw_data.get("repeat_count") or 
+                raw_data.get("repeatCount") or 
+                raw_data.get("combo_count") or 
+                raw_data.get("comboCount") or 
+                gift_obj.get("repeat_count") or 
+                gift_obj.get("repeatCount") or 
+                gift_obj.get("combo_count") or 
+                1
+            )
+            
+            diamond_count = int(
+                raw_data.get("diamond_count") or 
+                raw_data.get("diamondCount") or 
+                raw_data.get("diamonds") or 
+                gift_obj.get("diamond_count") or 
+                gift_obj.get("diamondCount") or 
+                gift_obj.get("diamonds") or 
+                gift_details.get("diamondCount") or 
+                gift_details.get("diamond_count") or 
+                0
+            )
+            
+            data["gift_id"] = gift_id
+            data["gift_name"] = gift_name
+            data["quantity"] = quantity
+            data["diamond_count"] = diamond_count
+        elif event_type == "like":
+            data["count"] = int(raw_data.get("like_count") or raw_data.get("count") or 1)
+        elif event_type == "follow":
+            data["action"] = "follow"
+        elif event_type == "share":
+            data["action"] = "share"
+            data["share_target"] = raw_data.get("share_target") or raw_data.get("target") or ""
+        elif event_type == "viewer":
+            data["viewer_count"] = int(
+                raw_data.get("viewer_count") or 
+                raw_data.get("view_count") or 
+                raw_data.get("total") or 
+                raw_data.get("total_user") or 
+                0
+            )
+        else:
+            return None
+
+        # Build Unique Deterministic ID if not provided
+        msg_id = (
+            raw_data.get("msg_id") or 
+            raw_data.get("id") or 
+            raw_data.get("message_id") or 
+            raw_data.get("messageId")
+        )
+
+        if not msg_id or event_type == "viewer":
+            # Generate deterministic hash of core fields
+            data_serialized = json.dumps(data, sort_keys=True)
+            raw_str = f"{event_type}:{username or ''}:{timestamp.isoformat()}:{data_serialized}"
+            msg_id = hashlib.md5(raw_str.encode("utf-8")).hexdigest()
+
+        return TikTokEvent(
+            id=str(msg_id),
+            event_type=event_type,
+            username=username,
+            nickname=nickname,
+            timestamp=timestamp,
+            data=data
+        )
