@@ -16,24 +16,37 @@ from app.processor import EventProcessor
 from app.providers.euler import EulerWebSocketProvider
 from app.providers.live import TikTokLiveProvider
 
+def get_base_dir() -> str:
+    """Returns the directory containing the executable or the script."""
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+BASE_DIR = get_base_dir()
+DATA_DIR = os.path.join(BASE_DIR, "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+LOG_FILE = os.path.join(DATA_DIR, "app.log")
+ENV_FILE = os.path.join(BASE_DIR, ".env")
+SOUNDS_DIR = os.path.join(DATA_DIR, "sounds")
+os.makedirs(SOUNDS_DIR, exist_ok=True)
+
 # Configure Logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("data/app.log", mode="a", encoding="utf-8")
+        logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
     ]
 )
 logger = logging.getLogger("app.main")
 
-# Initialize global components
 # Initialize global components (Managed Cloud WebSockets if API key exists, local fallback otherwise)
 sign_api_key = os.getenv("TIKTOK_SIGN_API_KEY")
 if not sign_api_key:
     try:
-        if os.path.exists(".env"):
-            with open(".env") as f:
+        if os.path.exists(ENV_FILE):
+            with open(ENV_FILE) as f:
                 for line in f:
                     if line.strip().startswith("TIKTOK_SIGN_API_KEY="):
                         sign_api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
@@ -128,6 +141,18 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing database and application components...")
     await database.init_db()
     
+    import shutil
+    static_sounds = os.path.join(get_static_dir(), "sounds")
+    if os.path.exists(static_sounds):
+        for f in os.listdir(static_sounds):
+            src = os.path.join(static_sounds, f)
+            dst = os.path.join(SOUNDS_DIR, f)
+            if not os.path.exists(dst) and os.path.isfile(src):
+                try:
+                    shutil.copy2(src, dst)
+                except Exception as e:
+                    logger.warning(f"Could not copy sound {f}: {e}")
+                    
     # Set the event callback for the live provider
     live_provider.set_event_callback(handle_provider_event)
     
@@ -172,6 +197,9 @@ class StartPollRequest(BaseModel):
     title: str
     candidates: list[CandidateInput]
     duration_seconds: int | None = None
+
+class SettingsUpdateRequest(BaseModel):
+    tiktok_sign_api_key: str | None = None
 
 # API Routes
 @app.post("/api/connect")
@@ -310,17 +338,16 @@ async def get_poll_status_api():
 # Sound Management Endpoints
 @app.get("/api/sounds")
 async def list_sounds_api():
-    """Lists available sound files in static/sounds."""
-    sounds_dir = os.path.join("static", "sounds")
-    if not os.path.exists(sounds_dir):
+    """Lists available sound files in data/sounds."""
+    if not os.path.exists(SOUNDS_DIR):
         return {"sounds": []}
     
-    files = [f for f in os.listdir(sounds_dir) if f.lower().endswith((".mp3", ".wav", ".ogg", ".m4a"))]
+    files = [f for f in os.listdir(SOUNDS_DIR) if f.lower().endswith((".mp3", ".wav", ".ogg", ".m4a"))]
     return {"sounds": files}
 
 @app.post("/api/upload-sound")
 async def upload_sound_api(file: UploadFile = File(...)):
-    """Uploads a custom audio file to static/sounds."""
+    """Uploads a custom audio file to data/sounds."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
     
@@ -328,16 +355,57 @@ async def upload_sound_api(file: UploadFile = File(...)):
     if ext not in (".mp3", ".wav", ".ogg", ".m4a"):
         raise HTTPException(status_code=400, detail="Only audio files (.mp3, .wav, .ogg, .m4a) are allowed")
     
-    sounds_dir = os.path.join("static", "sounds")
-    os.makedirs(sounds_dir, exist_ok=True)
-    
-    save_path = os.path.join(sounds_dir, file.filename)
+    save_path = os.path.join(SOUNDS_DIR, file.filename)
     content = await file.read()
     with open(save_path, "wb") as f:
         f.write(content)
         
     logger.info(f"Custom sound file uploaded successfully: {file.filename}")
     return {"status": "success", "filename": file.filename, "url": f"/sounds/{file.filename}"}
+
+# Application Settings Endpoints (.env configuration)
+@app.get("/api/settings")
+async def get_settings_api():
+    """Returns application configuration settings."""
+    env_key = os.getenv("TIKTOK_SIGN_API_KEY", "")
+    return {
+        "tiktok_sign_api_key": env_key
+    }
+
+@app.post("/api/settings")
+async def update_settings_api(req: SettingsUpdateRequest):
+    """Updates .env settings dynamically and reloads runtime variables."""
+    new_key = (req.tiktok_sign_api_key or "").strip()
+    
+    os.environ["TIKTOK_SIGN_API_KEY"] = new_key
+    
+    try:
+        from TikTokLive.client.web.web_defaults import WebDefaults
+        WebDefaults.tiktok_sign_api_key = new_key
+    except Exception:  # noqa: BLE001, S110
+        pass
+        
+    global sign_api_key
+    sign_api_key = new_key
+    
+    env_path = ENV_FILE
+    env_data = {}
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    env_data[k.strip()] = v.strip().strip('"').strip("'")
+                    
+    env_data["TIKTOK_SIGN_API_KEY"] = new_key
+    
+    with open(env_path, "w", encoding="utf-8") as f:
+        for k, v in env_data.items():
+            f.write(f'{k}="{v}"\n')
+            
+    logger.info("Environment settings updated successfully via API.")
+    return {"status": "success", "tiktok_sign_api_key": new_key}
 
 # Simulated Testing Endpoints
 @app.post("/api/test/comment-vote")
@@ -471,4 +539,5 @@ def get_static_dir() -> str:
     return "static"
 
 # Mount static files (Frontend Dashboard)
+app.mount("/sounds", StaticFiles(directory=SOUNDS_DIR), name="sounds")
 app.mount("/", StaticFiles(directory=get_static_dir(), html=True), name="static")

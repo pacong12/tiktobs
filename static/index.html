@@ -19,9 +19,14 @@
                 <span class="icon">📊</span>
                 <h1>TikTok LIVE <span>Collector</span></h1>
             </div>
-            <div class="status-bar">
-                <div id="status-indicator" class="status-bulb disconnected"></div>
-                <span id="status-text">Disconnected</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a href="/poll-admin.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">🗳️ Poll Admin</a>
+                <a href="/settings.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">⚙️ Settings</a>
+                <a href="/docs.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">📖 Docs</a>
+                <div class="status-bar">
+                    <div id="status-indicator" class="status-bulb disconnected"></div>
+                    <span id="status-text">Disconnected</span>
+                </div>
             </div>
         </header>
 
@@ -76,29 +81,6 @@
                         <button id="view-rankings-btn" class="btn primary" style="width: 100%; margin-top: 10px; font-size: 11px; padding: 6px; letter-spacing: 0.5px; border-radius: 6px; display: none;">
                             🏅 View Creator Leaderboards
                         </button>
-                    </div>
-                </div>
-
-                <!-- SOUND SETTINGS CARD -->
-                <div class="glass-card" style="margin-top: 20px;">
-                    <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                        <span>🎵</span> Gift Alert Sound
-                    </h2>
-                    
-                    <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 10px;">
-                        Upload custom MP3/WAV audio for gift alert sound effects.
-                    </div>
-
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="file" id="sound-upload-input-main" accept="audio/*" style="font-size: 11px; color: #fff; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 8px; flex: 1; width: 100%;">
-                        <button id="upload-sound-btn-main" class="btn secondary" style="font-size: 11px; font-weight: 600; padding: 6px 12px;">Upload</button>
-                    </div>
-
-                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 10px;">
-                        <div style="font-size: 11px; color: rgba(255,255,255,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px;">
-                            Active: <strong id="current-sound-name-main" style="color: #00f0ff;">Default</strong>
-                        </div>
-                        <button id="test-sound-btn-main" class="btn secondary" style="font-size: 10px; font-weight: 600; padding: 4px 8px; border-color: rgba(0, 240, 255, 0.4); color: #00f0ff;">🔊 Test Play</button>
                     </div>
                 </div>
 
