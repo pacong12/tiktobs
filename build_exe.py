@@ -7,8 +7,11 @@ def build():
     print("==================================================")
     
     # 1. Install PyInstaller if not present
-    print("Checking / Installing PyInstaller...")
-    subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=True)
+    print("Checking PyInstaller...")
+    try:
+        import PyInstaller  # noqa: F401
+    except ImportError:
+        subprocess.run(["uv", "pip", "install", "pyinstaller"], check=False)
 
     # 2. PyInstaller command arguments
     # --onefile: Packages everything into a single TikTokOBS.exe
@@ -17,7 +20,19 @@ def build():
         sys.executable, "-m", "PyInstaller",
         "--name=TikTokOBS",
         "--onefile",
+        "--icon=app.ico",
         "--add-data=static;static",
+        "--hidden-import=uvicorn.logging",
+        "--hidden-import=uvicorn.loops",
+        "--hidden-import=uvicorn.loops.auto",
+        "--hidden-import=uvicorn.protocols",
+        "--hidden-import=uvicorn.protocols.http",
+        "--hidden-import=uvicorn.protocols.http.auto",
+        "--hidden-import=uvicorn.protocols.websockets",
+        "--hidden-import=uvicorn.protocols.websockets.auto",
+        "--hidden-import=uvicorn.lifespan",
+        "--hidden-import=uvicorn.lifespan.on",
+        "--hidden-import=aiosqlite",
         "run_app.py"
     ]
     
@@ -25,7 +40,7 @@ def build():
     subprocess.run(cmd, check=True)
     
     print("\n==================================================")
-    print(" 🎉 BUILD SUCCESSFUL!")
+    print(" BUILD SUCCESSFUL!")
     print(" Executable file path: dist/TikTokOBS.exe")
     print("==================================================")
 
