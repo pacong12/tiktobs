@@ -319,23 +319,21 @@ function setupSoundEvents() {
     
     if (testSoundBtn) {
         testSoundBtn.addEventListener('click', () => {
-            const filename = currentSoundName.textContent;
-            const soundFile = (!filename || filename === 'Default Sound') 
-                ? 'dragon-studio-thud-sound-effect-405470.mp3' 
-                : filename;
+            const filename = currentSoundName.textContent.strip ? currentSoundName.textContent.strip() : currentSoundName.textContent.trim();
+            let soundUrl = '/sounds/dragon-studio-thud-sound-effect-405470.mp3';
+            if (filename && filename !== 'Default Sound') {
+                soundUrl = '/sounds/' + filename;
+            }
             
-            const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000/' : '';
-            const soundUrl = baseUrl + 'sounds/' + soundFile;
-            
-            console.log("Playing test sound from:", soundUrl);
             const audio = new Audio(soundUrl);
+            audio.currentTime = 0;
             audio.play()
                 .then(() => {
-                    console.log("Test sound played successfully!");
+                    console.log("Test sound played successfully:", soundUrl);
                 })
                 .catch(err => {
-                    console.error("Test sound playback error:", err);
-                    alert("Gagal memutar suara test. Pastikan server running di http://127.0.0.1:8000");
+                    console.warn("Could not play sound preview:", err);
+                    alert("Browser memblokir suara otomatis. Klik sekali lagi di area layar ini lalu coba lagi!");
                 });
         });
     }

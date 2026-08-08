@@ -560,92 +560,10 @@ async function handleViewRankings() {
             rankingsTableBody.appendChild(row);
         });
 
-// Sound Management Logic (Main Dashboard)
-const soundUploadInputMain = document.getElementById('sound-upload-input-main');
-const uploadSoundBtnMain = document.getElementById('upload-sound-btn-main');
-const currentSoundNameMain = document.getElementById('current-sound-name-main');
-const testSoundBtnMain = document.getElementById('test-sound-btn-main');
-
-async function loadCurrentSoundMain() {
-    try {
-        const res = await fetch('/api/sounds');
-        if (res.ok) {
-            const data = await res.json();
-            if (data.sounds && data.sounds.length > 0 && currentSoundNameMain) {
-                currentSoundNameMain.textContent = data.sounds[0];
-            } else if (currentSoundNameMain) {
-                currentSoundNameMain.textContent = "Default";
-            }
-        }
-    } catch (e) {
-        console.warn("Could not fetch sounds list:", e);
+    } catch (error) {
+        console.error('Error fetching rankings:', error);
+        rankingsLoading.classList.add('hidden');
+        rankingsContent.classList.remove('hidden');
+        rankingsTableBody.innerHTML = `<tr><td colspan="2" class="empty-state" style="text-align: center; color: #ff4a5a; padding: 20px;">Error: ${error.message}</td></tr>`;
     }
 }
-
-function setupSoundEventsMain() {
-    if (uploadSoundBtnMain && soundUploadInputMain) {
-        uploadSoundBtnMain.addEventListener('click', async () => {
-            const file = soundUploadInputMain.files[0];
-            if (!file) {
-                alert('Pilih file suara (.mp3 atau .wav) terlebih dahulu!');
-                return;
-            }
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            uploadSoundBtnMain.disabled = true;
-            uploadSoundBtnMain.textContent = 'Uploading...';
-            
-            try {
-                const res = await fetch('/api/upload-sound', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await res.json();
-                if (res.ok) {
-                    alert(`Suara berhasil diupload! (${data.filename})`);
-                    if (currentSoundNameMain) currentSoundNameMain.textContent = data.filename;
-                    soundUploadInputMain.value = '';
-                } else {
-                    alert(`Gagal upload: ${data.detail || 'Terjadi kesalahan'}`);
-                }
-            } catch (err) {
-                console.error("Upload error:", err);
-                alert('Gagal mengupload file suara.');
-            } finally {
-                uploadSoundBtnMain.disabled = false;
-                uploadSoundBtnMain.textContent = 'Upload';
-            }
-        });
-    }
-    
-    if (testSoundBtnMain) {
-        testSoundBtnMain.addEventListener('click', () => {
-            const filename = currentSoundNameMain ? currentSoundNameMain.textContent : '';
-            const soundFile = (!filename || filename === 'Default') 
-                ? 'dragon-studio-thud-sound-effect-405470.mp3' 
-                : filename;
-            
-            const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000/' : '';
-            const soundUrl = baseUrl + 'sounds/' + soundFile;
-            
-            console.log("Playing test sound from:", soundUrl);
-            const audio = new Audio(soundUrl);
-            audio.play()
-                .then(() => {
-                    console.log("Test sound played successfully!");
-                })
-                .catch(err => {
-                    console.error("Test sound playback error:", err);
-                    alert("Gagal memutar suara test. Pastikan server running di http://127.0.0.1:8000");
-                });
-        });
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    setupSoundEventsMain();
-    loadCurrentSoundMain();
-});
