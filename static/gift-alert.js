@@ -12,12 +12,15 @@ const alertEmoji = document.getElementById('gift-emoji');
 
 let audioCtx = null;
 let customSoundBuffer = null;
+let alertVolume = 1.0;
 
-const soundPaths = [
+const fallbackSoundPaths = [
     'sounds/dragon-studio-thud-sound-effect-405470.mp3',
     'sounds/gift-alert.wav',
     'sounds/gift-alert.mp3'
 ];
+
+const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000/' : '';
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,36 +38,50 @@ document.addEventListener('click', () => {
 async function initWebAudio() {
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000/' : '';
+    } catch (e) {
+        console.error("Web Audio initialization error:", e);
+        return;
+    }
+    await loadConfiguredSound();
+}
 
-        let filesToTry = soundPaths;
-        try {
-            const res = await fetch(baseUrl + 'api/sounds');
-            if (res.ok) {
-                const data = await res.json();
-                if (data.sounds && data.sounds.length > 0) {
-                    filesToTry = data.sounds.map(f => 'sounds/' + f);
-                }
-            }
-        } catch (e) {
-            console.warn("Could not fetch /api/sounds list, using default sound paths:", e);
-        }
-
-        for (const path of filesToTry) {
-            try {
-                const response = await fetch(baseUrl + path);
-                if (response.ok) {
-                    const arrayBuffer = await response.arrayBuffer();
-                    customSoundBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                    console.log(`Web Audio decoded sound buffer successfully: ${path}`);
-                    break; // Stop on first successful file
-                }
-            } catch (err) {
-                console.warn(`Could not load/decode sound file ${path}:`, err);
+// Fetch the chosen sound file (gift_sound) + volume from the server, then decode it.
+async function loadConfiguredSound() {
+    let filesToTry = fallbackSoundPaths;
+    try {
+        const res = await fetch(baseUrl + 'api/sounds');
+        if (res.ok) {
+            const data = await res.json();
+            const cfg = data.config || {};
+            if (typeof cfg.gift_volume === 'number') alertVolume = cfg.gift_volume;
+            if (cfg.gift_sound) {
+                // Explicit selection wins.
+                filesToTry = ['sounds/' + cfg.gift_sound];
+            } else if (cfg.gift_sound === '') {
+                // Explicitly set to default synth chime.
+                customSoundBuffer = null;
+                return;
+            } else if (data.sounds && data.sounds.length > 0) {
+                filesToTry = data.sounds.map(f => 'sounds/' + f);
             }
         }
     } catch (e) {
-        console.error("Web Audio initialization error:", e);
+        console.warn("Could not fetch /api/sounds list, using default sound paths:", e);
+    }
+
+    customSoundBuffer = null;
+    for (const path of filesToTry) {
+        try {
+            const response = await fetch(baseUrl + path);
+            if (response.ok) {
+                const arrayBuffer = await response.arrayBuffer();
+                customSoundBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                console.log(`Web Audio decoded sound buffer successfully: ${path}`);
+                break; // Stop on first successful file
+            }
+        } catch (err) {
+            console.warn(`Could not load/decode sound file ${path}:`, err);
+        }
     }
 }
 
@@ -82,7 +99,10 @@ function playAlertSound() {
         if (customSoundBuffer) {
             const source = audioCtx.createBufferSource();
             source.buffer = customSoundBuffer;
-            source.connect(audioCtx.destination);
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = alertVolume;
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
             source.start(0);
             console.log("Played custom sound via Web Audio API!");
         } else {
@@ -153,6 +173,11 @@ function connectWebSocket() {
     socket.onmessage = (event) => {
         try {
             const msg = JSON.parse(event.data);
+            if (msg.type === 'sound_config_update') {
+                // Admin changed the sound selection/volume — reload without refresh.
+                loadConfiguredSound();
+                return;
+            }
             if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
                 const giftEvent = msg.event;
                 const sender = giftEvent.nickname || giftEvent.username;

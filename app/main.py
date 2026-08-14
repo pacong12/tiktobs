@@ -29,6 +29,7 @@ LOG_FILE = os.path.join(DATA_DIR, "app.log")
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 SOUNDS_DIR = os.path.join(DATA_DIR, "sounds")
 os.makedirs(SOUNDS_DIR, exist_ok=True)
+SOUND_CONFIG_FILE = os.path.join(DATA_DIR, "sound_config.json")
 
 # Configure Logging
 logging.basicConfig(
@@ -204,6 +205,12 @@ class StartPollRequest(BaseModel):
 class SettingsUpdateRequest(BaseModel):
     tiktok_sign_api_key: str | None = None
 
+class SoundConfigRequest(BaseModel):
+    gift_sound: str | None = None
+    vote_sound: str | None = None
+    gift_volume: float | None = None
+    vote_volume: float | None = None
+
 # API Routes
 @app.post("/api/connect")
 async def connect_to_live(req: ConnectRequest):
@@ -362,14 +369,109 @@ async def clear_poll_rounds_api():
     return {"status": "ok"}
 
 # Sound Management Endpoints
+DEFAULT_SOUND_CONFIG = {
+    "gift_sound": "",        # filename in data/sounds, "" = default synth chime
+    "vote_sound": "",        # filename for vote-boost alerts
+    "gift_volume": 1.0,      # 0.0 - 1.0
+    "vote_volume": 1.0,
+}
+
+
+def _load_sound_config():
+    """Reads sound_config.json, falling back to defaults for any missing key."""
+    import json
+    cfg = dict(DEFAULT_SOUND_CONFIG)
+    if os.path.exists(SOUND_CONFIG_FILE):
+        try:
+            with open(SOUND_CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                cfg.update({k: data[k] for k in DEFAULT_SOUND_CONFIG if k in data})
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Could not read sound config, using defaults: {e}")
+    return cfg
+
+
+def _save_sound_config(cfg):
+    import json
+    with open(SOUND_CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2)
+
+
 @app.get("/api/sounds")
 async def list_sounds_api():
-    """Lists available sound files in data/sounds."""
-    if not os.path.exists(SOUNDS_DIR):
-        return {"sounds": []}
-    
-    files = [f for f in os.listdir(SOUNDS_DIR) if f.lower().endswith((".mp3", ".wav", ".ogg", ".m4a"))]
-    return {"sounds": files}
+    """Lists available sound files plus the current sound configuration."""
+    files = []
+    if os.path.exists(SOUNDS_DIR):
+        files = [f for f in os.listdir(SOUNDS_DIR) if f.lower().endswith((".mp3", ".wav", ".ogg", ".m4a"))]
+        files.sort()
+    return {"sounds": files, "config": _load_sound_config()}
+
+
+@app.get("/api/sound-config")
+async def get_sound_config_api():
+    """Returns just the active sound configuration."""
+    return _load_sound_config()
+
+
+@app.post("/api/sound-config")
+async def update_sound_config_api(req: SoundConfigRequest):
+    """Updates which sound file + volume each alert type uses. Persisted to disk."""
+    cfg = _load_sound_config()
+
+    def _valid(name):
+        if not name:
+            return True  # empty = default chime
+        return os.path.exists(os.path.join(SOUNDS_DIR, name))
+
+    if req.gift_sound is not None:
+        if not _valid(req.gift_sound):
+            raise HTTPException(status_code=400, detail=f"Sound file not found: {req.gift_sound}")
+        cfg["gift_sound"] = req.gift_sound
+    if req.vote_sound is not None:
+        if not _valid(req.vote_sound):
+            raise HTTPException(status_code=400, detail=f"Sound file not found: {req.vote_sound}")
+        cfg["vote_sound"] = req.vote_sound
+    if req.gift_volume is not None:
+        cfg["gift_volume"] = max(0.0, min(1.0, req.gift_volume))
+    if req.vote_volume is not None:
+        cfg["vote_volume"] = max(0.0, min(1.0, req.vote_volume))
+
+    _save_sound_config(cfg)
+    # Notify open overlays so they reload the new sound live.
+    await manager.broadcast({"type": "sound_config_update", "config": cfg})
+    logger.info(f"Sound config updated: {cfg}")
+    return {"status": "success", "config": cfg}
+
+
+@app.delete("/api/sounds/{filename}")
+async def delete_sound_api(filename: str):
+    """Deletes an uploaded sound file. Clears it from config if it was selected."""
+    # Prevent path traversal.
+    safe_name = os.path.basename(filename)
+    target = os.path.join(SOUNDS_DIR, safe_name)
+    if not os.path.exists(target):
+        raise HTTPException(status_code=404, detail="Sound file not found")
+    try:
+        os.remove(target)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Could not delete file: {e}")
+
+    cfg = _load_sound_config()
+    changed = False
+    if cfg.get("gift_sound") == safe_name:
+        cfg["gift_sound"] = ""
+        changed = True
+    if cfg.get("vote_sound") == safe_name:
+        cfg["vote_sound"] = ""
+        changed = True
+    if changed:
+        _save_sound_config(cfg)
+        await manager.broadcast({"type": "sound_config_update", "config": cfg})
+
+    logger.info(f"Sound file deleted: {safe_name}")
+    return {"status": "success", "deleted": safe_name, "config": cfg}
+
 
 @app.post("/api/upload-sound")
 async def upload_sound_api(file: UploadFile = File(...)):
@@ -381,13 +483,14 @@ async def upload_sound_api(file: UploadFile = File(...)):
     if ext not in (".mp3", ".wav", ".ogg", ".m4a"):
         raise HTTPException(status_code=400, detail="Only audio files (.mp3, .wav, .ogg, .m4a) are allowed")
     
-    save_path = os.path.join(SOUNDS_DIR, file.filename)
+    safe_name = os.path.basename(file.filename)
+    save_path = os.path.join(SOUNDS_DIR, safe_name)
     content = await file.read()
     with open(save_path, "wb") as f:
         f.write(content)
         
-    logger.info(f"Custom sound file uploaded successfully: {file.filename}")
-    return {"status": "success", "filename": file.filename, "url": f"/sounds/{file.filename}"}
+    logger.info(f"Custom sound file uploaded successfully: {safe_name}")
+    return {"status": "success", "filename": safe_name, "url": f"/sounds/{safe_name}"}
 
 # Application Settings Endpoints (.env configuration)
 @app.get("/api/settings")
