@@ -53,17 +53,26 @@ function renderPoll(poll) {
         maxVotes = Math.max(...poll.candidates.map(c => c.votes));
     }
 
-    candidatesList.innerHTML = '';
+    // Rank candidates: most votes = rank 0 (biggest photo). Sort a copy descending.
+    const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
+    const count = ranked.length;
 
-    poll.candidates.forEach(c => {
-        const card = document.createElement('div');
+    // Photo size scales with candidate count so everything still fits on screen.
+    let topSize, restSize;
+    if (count <= 4)      { topSize = 110; restSize = 84; }
+    else if (count <= 8) { topSize = 96;  restSize = 64; }
+    else                 { topSize = 84;  restSize = 50; }
+
+    // Build a vertical grid card (photo on top, name + votes below).
+    const buildCard = (c, size) => {
         const isLeading = maxVotes > 0 && c.votes === maxVotes;
+        const card = document.createElement('div');
         card.className = `glass-card candidate-card ${isLeading ? 'leading' : ''}`;
-        
-        // Generate beautiful initial gradient avatar if image_url is missing
+
+        const initialFont = Math.round(size * 0.4);
         const avatarHtml = c.image_url
-            ? `<img src="${escapeHTML(c.image_url)}" class="candidate-avatar" alt="Avatar">`
-            : `<div class="candidate-avatar default-avatar" style="background: ${getGradientForName(c.name)}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; width: 42px; height: 42px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25); text-shadow: 0 1px 4px rgba(0,0,0,0.3);">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
+            ? `<img src="${escapeHTML(c.image_url)}" class="candidate-avatar" alt="Avatar" style="width: ${size}px; height: ${size}px;">`
+            : `<div class="candidate-avatar default-avatar" style="background: ${getGradientForName(c.name)}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: ${initialFont}px; width: ${size}px; height: ${size}px; text-shadow: 0 1px 4px rgba(0,0,0,0.3);">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
 
         card.innerHTML = `
             <div class="candidate-number">${c.id}</div>
@@ -82,8 +91,28 @@ function renderPoll(poll) {
                 <span class="votes-label">Votes</span>
             </div>
         `;
-        candidatesList.appendChild(card);
-    });
+        return card;
+    };
+
+    candidatesList.className = 'candidates-list';
+    candidatesList.innerHTML = '';
+
+    // Top 2 (rank #1 & #2) -> grid of 2 columns
+    const topGroup = ranked.slice(0, 2);
+    const restGroup = ranked.slice(2);
+
+    const topGrid = document.createElement('div');
+    topGrid.className = 'candidate-grid grid-top';
+    topGroup.forEach(c => topGrid.appendChild(buildCard(c, topSize)));
+    candidatesList.appendChild(topGrid);
+
+    // The rest -> grid of 3 columns
+    if (restGroup.length > 0) {
+        const restGrid = document.createElement('div');
+        restGrid.className = 'candidate-grid grid-rest';
+        restGroup.forEach(c => restGrid.appendChild(buildCard(c, restSize)));
+        candidatesList.appendChild(restGrid);
+    }
 }
 
 function connectWebSocket() {

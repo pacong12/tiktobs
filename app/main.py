@@ -380,7 +380,7 @@ async def update_settings_api(req: SettingsUpdateRequest):
     os.environ["TIKTOK_SIGN_API_KEY"] = new_key
     
     try:
-        from TikTokLive.client.web.web_defaults import WebDefaults
+        from TikTokLive.client.web.web_settings import WebDefaults
         WebDefaults.tiktok_sign_api_key = new_key
     except Exception:  # noqa: BLE001, S110
         pass

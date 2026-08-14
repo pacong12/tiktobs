@@ -14,7 +14,7 @@ body {
 
 /* HIGHLY DRAMATIC GLOWING OVERLAY CONTAINER */
 .overlay-container {
-    width: 390px;
+    width: 500px;
     background: linear-gradient(135deg, rgba(16, 12, 34, 0.9), rgba(30, 10, 52, 0.9));
     border: 2.5px solid #00f0ff;
     border-radius: 20px;
@@ -92,16 +92,29 @@ body {
     gap: 14px;
 }
 
-/* CANDIDATE CARD ROW */
+/* GRID GROUPS: top 2 (rank #1 & #2) in 2 columns, the rest in 3 columns. */
+.candidate-grid {
+    display: grid;
+    gap: 12px;
+}
+.candidate-grid.grid-top  { grid-template-columns: repeat(2, 1fr); }
+.candidate-grid.grid-rest { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+/* CANDIDATE CARD (vertical: photo on top, name + progress + votes below) */
 .candidate-card {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 14px;
+    text-align: center;
+    gap: 8px;
+    padding: 14px 12px;
     position: relative;
     overflow: visible;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     animation: card-pop-in 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+
+.grid-rest .candidate-card { padding: 10px 8px; gap: 6px; }
 
 @keyframes card-pop-in {
     from { opacity: 0; transform: scale(0.9) translateY(12px); }
@@ -113,7 +126,7 @@ body {
     border: 2px solid #ffd700;
     background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(22, 16, 40, 0.9) 50%, rgba(255, 215, 0, 0.15) 100%);
     box-shadow: 0 0 25px rgba(255, 215, 0, 0.45), inset 0 0 10px rgba(255, 215, 0, 0.2);
-    transform: scale(1.04);
+    transform: scale(1.02);
     z-index: 5;
 }
 
@@ -121,33 +134,37 @@ body {
 .candidate-card.leading::before {
     content: "👑";
     position: absolute;
-    top: -18px;
-    left: -12px;
-    font-size: 28px;
+    top: -20px;
+    left: 50%;
+    font-size: 26px;
     z-index: 10;
-    transform: rotate(-25deg);
+    transform: translateX(-50%) rotate(-12deg);
     filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.95));
     animation: crown-float-anim 1.5s infinite ease-in-out;
 }
 
 @keyframes crown-float-anim {
-    0%, 100% { transform: rotate(-25deg) translateY(0); }
-    50% { transform: rotate(-16deg) translateY(-5px); }
+    0%, 100% { transform: translateX(-50%) rotate(-12deg) translateY(0); }
+    50% { transform: translateX(-50%) rotate(-6deg) translateY(-5px); }
 }
 
-/* Number badge */
+/* Number badge (top-left corner in vertical card) */
 .candidate-number {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 28px;
-    height: 28px;
-    background: rgba(255, 255, 255, 0.08);
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    min-width: 26px;
+    height: 26px;
+    background: rgba(20, 16, 34, 0.95);
     border-radius: 50%;
     font-size: 13px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 6;
 }
 
 .candidate-card.leading .candidate-number {
@@ -157,38 +174,45 @@ body {
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
 }
 
-/* Candidate image/avatar */
+/* Candidate image/avatar (square with rounded corners; size set inline per rank) */
 .candidate-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    border-radius: 16px;
     object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    border: 3px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .candidate-card.leading .candidate-avatar {
     border-color: #ffd700;
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
 }
 
-/* Candidate Main Info and Progress Bar */
+/* Candidate Main Info and Progress Bar (full width in vertical card) */
 .candidate-main {
-    flex-grow: 1;
+    width: 100%;
 }
 
 .candidate-info {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: baseline;
-    margin-bottom: 4px;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
 .candidate-name {
     font-size: 15px;
     font-weight: 600;
     color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
+
+.grid-rest .candidate-name { font-size: 13px; }
 
 .candidate-card.leading .candidate-name {
     color: #ffd700;
@@ -257,10 +281,9 @@ body {
     to { background-position: 20px 0, 0 0; }
 }
 
-/* Vote Count indicator on the right */
+/* Vote Count indicator (centered under progress bar) */
 .candidate-votes {
-    text-align: right;
-    min-width: 65px;
+    text-align: center;
 }
 
 .votes-value {
