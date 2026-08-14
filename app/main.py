@@ -168,6 +168,7 @@ async def lifespan(app: FastAPI):
         await live_provider.disconnect()
     if processor.session_id:
         await database.close_session(processor.session_id)
+    await database.close_db()
 
 app = FastAPI(
     title="TikTok LIVE Data Collector",

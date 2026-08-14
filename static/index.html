@@ -19,7 +19,7 @@
                 <span class="icon">📊</span>
                 <h1>TikTok LIVE <span>Collector</span></h1>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="header-actions">
                 <a href="/poll-admin.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">🗳️ Poll Admin</a>
                 <a href="/settings.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">⚙️ Settings</a>
                 <a href="/docs.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">📖 Docs</a>
@@ -50,19 +50,37 @@
                         <button id="connect-btn" class="btn primary">Connect</button>
                         <button id="disconnect-btn" class="btn danger" disabled>Disconnect</button>
                     </div>
-                    <div style="margin-top: 12px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                        <a href="/overlay.html" target="_blank" style="color: #00f0ff; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
-                            💎 OBS Gift Leaderboard Overlay
-                        </a>
-                        <a href="/gift-alert.html" target="_blank" style="color: #ff007f; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
-                            🎁 OBS Gift Alert Overlay (with Sound)
-                        </a>
-                        <a href="/recent-gifts.html" target="_blank" style="color: #00ff87; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
-                            🎉 OBS Recent Gifts Feed Ticker
-                        </a>
-                        <a href="/poll-admin.html" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
-                            🗳️ Open Poll/Voting Manager
-                        </a>
+                    <div class="overlay-links">
+                        <p class="overlay-links-title">OBS Browser Source Overlays</p>
+                        <div class="overlay-link-item" data-accent="cyan">
+                            <span class="overlay-link-label"><span class="ol-icon">💎</span> Gift Leaderboard</span>
+                            <div class="overlay-link-actions">
+                                <a href="/overlay.html" target="_blank" class="ol-btn open" title="Open overlay">Open</a>
+                                <button class="ol-btn copy" data-url="/overlay.html" title="Copy URL for OBS">Copy</button>
+                            </div>
+                        </div>
+                        <div class="overlay-link-item" data-accent="pink">
+                            <span class="overlay-link-label"><span class="ol-icon">🎁</span> Gift Alert (Sound)</span>
+                            <div class="overlay-link-actions">
+                                <a href="/gift-alert.html" target="_blank" class="ol-btn open">Open</a>
+                                <button class="ol-btn copy" data-url="/gift-alert.html">Copy</button>
+                            </div>
+                        </div>
+                        <div class="overlay-link-item" data-accent="green">
+                            <span class="overlay-link-label"><span class="ol-icon">🎉</span> Recent Gifts Ticker</span>
+                            <div class="overlay-link-actions">
+                                <a href="/recent-gifts.html" target="_blank" class="ol-btn open">Open</a>
+                                <button class="ol-btn copy" data-url="/recent-gifts.html">Copy</button>
+                            </div>
+                        </div>
+                        <div class="overlay-link-item" data-accent="gold">
+                            <span class="overlay-link-label"><span class="ol-icon">🗳️</span> Vote / Poll Overlay</span>
+                            <div class="overlay-link-actions">
+                                <a href="/vote-overlay.html" target="_blank" class="ol-btn open">Open</a>
+                                <button class="ol-btn copy" data-url="/vote-overlay.html">Copy</button>
+                            </div>
+                        </div>
+                        <a href="/poll-admin.html" target="_blank" class="overlay-manager-link">🗳️ Open Poll / Voting Manager →</a>
                     </div>
                     
                     <div class="session-info hidden" id="session-info">

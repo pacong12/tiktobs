@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import uuid
+import asyncio
 from datetime import datetime, timezone
 
 import aiosqlite
@@ -19,72 +20,114 @@ DB_PATH = os.path.join(DB_DIR, "tiktok_live.db")
 
 logger = logging.getLogger("app.database")
 
+# A single shared connection is used for the whole app. SQLite only allows one
+# writer at a time, so opening a new connection per event (with TikTok firing
+# dozens of events per second) caused heavy lock contention -> "database is locked".
+# We keep one persistent WAL connection and serialize writes with a lock.
+_shared_db: aiosqlite.Connection | None = None
+_write_lock = asyncio.Lock()
+_conn_lock = asyncio.Lock()
+
+
+async def _get_shared_db() -> aiosqlite.Connection:
+    """Returns the process-wide SQLite connection, creating it on first use."""
+    global _shared_db
+    if _shared_db is None:
+        async with _conn_lock:
+            if _shared_db is None:
+                os.makedirs(DB_DIR, exist_ok=True)
+                db = await aiosqlite.connect(DB_PATH)
+                await db.execute("PRAGMA journal_mode = WAL;")
+                await db.execute("PRAGMA busy_timeout = 5000;")
+                await db.execute("PRAGMA synchronous = NORMAL;")
+                await db.execute("PRAGMA foreign_keys = ON;")
+                await db.commit()
+                _shared_db = db
+    return _shared_db
+
+
+async def close_db():
+    """Closes the shared connection (call on app shutdown)."""
+    global _shared_db
+    if _shared_db is not None:
+        try:
+            await _shared_db.close()
+        except Exception as e:
+            logger.warning(f"Error closing shared DB connection: {e}")
+        finally:
+            _shared_db = None
+
+
 class get_db_connection:
-    """Asynchronous context manager to retrieve configured SQLite connection with busy timeout and WAL mode."""
+    """Backwards-compatible async context manager that yields the shared connection.
+
+    Note: the connection is NOT closed on exit; it is owned by the module and
+    lives for the whole process."""
     def __init__(self):
         self.db = None
 
     async def __aenter__(self) -> aiosqlite.Connection:
-        self.db = await aiosqlite.connect(DB_PATH)
-        await self.db.execute("PRAGMA busy_timeout = 5000;")
+        self.db = await _get_shared_db()
         return self.db
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.db:
-            await self.db.close()
+        # Intentionally do not close the shared connection.
+        return False
 
 async def init_db():
     """Initializes the database and creates the necessary tables if they do not exist."""
     os.makedirs(DB_DIR, exist_ok=True)
-    async with get_db_connection() as db:
-        await db.execute("PRAGMA journal_mode = WAL;")
-        await db.execute("PRAGMA foreign_keys = ON;")
-        
-        # Create live_sessions table
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS live_sessions (
-                id TEXT PRIMARY KEY,
-                username TEXT NOT NULL,
-                connected_at TEXT NOT NULL,
-                disconnected_at TEXT,
-                status TEXT NOT NULL
-            );
-        """)
-        
-        # Create tiktok_events table
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS tiktok_events (
-                id TEXT PRIMARY KEY,
-                session_id TEXT NOT NULL,
-                event_type TEXT NOT NULL,
-                username TEXT,
-                nickname TEXT,
-                payload TEXT, -- Stored as JSON string
-                created_at TEXT NOT NULL,
-                FOREIGN KEY (session_id) REFERENCES live_sessions(id) ON DELETE CASCADE
-            );
-        """)
-        await db.commit()
+    db = await _get_shared_db()
+    # Create live_sessions table
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS live_sessions (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            connected_at TEXT NOT NULL,
+            disconnected_at TEXT,
+            status TEXT NOT NULL
+        );
+    """)
+
+    # Create tiktok_events table
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS tiktok_events (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            username TEXT,
+            nickname TEXT,
+            payload TEXT, -- Stored as JSON string
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (session_id) REFERENCES live_sessions(id) ON DELETE CASCADE
+        );
+    """)
+    # Helpful indexes for the common queries (recent events, per-session gifts).
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_events_created_at ON tiktok_events(created_at DESC);")
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_events_session_type ON tiktok_events(session_id, event_type);")
+    await db.commit()
 
 async def create_session(username: str) -> str:
     """Creates a new LIVE session and stores it in the database. Returns the session ID."""
     session_id = uuid.uuid4().hex[:8]  # Compact 8-character ID
     connected_at = datetime.now(timezone.utc).isoformat()
-    
-    async with get_db_connection() as db:
+
+    db = await _get_shared_db()
+    async with _write_lock:
         await db.execute(
             "INSERT INTO live_sessions (id, username, connected_at, status) VALUES (?, ?, ?, ?)",
             (session_id, username, connected_at, "CONNECTED")
         )
         await db.commit()
-        
+
     return session_id
 
 async def close_session(session_id: str):
     """Closes an active session by updating status and disconnection timestamp."""
     disconnected_at = datetime.now(timezone.utc).isoformat()
     try:
-        async with get_db_connection() as db:
+        db = await _get_shared_db()
+        async with _write_lock:
             await db.execute(
                 "UPDATE live_sessions SET disconnected_at = ?, status = ? WHERE id = ?",
                 (disconnected_at, "DISCONNECTED", session_id)
@@ -109,13 +152,15 @@ async def insert_event(
     """
     payload_str = json.dumps(payload)
     try:
-        async with get_db_connection() as db, db.execute(
-            """
-            INSERT OR IGNORE INTO tiktok_events (id, session_id, event_type, username, nickname, payload, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (event_id, session_id, event_type, username, nickname, payload_str, created_at),
-        ) as cursor:
+        db = await _get_shared_db()
+        async with _write_lock:
+            cursor = await db.execute(
+                """
+                INSERT OR IGNORE INTO tiktok_events (id, session_id, event_type, username, nickname, payload, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (event_id, session_id, event_type, username, nickname, payload_str, created_at),
+            )
             await db.commit()
             return cursor.rowcount > 0
     except aiosqlite.OperationalError as e:
@@ -124,75 +169,75 @@ async def insert_event(
 
 async def get_recent_events(limit: int = 100) -> list[dict]:
     """Retrieves the most recent events from the database."""
-    async with get_db_connection() as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute(
-            """
-            SELECT id, session_id, event_type, username, nickname, payload, created_at
-            FROM tiktok_events
-            ORDER BY created_at DESC
-            LIMIT ?
-            """,
-            (limit,)
-        ) as cursor:
-            rows = await cursor.fetchall()
-            events = []
-            for row in rows:
-                events.append({
-                    "id": row["id"],
-                    "session_id": row["session_id"],
-                    "event_type": row["event_type"],
-                    "username": row["username"],
-                    "nickname": row["nickname"],
-                    "payload": json.loads(row["payload"]) if row["payload"] else {},
-                    "created_at": row["created_at"]
-                })
-            return events
+    db = await _get_shared_db()
+    db.row_factory = aiosqlite.Row
+    async with db.execute(
+        """
+        SELECT id, session_id, event_type, username, nickname, payload, created_at
+        FROM tiktok_events
+        ORDER BY created_at DESC
+        LIMIT ?
+        """,
+        (limit,)
+    ) as cursor:
+        rows = await cursor.fetchall()
+        events = []
+        for row in rows:
+            events.append({
+                "id": row["id"],
+                "session_id": row["session_id"],
+                "event_type": row["event_type"],
+                "username": row["username"],
+                "nickname": row["nickname"],
+                "payload": json.loads(row["payload"]) if row["payload"] else {},
+                "created_at": row["created_at"]
+            })
+        return events
 
 async def get_session_leaderboard(session_id: str) -> list[dict]:
     """
     Calculates the gift leaderboard for a given session by querying and aggregating gift events.
     Returns a sorted list of dictionaries with columns: username, nickname, total_diamonds, total_gifts.
     """
-    async with get_db_connection() as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute(
-            """
-            SELECT username, nickname, payload
-            FROM tiktok_events
-            WHERE session_id = ? AND event_type = 'gift'
-            """,
-            (session_id,)
-        ) as cursor:
-            rows = await cursor.fetchall()
-            
-            leaderboard_map = {}
-            for row in rows:
-                username = row["username"]
-                if not username:
-                    continue
-                nickname = row["nickname"] or username
-                payload = json.loads(row["payload"]) if row["payload"] else {}
-                event_data = payload.get("data") or {}
-                
-                quantity = int(event_data.get("quantity") or 1)
-                diamond_count = int(event_data.get("diamond_count") or 0)
-                diamonds_gained = quantity * diamond_count
-                
-                if username not in leaderboard_map:
-                    leaderboard_map[username] = {
-                        "username": username,
-                        "nickname": nickname,
-                        "total_diamonds": 0,
-                        "total_gifts": 0
-                    }
-                
-                if row["nickname"]:
-                    leaderboard_map[username]["nickname"] = row["nickname"]
-                    
-                leaderboard_map[username]["total_diamonds"] += diamonds_gained
-                leaderboard_map[username]["total_gifts"] += quantity
-                
-            leaderboard = list(leaderboard_map.values())
-            leaderboard.sort(key=lambda x: (-x["total_diamonds"], -x["total_gifts"], x["username"]))
-            return leaderboard
+    db = await _get_shared_db()
+    db.row_factory = aiosqlite.Row
+    async with db.execute(
+        """
+        SELECT username, nickname, payload
+        FROM tiktok_events
+        WHERE session_id = ? AND event_type = 'gift'
+        """,
+        (session_id,)
+    ) as cursor:
+        rows = await cursor.fetchall()
+
+        leaderboard_map = {}
+        for row in rows:
+            username = row["username"]
+            if not username:
+                continue
+            nickname = row["nickname"] or username
+            payload = json.loads(row["payload"]) if row["payload"] else {}
+            event_data = payload.get("data") or {}
+
+            quantity = int(event_data.get("quantity") or 1)
+            diamond_count = int(event_data.get("diamond_count") or 0)
+            diamonds_gained = quantity * diamond_count
+
+            if username not in leaderboard_map:
+                leaderboard_map[username] = {
+                    "username": username,
+                    "nickname": nickname,
+                    "total_diamonds": 0,
+                    "total_gifts": 0
+                }
+
+            if row["nickname"]:
+                leaderboard_map[username]["nickname"] = row["nickname"]
+
+            leaderboard_map[username]["total_diamonds"] += diamonds_gained
+            leaderboard_map[username]["total_gifts"] += quantity
+
+        leaderboard = list(leaderboard_map.values())
+        leaderboard.sort(key=lambda x: (-x["total_diamonds"], -x["total_gifts"], x["username"]))
+        return leaderboard

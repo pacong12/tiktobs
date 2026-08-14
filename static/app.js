@@ -76,6 +76,32 @@ function setupEventListeners() {
         }
     });
 
+    // Copy overlay URL to clipboard (for OBS Browser Source)
+    document.querySelectorAll('.ol-btn.copy').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const fullUrl = window.location.origin + btn.dataset.url;
+            try {
+                await navigator.clipboard.writeText(fullUrl);
+            } catch {
+                // Fallback for non-secure contexts
+                const ta = document.createElement('textarea');
+                ta.value = fullUrl;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            showToast(`URL copied: ${fullUrl}`);
+            setTimeout(() => {
+                btn.textContent = original;
+                btn.classList.remove('copied');
+            }, 1500);
+        });
+    });
+
     // Modal close
     modalCloseBtn.addEventListener('click', () => {
         detailModal.classList.add('hidden');
@@ -408,21 +434,36 @@ function incrementCounter(type, data) {
 }
 
 function updateCounterDOM(highlightType = null, shouldBump = false) {
-    const format = (num) => num.toLocaleString();
+    // Compact format for large numbers (e.g. 12.3K, 1.2M) to avoid overflow,
+    // keeping the full value available on hover via the title attribute.
+    const compact = (num) => {
+        if (num >= 1_000_000) return (num / 1_000_000).toFixed(num >= 10_000_000 ? 0 : 1).replace(/\.0$/, '') + 'M';
+        if (num >= 10_000) return (num / 1_000).toFixed(num >= 100_000 ? 0 : 1).replace(/\.0$/, '') + 'K';
+        return num.toLocaleString();
+    };
 
-    document.getElementById('counter-gifts').textContent = format(counters.gift);
-    document.getElementById('counter-comments').textContent = format(counters.comment);
-    document.getElementById('counter-likes').textContent = format(counters.like);
-    document.getElementById('counter-follows').textContent = format(counters.follow);
-    document.getElementById('counter-shares').textContent = format(counters.share);
-    document.getElementById('counter-viewers').textContent = format(counters.viewer);
+    const setCounter = (id, value) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = compact(value);
+        el.title = value.toLocaleString();
+    };
+
+    setCounter('counter-gifts', counters.gift);
+    setCounter('counter-comments', counters.comment);
+    setCounter('counter-likes', counters.like);
+    setCounter('counter-follows', counters.follow);
+    setCounter('counter-shares', counters.share);
+    setCounter('counter-viewers', counters.viewer);
 
     // Micro-animation triggers
     if (highlightType && shouldBump) {
         const card = document.querySelector(`.counter-card[data-type="${highlightType}"]`);
         if (card) {
+            card.classList.remove('bump');
+            void card.offsetWidth; // restart animation
             card.classList.add('bump');
-            setTimeout(() => card.classList.remove('bump'), 150);
+            setTimeout(() => card.classList.remove('bump'), 400);
         }
     }
 }
@@ -566,4 +607,22 @@ async function handleViewRankings() {
         rankingsContent.classList.remove('hidden');
         rankingsTableBody.innerHTML = `<tr><td colspan="2" class="empty-state" style="text-align: center; color: #ff4a5a; padding: 20px;">Error: ${error.message}</td></tr>`;
     }
+}
+
+// TOAST NOTIFICATION HELPER
+let toastTimer = null;
+function showToast(message) {
+    let toast = document.getElementById('app-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'app-toast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    // Force reflow so re-triggering the animation works
+    void toast.offsetWidth;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
 }

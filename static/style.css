@@ -163,6 +163,31 @@ body {
     }
 }
 
+@media (max-width: 640px) {
+    .app-container {
+        padding: 14px;
+        gap: 16px;
+    }
+    .app-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding: 14px;
+    }
+    .header-actions {
+        justify-content: center;
+    }
+    .counters-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .stream-card {
+        height: 400px;
+    }
+    .logo-area {
+        justify-content: center;
+    }
+}
+
 /* SIDEBAR CONTROLS */
 .control-sidebar {
     display: flex;
@@ -288,6 +313,165 @@ body {
     color: var(--color-text);
 }
 
+.btn.secondary {
+    flex-grow: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text);
+    padding: 8px 14px;
+}
+
+.btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* HEADER ACTIONS (responsive) */
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* OBS OVERLAY LINKS LIST */
+.overlay-links {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.overlay-links-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+}
+
+.overlay-link-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 3px solid var(--ol-accent, #00f0ff);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.overlay-link-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(2px);
+}
+
+.overlay-link-item[data-accent="cyan"] { --ol-accent: #00f0ff; }
+.overlay-link-item[data-accent="pink"] { --ol-accent: #ff007f; }
+.overlay-link-item[data-accent="green"] { --ol-accent: #00ff87; }
+.overlay-link-item[data-accent="gold"] { --ol-accent: #ffd700; }
+
+.overlay-link-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--color-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.overlay-link-label .ol-icon {
+    filter: drop-shadow(0 0 6px var(--ol-accent));
+}
+
+.overlay-link-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.ol-btn {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--color-text);
+    text-decoration: none;
+    transition: all 0.18s ease;
+    line-height: 1.4;
+}
+
+.ol-btn:hover {
+    background: var(--ol-accent, #00f0ff);
+    color: #0b0f19;
+    border-color: var(--ol-accent, #00f0ff);
+}
+
+.ol-btn.copy.copied {
+    background: var(--color-success);
+    color: #0b0f19;
+    border-color: var(--color-success);
+}
+
+.overlay-manager-link {
+    margin-top: 4px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffd700;
+    text-decoration: none;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 215, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.overlay-manager-link:hover {
+    background: rgba(255, 215, 0, 0.08);
+    border-color: rgba(255, 215, 0, 0.6);
+}
+
+/* TOAST NOTIFICATION */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-left: 4px solid var(--color-success);
+    color: var(--color-text);
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9999;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
 /* SESSION METADATA info */
 .session-info {
     margin-top: 16px;
@@ -355,11 +539,19 @@ body {
     font-weight: 700;
     letter-spacing: -0.5px;
     color: var(--color-text);
-    transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.25s ease;
+}
+
+.counter-card {
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease, border-color 0.3s ease;
+}
+
+.counter-card.bump {
+    transform: translateY(-3px);
 }
 
 .counter-card.bump .counter-value {
-    transform: scale(1.2);
+    transform: scale(1.18);
     color: white;
 }
 
@@ -370,6 +562,14 @@ body {
 .counter-card[data-type="follow"] { border-left: 3px solid #10b981; }
 .counter-card[data-type="share"] { border-left: 3px solid #f59e0b; }
 .counter-card[data-type="viewer"] { border-left: 3px solid #8b5cf6; }
+
+/* Colored glow pulse when a counter updates */
+.counter-card[data-type="gift"].bump { box-shadow: 0 6px 20px rgba(236, 72, 153, 0.35); border-color: #ec4899; }
+.counter-card[data-type="comment"].bump { box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35); border-color: #38bdf8; }
+.counter-card[data-type="like"].bump { box-shadow: 0 6px 20px rgba(244, 63, 94, 0.35); border-color: #f43f5e; }
+.counter-card[data-type="follow"].bump { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35); border-color: #10b981; }
+.counter-card[data-type="share"].bump { box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35); border-color: #f59e0b; }
+.counter-card[data-type="viewer"].bump { box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35); border-color: #8b5cf6; }
 
 /* CONTENT AREA */
 .content-area {
