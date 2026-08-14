@@ -193,11 +193,13 @@ class ConnectRequest(BaseModel):
 class CandidateInput(BaseModel):
     name: str
     image_url: str | None = None
+    gift_name: str | None = None
 
 class StartPollRequest(BaseModel):
     title: str
     candidates: list[CandidateInput]
     duration_seconds: int | None = None
+    round_name: str | None = None
 
 class SettingsUpdateRequest(BaseModel):
     tiktok_sign_api_key: str | None = None
@@ -312,7 +314,7 @@ async def get_rankings_api(anchor_id: str):
 async def start_poll_api(req: StartPollRequest):
     """Starts a new voting session and broadcasts the poll details."""
     candidates = [c.model_dump() for c in req.candidates]
-    await poll_manager.start_poll(req.title, candidates, req.duration_seconds)
+    await poll_manager.start_poll(req.title, candidates, req.duration_seconds, req.round_name or "")
     poll_status = await poll_manager.get_status()
     await manager.broadcast({
         "type": "poll_update",
@@ -322,19 +324,42 @@ async def start_poll_api(req: StartPollRequest):
 
 @app.post("/api/poll/stop")
 async def stop_poll_api():
-    """Stops the active voting session and broadcasts the final state."""
-    await poll_manager.stop_poll()
+    """Stops the active voting session, archives its result, and broadcasts the final state."""
+    archived = await poll_manager.stop_poll()
     poll_status = await poll_manager.get_status()
     await manager.broadcast({
         "type": "poll_update",
         "poll": poll_status
     })
-    return poll_status
+    if archived:
+        await manager.broadcast({
+            "type": "poll_round_archived",
+            "round": archived
+        })
+    return {"poll": poll_status, "archived": archived}
 
 @app.get("/api/poll/status")
 async def get_poll_status_api():
     """Returns the current status and vote counts of the active poll."""
     return await poll_manager.get_status()
+
+@app.get("/api/poll/rounds")
+async def list_poll_rounds_api(limit: int = 100):
+    """Returns the archive of completed voting rounds/sessions, most recent first."""
+    rounds = await database.get_poll_rounds(limit)
+    return {"rounds": rounds}
+
+@app.delete("/api/poll/rounds/{round_id}")
+async def delete_poll_round_api(round_id: int):
+    """Deletes a single archived round."""
+    await database.delete_poll_round(round_id)
+    return {"status": "ok", "deleted": round_id}
+
+@app.post("/api/poll/rounds/clear")
+async def clear_poll_rounds_api():
+    """Deletes all archived rounds."""
+    await database.clear_poll_rounds()
+    return {"status": "ok"}
 
 # Sound Management Endpoints
 @app.get("/api/sounds")

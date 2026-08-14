@@ -105,7 +105,90 @@ async def init_db():
     # Helpful indexes for the common queries (recent events, per-session gifts).
     await db.execute("CREATE INDEX IF NOT EXISTS idx_events_created_at ON tiktok_events(created_at DESC);")
     await db.execute("CREATE INDEX IF NOT EXISTS idx_events_session_type ON tiktok_events(session_id, event_type);")
+
+    # Create poll_rounds table (archive of completed voting rounds/sessions)
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS poll_rounds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            round_name TEXT NOT NULL,
+            title TEXT NOT NULL,
+            total_votes INTEGER NOT NULL DEFAULT 0,
+            candidates TEXT NOT NULL, -- JSON array of {name, votes, percentage, gift_name, image_url}
+            duration_seconds INTEGER,
+            started_at TEXT,
+            ended_at TEXT NOT NULL
+        );
+    """)
     await db.commit()
+
+
+async def save_poll_round(
+    round_name: str,
+    title: str,
+    total_votes: int,
+    candidates: list[dict],
+    duration_seconds: int | None,
+    started_at: str | None,
+    ended_at: str,
+) -> int:
+    """Archives a completed voting round. Returns the new round's row id."""
+    db = await _get_shared_db()
+    async with _write_lock:
+        cursor = await db.execute(
+            """
+            INSERT INTO poll_rounds
+                (round_name, title, total_votes, candidates, duration_seconds, started_at, ended_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (round_name, title, total_votes, json.dumps(candidates), duration_seconds, started_at, ended_at),
+        )
+        await db.commit()
+        return cursor.lastrowid
+
+
+async def get_poll_rounds(limit: int = 100) -> list[dict]:
+    """Returns archived voting rounds, most recent first."""
+    db = await _get_shared_db()
+    db.row_factory = aiosqlite.Row
+    async with db.execute(
+        """
+        SELECT id, round_name, title, total_votes, candidates, duration_seconds, started_at, ended_at
+        FROM poll_rounds
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ) as cursor:
+        rows = await cursor.fetchall()
+        rounds = []
+        for row in rows:
+            rounds.append({
+                "id": row["id"],
+                "round_name": row["round_name"],
+                "title": row["title"],
+                "total_votes": row["total_votes"],
+                "candidates": json.loads(row["candidates"]) if row["candidates"] else [],
+                "duration_seconds": row["duration_seconds"],
+                "started_at": row["started_at"],
+                "ended_at": row["ended_at"],
+            })
+        return rounds
+
+
+async def delete_poll_round(round_id: int) -> None:
+    """Deletes a single archived round by id."""
+    db = await _get_shared_db()
+    async with _write_lock:
+        await db.execute("DELETE FROM poll_rounds WHERE id = ?", (round_id,))
+        await db.commit()
+
+
+async def clear_poll_rounds() -> None:
+    """Deletes all archived rounds."""
+    db = await _get_shared_db()
+    async with _write_lock:
+        await db.execute("DELETE FROM poll_rounds")
+        await db.commit()
 
 async def create_session(username: str) -> str:
     """Creates a new LIVE session and stores it in the database. Returns the session ID."""

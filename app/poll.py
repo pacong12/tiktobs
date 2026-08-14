@@ -9,17 +9,21 @@ class PollManager:
     Manages the active polling state in memory.
     Tracks candidates, votes, and voters to prevent duplicate votes.
     Supports countdown timers and automatic poll stopping.
+    Completed rounds are archived to the database for later review.
     """
     def __init__(self):
         self.is_active = False
         self.title = ""
+        self.round_name = ""
         self.candidates = []  # List of {"id": "1", "name": "Name", "image_url": "...", "votes": 0}
         self.voters = set()   # Set of usernames who have voted
         self.expires_at = None  # datetime | None
+        self.started_at = None  # datetime | None
+        self.duration_seconds = None  # int | None
         self.timer_task = None  # asyncio.Task | None
         self.lock = asyncio.Lock()
 
-    async def start_poll(self, title: str, candidates: list[dict], duration_seconds: int | None = None) -> None:
+    async def start_poll(self, title: str, candidates: list[dict], duration_seconds: int | None = None, round_name: str = "") -> None:
         """Starts a new poll and resets all existing votes and voters."""
         async with self.lock:
             # Cancel existing timer task if running
@@ -28,6 +32,7 @@ class PollManager:
                 self.timer_task = None
 
             self.title = title
+            self.round_name = (round_name or "").strip() or title
             self.candidates = []
             for idx, c in enumerate(candidates, start=1):
                 name_val = c.get("name") or ""
@@ -42,30 +47,80 @@ class PollManager:
                 })
             self.voters.clear()
             self.is_active = True
-            
-            if duration_seconds and duration_seconds > 0:
-                self.expires_at = datetime.now(timezone.utc) + timedelta(seconds=duration_seconds)
-                self.timer_task = asyncio.create_task(self._poll_timer_loop(duration_seconds))
+            self.started_at = datetime.now(timezone.utc)
+            self.duration_seconds = duration_seconds if (duration_seconds and duration_seconds > 0) else None
+
+            if self.duration_seconds:
+                self.expires_at = self.started_at + timedelta(seconds=self.duration_seconds)
+                self.timer_task = asyncio.create_task(self._poll_timer_loop(self.duration_seconds))
             else:
                 self.expires_at = None
 
-            logger.info(f"Poll started: '{self.title}' (duration={duration_seconds}s) with {len(self.candidates)} candidates.")
+            logger.info(f"Poll started: round='{self.round_name}' title='{self.title}' (duration={duration_seconds}s) with {len(self.candidates)} candidates.")
 
-    async def stop_poll(self) -> None:
-        """Stops the current poll."""
+    async def stop_poll(self, archive: bool = True) -> dict | None:
+        """Stops the current poll. If archive=True and there was an active poll,
+        the final result is saved to the database. Returns the archived round dict (or None)."""
         async with self.lock:
-            if self.timer_task:
+            # Cancel the timer task, but NOT if stop_poll is being called from
+            # within the timer task itself (that would cancel the current task
+            # mid-execution and abort the archive/cleanup below).
+            if self.timer_task and self.timer_task is not asyncio.current_task():
                 self.timer_task.cancel()
-                self.timer_task = None
+            self.timer_task = None
+
+            was_active = self.is_active
+            archived = None
+
+            if was_active and archive:
+                total_votes = sum(c["votes"] for c in self.candidates)
+                result_candidates = []
+                for c in self.candidates:
+                    pct = round((c["votes"] / total_votes) * 100, 1) if total_votes > 0 else 0.0
+                    result_candidates.append({
+                        "id": c["id"],
+                        "name": c["name"],
+                        "image_url": c["image_url"],
+                        "gift_name": c.get("gift_name", ""),
+                        "votes": c["votes"],
+                        "percentage": pct,
+                    })
+                ended_at = datetime.now(timezone.utc)
+                try:
+                    from app import database
+                    round_id = await database.save_poll_round(
+                        round_name=self.round_name or self.title,
+                        title=self.title,
+                        total_votes=total_votes,
+                        candidates=result_candidates,
+                        duration_seconds=self.duration_seconds,
+                        started_at=self.started_at.isoformat() if self.started_at else None,
+                        ended_at=ended_at.isoformat(),
+                    )
+                    archived = {
+                        "id": round_id,
+                        "round_name": self.round_name or self.title,
+                        "title": self.title,
+                        "total_votes": total_votes,
+                        "candidates": result_candidates,
+                        "duration_seconds": self.duration_seconds,
+                        "started_at": self.started_at.isoformat() if self.started_at else None,
+                        "ended_at": ended_at.isoformat(),
+                    }
+                    logger.info(f"Poll round '{self.round_name}' archived (id={round_id}, total_votes={total_votes}).")
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f"Failed to archive poll round '{self.round_name}': {e}")
+
             self.is_active = False
             self.expires_at = None
             logger.info(f"Poll stopped: '{self.title}'.")
+            return archived
 
     async def _poll_timer_loop(self, duration_seconds: int):
         try:
             await asyncio.sleep(duration_seconds)
-            await self.stop_poll()
-            
+            archived = await self.stop_poll()
+
             # Broadcast the expiration to all websockets
             from app.main import manager
             poll_status = await self.get_status()
@@ -73,6 +128,11 @@ class PollManager:
                 "type": "poll_update",
                 "poll": poll_status
             })
+            if archived:
+                await manager.broadcast({
+                    "type": "poll_round_archived",
+                    "round": archived
+                })
         except asyncio.CancelledError:
             pass
         except Exception as e:  # noqa: BLE001
@@ -188,6 +248,7 @@ class PollManager:
             return {
                 "is_active": self.is_active,
                 "title": self.title,
+                "round_name": self.round_name,
                 "total_votes": total_votes,
                 "candidates": status_candidates,
                 "expires_at": self.expires_at.isoformat() if self.expires_at else None,
