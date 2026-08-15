@@ -73,6 +73,41 @@ body {
     100% { background-position: 150% 50%; }
 }
 
+/* Scope toggle: Sesi Ini (active session) vs Riwayat (stored history) */
+.scope-toggle {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.scope-btn {
+    flex: 1;
+    padding: 5px 0;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.scope-btn:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.scope-btn.active {
+    color: #0a0614;
+    background: linear-gradient(90deg, #ffd700, #ff9d00);
+    border-color: transparent;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.35);
+}
+
 .leaderboard-list {
     list-style: none;
     display: flex;

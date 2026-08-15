@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TikTok LIVE Gift Leaderboard Overlay</title>
-    <link rel="stylesheet" href="overlay-style.css">
+    <link rel="stylesheet" href="overlay-style.css?v=2">
     <!-- Google Fonts Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,11 +16,15 @@
             <span class="header-icon">🏆</span>
             <h2 class="header-title">TOP SENDER</h2>
         </div>
+        <div class="scope-toggle">
+            <button id="scope-session-btn" class="scope-btn active" type="button">Sesi Ini</button>
+            <button id="scope-all-btn" class="scope-btn" type="button">Riwayat</button>
+        </div>
         <ul id="leaderboard-list" class="leaderboard-list">
             <li class="empty-state">Waiting for gifts...</li>
         </ul>
     </div>
     
-    <script src="overlay.js"></script>
+    <script src="overlay.js?v=2"></script>
 </body>
 </html>

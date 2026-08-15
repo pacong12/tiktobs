@@ -47,6 +47,9 @@ const counters = {
     viewer: 0
 };
 
+// GIFT LEADERBOARD STATE (dashboard card, active session)
+let dashboardLeaderboard = []; // [{username, nickname, total_diamonds, total_gifts}]
+
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
@@ -56,6 +59,7 @@ async function initApp() {
     setupEventListeners();
     await checkStatus();
     await loadRecentEvents();
+    await loadLeaderboard();
     connectWebSocket();
 }
 
@@ -218,9 +222,11 @@ function resetStreamPanels() {
     counters.follow = 0;
     counters.share = 0;
     counters.viewer = 0;
+    dashboardLeaderboard = [];
 
     updateCounterDOM();
     renderEventStream();
+    renderDashboardLeaderboard();
 
     // Clear inspector panels
     inspectorEventId.textContent = 'No event selected';
@@ -338,6 +344,11 @@ function handleWSMessage(msg) {
 
         // Update real-time counter
         incrementCounter(normalized.event_type, normalized.data);
+
+        // Keep the gift leaderboard card in sync
+        if (normalized.event_type === 'gift') {
+            updateLeaderboardFromGift(normalized);
+        }
 
         // Update raw live developer panel
         updateRawEventDebug(normalized.event_type, event);
@@ -568,6 +579,63 @@ function renderEventStream() {
         row.addEventListener('click', () => openInspector(evt));
         eventStreamBody.appendChild(row);
     });
+}
+
+// GIFT LEADERBOARD CARD (dashboard, active session)
+async function loadLeaderboard() {
+    try {
+        const response = await fetch('/api/leaderboard');
+        dashboardLeaderboard = await response.json();
+        renderDashboardLeaderboard();
+    } catch (error) {
+        console.error('Failed to load gift leaderboard:', error);
+    }
+}
+
+function renderDashboardLeaderboard() {
+    const list = document.getElementById('dashboard-leaderboard');
+    if (!list) return;
+
+    const sorted = [...dashboardLeaderboard].sort((a, b) =>
+        (b.total_diamonds - a.total_diamonds) ||
+        (b.total_gifts - a.total_gifts) ||
+        a.username.localeCompare(b.username)
+    );
+    const top = sorted.slice(0, 5);
+
+    if (top.length === 0) {
+        list.innerHTML = '<li class="lb-empty">Belum ada gift di sesi ini.</li>';
+        return;
+    }
+
+    const medals = ['🥇', '🥈', '🥉'];
+    list.innerHTML = top.map((entry, i) => `
+        <li class="lb-row lb-rank-${i + 1}">
+            <span class="lb-rank">${medals[i] || i + 1}</span>
+            <span class="lb-name" title="@${escapeHTML(entry.username)}">${escapeHTML(entry.nickname || entry.username)}</span>
+            <span class="lb-diamonds">💎 ${entry.total_diamonds.toLocaleString()}</span>
+        </li>
+    `).join('');
+}
+
+function updateLeaderboardFromGift(event) {
+    const data = event.data || {};
+    const username = event.username;
+    if (!username) return;
+
+    const quantity = parseInt(data.quantity || 1, 10) || 1;
+    const diamondsAdded = quantity * (parseInt(data.diamond_count || 0, 10) || 0);
+
+    let entry = dashboardLeaderboard.find(e => e.username === username);
+    if (!entry) {
+        entry = { username, nickname: event.nickname || username, total_diamonds: 0, total_gifts: 0 };
+        dashboardLeaderboard.push(entry);
+    }
+    if (event.nickname) entry.nickname = event.nickname;
+    entry.total_diamonds += diamondsAdded;
+    entry.total_gifts += quantity;
+
+    renderDashboardLeaderboard();
 }
 
 function openInspector(event) {

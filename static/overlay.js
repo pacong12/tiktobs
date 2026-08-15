@@ -3,8 +3,13 @@ let socket = null;
 let leaderboard = []; // [{username, nickname, total_diamonds, total_gifts}]
 const maxEntries = 5; // Display top 5
 
+// Scope: 'session' = active session only, 'all' = full stored history.
+let scope = localStorage.getItem('tiktobs_leaderboard_scope') === 'all' ? 'all' : 'session';
+
 // DOM elements
 const leaderboardList = document.getElementById('leaderboard-list');
+const scopeSessionBtn = document.getElementById('scope-session-btn');
+const scopeAllBtn = document.getElementById('scope-all-btn');
 
 // Init overlay
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,15 +17,36 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initOverlay() {
+    setupScopeToggle();
     await fetchLeaderboard();
     connectWebSocket();
 }
 
-// Fetch active session leaderboard
+function setupScopeToggle() {
+    updateScopeButtons();
+    scopeSessionBtn.addEventListener('click', () => setScope('session'));
+    scopeAllBtn.addEventListener('click', () => setScope('all'));
+}
+
+function updateScopeButtons() {
+    scopeSessionBtn.classList.toggle('active', scope === 'session');
+    scopeAllBtn.classList.toggle('active', scope === 'all');
+}
+
+async function setScope(newScope) {
+    if (scope === newScope) return;
+    scope = newScope;
+    localStorage.setItem('tiktobs_leaderboard_scope', scope);
+    updateScopeButtons();
+    await fetchLeaderboard();
+}
+
+// Fetch leaderboard for the selected scope
 async function fetchLeaderboard() {
     try {
         const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
-        const response = await fetch(`${baseUrl}/api/leaderboard`);
+        const suffix = scope === 'all' ? '?scope=all' : '';
+        const response = await fetch(`${baseUrl}/api/leaderboard${suffix}`);
         leaderboard = await response.json();
         renderLeaderboard();
     } catch (error) {
@@ -108,10 +134,23 @@ function connectWebSocket() {
 
 // Handle WebSocket messages
 function handleWSMessage(msg) {
-    // If the active session is reset or disconnected, clear local leaderboard
+    // If the active session is reset or disconnected, clear the local board
+    // only in session scope; the history board keeps its stored totals.
     if (msg.type === 'status' && (msg.status === 'disconnected' || msg.status === 'failed')) {
-        leaderboard = [];
-        renderLeaderboard();
+        if (scope === 'session') {
+            leaderboard = [];
+            renderLeaderboard();
+        }
+        return;
+    }
+
+    // A cleared event stream resets the session board too.
+    if (msg.type === 'stream_cleared') {
+        if (scope === 'session') {
+            leaderboard = [];
+            renderLeaderboard();
+        }
+        return;
     }
     
     // Process new gift events

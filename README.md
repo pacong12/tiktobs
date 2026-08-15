@@ -63,7 +63,7 @@ the full URL):
 
 | Overlay | URL | Purpose |
 |:---|:---|:---|
-| Gift Leaderboard | `/overlay.html` | Top gifters of the active session |
+| Gift Leaderboard | `/overlay.html` | Top gifters — toggle between the active session and full stored history |
 | Gift Alert | `/gift-alert.html` | Animated alert + sound on incoming gifts |
 | Recent Gifts Ticker | `/recent-gifts.html` | Feed of the latest gifts |
 | Vote / Poll | `/vote-overlay.html` | Live poll progress |
