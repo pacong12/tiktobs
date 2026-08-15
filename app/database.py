@@ -100,6 +100,35 @@ async def _execute_write(sql: str, params: tuple = ()):
                 await _reset_shared_db()
     raise last_err
 
+_read_lock = asyncio.Lock()
+
+async def _fetch_all(sql: str, params: tuple = (), as_rows: bool = False):
+    """Runs a SELECT and returns all rows, with one self-healing retry.
+
+    Reads share the single connection, so the row_factory mutation and the
+    query run under a lock to keep concurrent readers from clobbering each
+    other. as_rows=True returns dict-like aiosqlite.Row objects (name access);
+    otherwise plain tuples (index access).
+    """
+    last_err: Exception | None = None
+    for attempt in (1, 2):
+        try:
+            db = await _get_shared_db()
+            async with _read_lock:
+                db.row_factory = aiosqlite.Row if as_rows else None
+                async with db.execute(sql, params) as cursor:
+                    return await cursor.fetchall()
+        except aiosqlite.Error as e:
+            last_err = e
+            logger.warning(f"DB read failed (attempt {attempt}/2): {e}")
+            await _reset_shared_db()
+    raise last_err
+
+async def _fetch_one(sql: str, params: tuple = ()):
+    """Runs a SELECT and returns the first row as a tuple, or None."""
+    rows = await _fetch_all(sql, params, as_rows=False)
+    return rows[0] if rows else None
+
 async def init_db():
     """Initializes the database and creates the necessary tables if they do not exist."""
     os.makedirs(DB_DIR, exist_ok=True)
@@ -199,9 +228,7 @@ async def save_poll_round(
 
 async def get_poll_rounds(limit: int = 100) -> list[dict]:
     """Returns archived voting rounds, most recent first."""
-    db = await _get_shared_db()
-    db.row_factory = aiosqlite.Row
-    async with db.execute(
+    rows = await _fetch_all(
         """
         SELECT id, round_name, title, total_votes, candidates, duration_seconds, started_at, ended_at
         FROM poll_rounds
@@ -209,21 +236,21 @@ async def get_poll_rounds(limit: int = 100) -> list[dict]:
         LIMIT ?
         """,
         (limit,),
-    ) as cursor:
-        rows = await cursor.fetchall()
-        rounds = []
-        for row in rows:
-            rounds.append({
-                "id": row["id"],
-                "round_name": row["round_name"],
-                "title": row["title"],
-                "total_votes": row["total_votes"],
-                "candidates": json.loads(row["candidates"]) if row["candidates"] else [],
-                "duration_seconds": row["duration_seconds"],
-                "started_at": row["started_at"],
-                "ended_at": row["ended_at"],
-            })
-        return rounds
+        as_rows=True,
+    )
+    return [
+        {
+            "id": row["id"],
+            "round_name": row["round_name"],
+            "title": row["title"],
+            "total_votes": row["total_votes"],
+            "candidates": json.loads(row["candidates"]) if row["candidates"] else [],
+            "duration_seconds": row["duration_seconds"],
+            "started_at": row["started_at"],
+            "ended_at": row["ended_at"],
+        }
+        for row in rows
+    ]
 
 
 async def delete_poll_round(round_id: int) -> None:
@@ -266,12 +293,10 @@ async def clear_poll_wins(session_id: str | None = None) -> None:
 
 async def get_session_wins(session_id: str) -> dict[str, int]:
     """Returns win counts keyed by candidate_key for one session."""
-    db = await _get_shared_db()
-    async with db.execute(
+    rows = await _fetch_all(
         "SELECT candidate_key, COUNT(*) FROM poll_wins WHERE session_id = ? GROUP BY candidate_key;",
         (session_id,),
-    ) as cursor:
-        rows = await cursor.fetchall()
+    )
     return {row[0]: row[1] for row in rows}
 
 # ---------------------------------------------------------------------------
@@ -288,9 +313,7 @@ async def save_active_poll(state: dict) -> None:
 
 async def get_active_poll() -> dict | None:
     """Returns the persisted active poll state, or None."""
-    db = await _get_shared_db()
-    async with db.execute("SELECT state FROM active_poll WHERE id = 1;") as cursor:
-        row = await cursor.fetchone()
+    row = await _fetch_one("SELECT state FROM active_poll WHERE id = 1;")
     if not row:
         return None
     try:
@@ -355,49 +378,45 @@ async def insert_event(
 
 async def get_recent_events(limit: int = 100) -> list[dict]:
     """Retrieves the most recent events from the database."""
-    db = await _get_shared_db()
-    db.row_factory = aiosqlite.Row
-    async with db.execute(
+    rows = await _fetch_all(
         """
         SELECT id, session_id, event_type, username, nickname, payload, created_at
         FROM tiktok_events
         ORDER BY created_at DESC
         LIMIT ?
         """,
-        (limit,)
-    ) as cursor:
-        rows = await cursor.fetchall()
-        events = []
-        for row in rows:
-            events.append({
-                "id": row["id"],
-                "session_id": row["session_id"],
-                "event_type": row["event_type"],
-                "username": row["username"],
-                "nickname": row["nickname"],
-                "payload": json.loads(row["payload"]) if row["payload"] else {},
-                "created_at": row["created_at"]
-            })
-        return events
+        (limit,),
+        as_rows=True,
+    )
+    return [
+        {
+            "id": row["id"],
+            "session_id": row["session_id"],
+            "event_type": row["event_type"],
+            "username": row["username"],
+            "nickname": row["nickname"],
+            "payload": json.loads(row["payload"]) if row["payload"] else {},
+            "created_at": row["created_at"],
+        }
+        for row in rows
+    ]
 
 async def get_session_events(session_id: str) -> list[dict]:
     """
     Retrieves every stored event of one session in chronological order
     (oldest first), so history can be replayed in the order it happened.
     """
-    db = await _get_shared_db()
-    db.row_factory = aiosqlite.Row
-    async with db.execute(
+    rows = await _fetch_all(
         """
         SELECT id, session_id, event_type, username, nickname, payload, created_at
         FROM tiktok_events
         WHERE session_id = ?
         ORDER BY created_at ASC
         """,
-        (session_id,)
-    ) as cursor:
-        rows = await cursor.fetchall()
-        return [
+        (session_id,),
+        as_rows=True,
+    )
+    return [
             {
                 "id": row["id"],
                 "session_id": row["session_id"],
@@ -417,8 +436,6 @@ async def _aggregate_leaderboard(where: str, params: tuple) -> list[dict]:
     Returns a sorted list of dicts: username, nickname, total_diamonds,
     total_gifts.
     """
-    db = await _get_shared_db()
-    db.row_factory = aiosqlite.Row
     sql = """
         SELECT
             username,
@@ -440,9 +457,8 @@ async def _aggregate_leaderboard(where: str, params: tuple) -> list[dict]:
     if where:
         sql += " AND " + where
     sql += " GROUP BY username ORDER BY total_diamonds DESC, total_gifts DESC, username ASC"
-    async with db.execute(sql, params) as cursor:
-        rows = await cursor.fetchall()
-        return [
+    rows = await _fetch_all(sql, params, as_rows=True)
+    return [
             {
                 "username": row["username"],
                 "nickname": row["nickname"],
