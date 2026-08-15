@@ -353,6 +353,36 @@ async def get_recent_events(limit: int = 100) -> list[dict]:
             })
         return events
 
+async def get_session_events(session_id: str) -> list[dict]:
+    """
+    Retrieves every stored event of one session in chronological order
+    (oldest first), so history can be replayed in the order it happened.
+    """
+    db = await _get_shared_db()
+    db.row_factory = aiosqlite.Row
+    async with db.execute(
+        """
+        SELECT id, session_id, event_type, username, nickname, payload, created_at
+        FROM tiktok_events
+        WHERE session_id = ?
+        ORDER BY created_at ASC
+        """,
+        (session_id,)
+    ) as cursor:
+        rows = await cursor.fetchall()
+        return [
+            {
+                "id": row["id"],
+                "session_id": row["session_id"],
+                "event_type": row["event_type"],
+                "username": row["username"],
+                "nickname": row["nickname"],
+                "payload": json.loads(row["payload"]) if row["payload"] else {},
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ]
+
 async def _aggregate_leaderboard(where: str, params: tuple) -> list[dict]:
     """
     Aggregates gift events directly in SQL (json_extract over the stored

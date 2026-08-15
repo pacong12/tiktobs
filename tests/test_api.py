@@ -236,6 +236,71 @@ def test_delete_sound_rejects_traversal(client):
     # And the plain-basename case: "../" is stripped by the handler itself.
     assert client.delete("/api/sounds/.env").status_code == 404
 
+# ---------- Poll history replay ----------
+
+async def test_start_poll_include_history_replays_session_events(client):
+    """include_history=true reuses stored events of the current session:
+    comments and gifts that arrived before the poll started are counted."""
+    import uuid
+    from datetime import datetime, timezone
+
+    import app.main as app_main
+    from app import database
+
+    session_id = await database.create_session("poll_history_test")
+    old_session = app_main.processor.session_id
+    app_main.processor.session_id = session_id
+
+    async def ev(event_type: str, username: str, data: dict):
+        await database.insert_event(
+            session_id=session_id,
+            event_id=uuid.uuid4().hex,
+            event_type=event_type,
+            username=username,
+            nickname=username,
+            payload={"data": data},
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
+
+    # Pre-poll history of this session.
+    await ev("comment", "voter_a", {"comment": "1"})            # -> Merah
+    await ev("comment", "voter_b", {"comment": "pilih Biru!"})  # -> Biru (name mention)
+    await ev("comment", "voter_a", {"comment": "1"})            # same user, counts once
+    await ev("gift", "whale", {"gift_name": "Rose", "quantity": 1, "diamond_count": 25})  # -> Biru
+    await ev("comment", "noise", {"comment": "haha lucu banget"})  # matches nothing
+
+    try:
+        resp = client.post("/api/poll/start", json={
+            "title": "Pakai riwayat",
+            "candidates": [{"name": "Merah"}, {"name": "Biru", "gift_name": "Rose"}],
+            "include_history": True,
+        })
+        assert resp.status_code == 200
+        body = resp.json()
+
+        assert body["history_applied"]["comments"] == 2
+        assert body["history_applied"]["gifts"] == 1
+        assert body["history_applied"]["votes"] == 27  # 2 comment votes + 25 diamonds
+
+        votes = {c["name"]: c["votes"] for c in body["candidates"]}
+        assert votes["Merah"] == 1
+        assert votes["Biru"] == 26  # 1 comment + 25 gift votes
+    finally:
+        client.post("/api/poll/stop")
+        app_main.processor.session_id = old_session
+
+def test_start_poll_without_history_ignores_previous_events(client):
+    """Default behavior stays unchanged: without the flag nothing is replayed."""
+    resp = client.post("/api/poll/start", json={
+        "title": "Tanpa riwayat",
+        "candidates": [{"name": "A"}, {"name": "B"}],
+    })
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["history_applied"] == {"comments": 0, "gifts": 0, "votes": 0}
+    assert all(c["votes"] == 0 for c in body["candidates"])
+    client.post("/api/poll/stop")
+
 # ---------- Gift leaderboard scope ----------
 
 async def test_leaderboard_scope_all_reuses_history(client):

@@ -231,6 +231,9 @@ class StartPollRequest(BaseModel):
     candidates: list[CandidateInput]
     duration_seconds: int | None = None
     round_name: str | None = None
+    # When True, stored events of the current session (comments and gifts
+    # that arrived before the poll started) are replayed into the poll.
+    include_history: bool = False
 
 class SettingsUpdateRequest(BaseModel):
     tiktok_sign_api_key: str | None = None
@@ -386,12 +389,49 @@ async def start_poll_api(req: StartPollRequest):
         raise HTTPException(status_code=400, detail="Poll duration must be at least 5 seconds")
     candidates = [c.model_dump() for c in req.candidates]
     await poll_manager.start_poll(req.title, candidates, req.duration_seconds, req.round_name or "")
+
+    # Optionally reuse the stored history of the current session: replay
+    # comments and gifts that arrived BEFORE the poll started.
+    history_applied = {"comments": 0, "gifts": 0, "votes": 0}
+    if req.include_history and processor.session_id:
+        history_applied = await _apply_session_history_to_poll(processor.session_id)
+
     poll_status = await poll_manager.get_status()
     await manager.broadcast({
         "type": "poll_update",
         "poll": poll_status
     })
-    return poll_status
+    return {**poll_status, "history_applied": history_applied}
+
+async def _apply_session_history_to_poll(session_id: str) -> dict:
+    """
+    Replays the stored events of a session through the active poll, so votes
+    that arrived before the poll started are counted too. The exact same
+    matching rules as live events apply: one comment vote per user, gift
+    votes matched by gift name with 1 diamond = 1 vote.
+    """
+    applied = {"comments": 0, "gifts": 0, "votes": 0}
+    events = await database.get_session_events(session_id)
+    for event in events:
+        data = (event.get("payload") or {}).get("data", {})
+        if event["event_type"] == "comment":
+            comment_text = data.get("comment", "")
+            if await poll_manager.record_vote(event["username"], comment_text):
+                applied["comments"] += 1
+                applied["votes"] += 1
+        elif event["event_type"] == "gift":
+            gift_name = data.get("gift_name", "")
+            diamond_count = int(data.get("diamond_count") or 0)
+            success, _candidate_name, votes_added = await poll_manager.record_gift_vote(gift_name, diamond_count)
+            if success:
+                applied["gifts"] += 1
+                applied["votes"] += votes_added
+    if applied["votes"]:
+        logger.info(
+            "Poll history replay: %s votes applied from %s comment(s) and %s gift(s)",
+            applied["votes"], applied["comments"], applied["gifts"],
+        )
+    return applied
 
 @app.post("/api/poll/stop")
 async def stop_poll_api():

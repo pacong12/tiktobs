@@ -377,14 +377,24 @@ async function handleStartPoll() {
     const durationVal = document.getElementById('poll-duration-input').value.trim();
     const durationSeconds = durationVal ? parseInt(durationVal) : null;
 
+    const includeHistory = document.getElementById('include-history-check')?.checked || false;
+
     try {
         const response = await fetch('/api/poll/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, round_name: roundName || null, candidates, duration_seconds: durationSeconds })
+            body: JSON.stringify({ title, round_name: roundName || null, candidates, duration_seconds: durationSeconds, include_history: includeHistory })
         });
         const data = await response.json();
         updatePollUI(data);
+        if (includeHistory && data.history_applied) {
+            const h = data.history_applied;
+            if (h.votes > 0) {
+                alert(`Riwayat sesi dihitung: +${h.votes} suara (${h.comments} komentar, ${h.gifts} gift).`);
+            } else {
+                alert('Riwayat sesi diperiksa, tapi tidak ada komentar/gift yang cocok dengan kandidat.');
+            }
+        }
     } catch (error) {
         console.error('Failed to start poll:', error);
         alert('Gagal memulai voting.');
