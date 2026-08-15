@@ -2,6 +2,16 @@
 let socket = null;
 const alertQueue = [];
 let isAlertActive = false;
+let shownAlert = null;        // alert currently on screen
+let comboHideTimer = null;
+let comboFadeTimer = null;
+
+// Streak combos (gift_type === 1) arrive as one event per increment. They are
+// merged into ONE alert whose counter climbs live, and the sound plays once,
+// at the start of the combo.
+function comboKey(username, giftName) {
+    return `${(username || '').toLowerCase()}|${(giftName || '').toLowerCase()}`;
+}
 
 // DOM Elements
 const alertCard = document.getElementById('alert-card');
@@ -180,23 +190,46 @@ function connectWebSocket() {
             }
             if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
                 const giftEvent = msg.event;
+                const data = giftEvent.data || {};
                 const sender = giftEvent.nickname || giftEvent.username;
-                const giftName = giftEvent.data.gift_name;
-                const count = giftEvent.data.quantity || 1;
+                const giftName = data.gift_name;
+                const count = data.quantity || 1;
+                const isStreak = data.gift_type === 1;
+                const isFinal = data.repeat_end === 1;
+                const key = comboKey(giftEvent.username, giftName);
+                const alert = { sender, giftName, count, streak: isStreak, final: isFinal, key };
 
-                // Play sound INSTANTLY for real-time response (protected by try-catch)
+                if (isStreak) {
+                    // Combo already on screen -> update its counter in place.
+                    if (isAlertActive && shownAlert && shownAlert.key === key) {
+                        updateShownAlert(alert);
+                        return;
+                    }
+                    // Same combo already waiting in the queue -> merge.
+                    const queued = alertQueue.find(a => a.key === key);
+                    if (queued) {
+                        queued.count = count;
+                        queued.final = isFinal;
+                        return;
+                    }
+                    // New combo: sound plays once, right here.
+                    try {
+                        playAlertSound();
+                    } catch (soundErr) {
+                        console.error("Audio playback crashed during WS event:", soundErr);
+                    }
+                    alertQueue.push(alert);
+                    processQueue();
+                    return;
+                }
+
+                // Non-streak gift: alert per event (original behavior).
                 try {
                     playAlertSound();
                 } catch (soundErr) {
                     console.error("Audio playback crashed during WS event:", soundErr);
                 }
-
-                alertQueue.push({
-                    sender: sender,
-                    giftName: giftName,
-                    count: count
-                });
-
+                alertQueue.push({ sender, giftName, count, streak: false, final: true, key: null });
                 processQueue();
             }
         } catch (error) {
@@ -218,9 +251,15 @@ function processQueue() {
     if (isAlertActive || alertQueue.length === 0) return;
 
     isAlertActive = true;
-    const alert = alertQueue.shift();
+    shownAlert = alertQueue.shift();
+    renderAlert(shownAlert);
 
-    // Set UI details
+    // Display popup
+    alertCard.classList.add('show');
+    scheduleHide();
+}
+
+function renderAlert(alert) {
     alertUser.textContent = alert.sender;
     alertGiftName.textContent = alert.giftName;
     alertEmoji.textContent = getGiftEmoji(alert.giftName);
@@ -231,19 +270,30 @@ function processQueue() {
     } else {
         alertCombo.style.display = 'none';
     }
+}
 
-    // Play sound removed (moved to instant WS receipt trigger)
+// Live update while a combo is still climbing.
+function updateShownAlert(alert) {
+    shownAlert = alert;
+    renderAlert(alert);
+    alertCard.classList.remove('combo-pulse');
+    void alertCard.offsetWidth; // restart the CSS animation
+    alertCard.classList.add('combo-pulse');
+    scheduleHide(); // keep it visible while the combo grows
+}
 
-    // Display popup
-    alertCard.classList.add('show');
+function scheduleHide() {
+    clearTimeout(comboHideTimer);
+    clearTimeout(comboFadeTimer);
 
     // Keep visible for 2.2 seconds, then fade out
-    setTimeout(() => {
+    comboHideTimer = setTimeout(() => {
         alertCard.classList.remove('show');
 
         // Wait 0.6 seconds for fadeout transition before processing next gift
-        setTimeout(() => {
+        comboFadeTimer = setTimeout(() => {
             isAlertActive = false;
+            shownAlert = null;
             processQueue();
         }, 600);
     }, 2200);

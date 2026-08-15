@@ -128,3 +128,23 @@ body {
     50% { transform: scale(1.25); }
     100% { transform: scale(1); }
 }
+
+/* --- Combo streak pulse: card pops each time the counter climbs --- */
+#alert-card.combo-pulse {
+    animation: alert-combo-pulse 0.45s ease;
+}
+
+#alert-card.combo-pulse #alert-combo {
+    animation: alert-combo-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes alert-combo-pulse {
+    0%   { transform: scale(1.06); box-shadow: 0 0 46px rgba(255, 190, 70, 0.75); }
+    100% { transform: scale(1); }
+}
+
+@keyframes alert-combo-pop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.6); }
+    100% { transform: scale(1); }
+}

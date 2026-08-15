@@ -1,10 +1,11 @@
 """Simulated testing endpoints (can be disabled via TIKTOBS_TEST_ENDPOINTS=0)."""
 
+import asyncio
 import os
 import random
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 
 from app import state
 from app.poll import poll_manager
@@ -126,9 +127,86 @@ async def simulate_gift_normal():
                 "gift_id": random.randint(1000, 9999),
                 "gift_name": gift_name,
                 "quantity": quantity,
-                "diamond_count": diamond_count
+                "diamond_count": diamond_count,
+                "gift_type": 2,
+                "repeat_end": 1
             }
         }
     }
     await state.manager.broadcast(event_data)
     return {"status": "success", "username": user, "gift": gift_name, "quantity": quantity, "diamonds": diamond_count}
+
+
+@router.post("/gift-combo")
+async def simulate_gift_combo(payload: dict = Body(default={})):
+    """Simulate a full TikTok gift streak / combo.
+
+    Emits one event per increment (gift_type=1, repeat_end=0, growing
+    repeat_count) followed by a single FINAL event (repeat_end=1) that
+    carries the full count. This mirrors the real TikTok schema and drives
+    the combo-consolidation UI on the overlays.
+
+    Optional body: {username, gift_name, count, diamond_count}.
+    """
+    _require_test_endpoints()
+
+    usernames = ["ComboKing", "RoseSpammer", "GiftMachine", "StreakLord", "HypeBeast"]
+    user = payload.get("username") or random.choice(usernames)
+    gift_name = payload.get("gift_name") or "Rose"
+    diamond_count = int(payload.get("diamond_count") or 1)
+    count = max(2, min(int(payload.get("count") or random.randint(3, 8)), 50))
+
+    # If a live session is active, route the streak through the real event
+    # processor (persist + poll counting + broadcast). Otherwise broadcast
+    # directly so the overlay display can still be tested offline.
+    use_processor = bool(state.processor and state.processor.session_id)
+
+    nonce = random.randint(100000, 999999)
+    for i in range(1, count + 1):
+        is_final = i == count
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        if use_processor:
+            raw_event = {
+                "msg_id": f"mock-combo-{nonce}-{i}",
+                "username": user,
+                "nickname": f"{user} 🔥",
+                "gift_name": gift_name,
+                "quantity": i,
+                "diamond_count": diamond_count,
+                "gift_type": 1,
+                "repeat_end": 1 if is_final else 0,
+            }
+            await state.processor.process_raw_event("gift", raw_event)
+        else:
+            event_data = {
+                "type": "event",
+                "event": {
+                    "id": f"mock-combo-{nonce}-{i}",
+                    "event_type": "gift",
+                    "timestamp": timestamp,
+                    "username": user,
+                    "nickname": f"{user} 🔥",
+                    "data": {
+                        "gift_id": "0",
+                        "gift_name": gift_name,
+                        "quantity": i,
+                        "diamond_count": diamond_count,
+                        "gift_type": 1,
+                        "repeat_end": 1 if is_final else 0,
+                    },
+                },
+            }
+            await state.manager.broadcast(event_data)
+
+        if not is_final:
+            await asyncio.sleep(0.35)  # pace the increments like a real combo
+
+    return {
+        "status": "success",
+        "username": user,
+        "gift": gift_name,
+        "combo_count": count,
+        "diamonds_each": diamond_count,
+        "via_processor": use_processor,
+    }

@@ -140,6 +140,20 @@ reuses gift names with different prices (e.g. "Love you" exists as both a
 1-coin and a 199-coin gift), so gift names are matched strictly and
 case-insensitively.
 
+While votes and leaderboard totals only move on the final event, the
+overlays use the mid-streak events for live feedback:
+
+- **Recent Gifts** collapses a whole combo into a single row whose `xN`
+  counter climbs in place until the combo ends.
+- **Gift Alert** shows one alert per combo (sound plays once) and updates
+  the counter as the streak grows.
+- **Vote Overlay** shows a floating toast naming the gift, the climbing
+  count, and the candidate receiving it.
+
+To try this without a live stream, `POST /api/test/gift-combo`
+(optional body `{username, gift_name, count, diamond_count}`) emits a full
+synthetic streak.
+
 ---
 
 ## Project Structure

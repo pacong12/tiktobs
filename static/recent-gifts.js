@@ -3,6 +3,16 @@ let socket = null;
 const recentGifts = [];
 const MAX_GIFTS = 10;
 
+// Active streak combos: key -> DOM row. A streakable gift (gift_type === 1)
+// emits one event per combo increment; instead of adding a new row for every
+// increment, all of them update a single "Gift xN" row in place until the
+// combo ends (repeat_end === 1).
+const activeCombos = new Map();
+
+function comboKey(username, giftName) {
+    return `${(username || '').toLowerCase()}|${(giftName || '').toLowerCase()}`;
+}
+
 // DOM Elements
 const giftsList = document.getElementById('gifts-list');
 const emptyPlaceholder = document.getElementById('empty-placeholder');
@@ -51,10 +61,14 @@ function connectWebSocket() {
             const msg = JSON.parse(event.data);
             if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
                 const giftEvent = msg.event;
+                const data = giftEvent.data || {};
                 addGiftToFeed({
                     sender: giftEvent.nickname || giftEvent.username,
-                    giftName: giftEvent.data.gift_name,
-                    quantity: giftEvent.data.quantity || 1
+                    username: giftEvent.username,
+                    giftName: data.gift_name,
+                    quantity: data.quantity || 1,
+                    streak: data.gift_type === 1,
+                    final: data.repeat_end === 1
                 });
             }
         } catch (error) {
@@ -78,6 +92,23 @@ function addGiftToFeed(gift) {
         emptyPlaceholder.style.display = 'none';
     }
 
+    const key = comboKey(gift.username, gift.giftName);
+
+    // Combo already on screen: just bump the multiplier in place.
+    if (gift.streak) {
+        const existing = activeCombos.get(key);
+        if (existing && existing.isConnected) {
+            const mult = existing.querySelector('.gift-multiplier');
+            if (mult) mult.textContent = `x${gift.quantity}`;
+            existing.classList.remove('combo-pulse');
+            void existing.offsetWidth; // restart the CSS animation
+            existing.classList.add('combo-pulse');
+            if (gift.final) activeCombos.delete(key);
+            return;
+        }
+        activeCombos.delete(key); // stale entry, if any
+    }
+
     // Add to state
     recentGifts.unshift(gift);
     feedCount.textContent = recentGifts.length;
@@ -85,9 +116,9 @@ function addGiftToFeed(gift) {
     // Create DOM element
     const item = document.createElement('div');
     item.className = 'gift-item';
-    
+
     const emoji = getGiftEmoji(gift.giftName);
-    
+
     item.innerHTML = `
         <span class="gift-emoji-badge">${emoji}</span>
         <div class="gift-info">
@@ -100,19 +131,27 @@ function addGiftToFeed(gift) {
     // Insert at the top of the feed
     giftsList.insertBefore(item, giftsList.firstChild);
 
+    // An ongoing combo owns its row until the final event arrives.
+    if (gift.streak && !gift.final) {
+        activeCombos.set(key, item);
+    }
+
     // Enforce max item limits
     const items = giftsList.querySelectorAll('.gift-item');
     if (items.length > MAX_GIFTS) {
         const lastItem = items[items.length - 1];
+        for (const [k, el] of activeCombos) {
+            if (el === lastItem) activeCombos.delete(k);
+        }
         lastItem.classList.add('fade-out');
-        
+
         // Remove after transition finishes
         setTimeout(() => {
             if (lastItem.parentNode === giftsList) {
                 giftsList.removeChild(lastItem);
             }
         }, 350);
-        
+
         recentGifts.pop();
     }
 }

@@ -1,5 +1,7 @@
 // State variables
 let socket = null;
+let currentPoll = null;
+let comboToastTimer = null;
 
 // DOM Elements
 const pollContainer = document.getElementById('poll-container');
@@ -32,6 +34,7 @@ async function fetchPollStatus() {
 
 // Render the active poll or inactive state
 function renderPoll(poll) {
+    currentPoll = poll;
     if (!poll || !poll.is_active) {
         pollContainer.classList.add('hidden');
         inactiveContainer.classList.remove('hidden');
@@ -154,6 +157,8 @@ function connectWebSocket() {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
                 renderPoll(msg.poll);
+            } else if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
+                handleGiftEventForToast(msg.event);
             }
         } catch (error) {
             console.error('Error handling WebSocket message:', error);
@@ -199,5 +204,65 @@ function escapeHTML(str) {
             "'": '&#39;',
             '"': '&quot;'
         }[tag] || tag)
+    );
+}
+
+// --- Live combo toast -------------------------------------------------------
+// Streakable gifts (gift_type === 1) emit one event per combo increment.
+// While votes are only tallied once at the final event (repeat_end === 1),
+// this toast gives instant visual feedback: the counter climbs live and the
+// candidate receiving the combo is named.
+
+function normalizeGiftName(name) {
+    return ((name || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
+}
+
+function getGiftEmoji(giftName) {
+    if (!giftName) return '🎁';
+    const name = giftName.toLowerCase();
+    if (name.includes('rose') || name.includes('mawar')) return '🌹';
+    if (name.includes('heart') || name.includes('hati')) return '❤️';
+    if (name.includes('finger')) return '🫰';
+    if (name.includes('corona') || name.includes('crown')) return '👑';
+    if (name.includes('diamond') || name.includes('berlian')) return '💎';
+    if (name.includes('perfume') || name.includes('parfum')) return '💖';
+    if (name.includes('ice cream') || name.includes('es krim')) return '🍦';
+    if (name.includes('fire') || name.includes('api')) return '🔥';
+    return '🎁';
+}
+
+function handleGiftEventForToast(giftEvent) {
+    if (!currentPoll || !currentPoll.is_active || !currentPoll.candidates) return;
+    const data = giftEvent.data || {};
+    const giftKey = normalizeGiftName(data.gift_name);
+    if (!giftKey) return;
+
+    // Only gifts assigned to a candidate deserve the spotlight.
+    const candidate = currentPoll.candidates.find(
+        c => normalizeGiftName(c.gift_name) === giftKey
+    );
+    if (!candidate) return;
+
+    const toast = document.getElementById('combo-toast');
+    if (!toast) return;
+
+    const isFinal = data.repeat_end === 1;
+    const quantity = data.quantity || 1;
+    toast.innerHTML = `
+        <span class="combo-toast-gift">${getGiftEmoji(data.gift_name)} ${escapeHTML(data.gift_name)}</span>
+        <span class="combo-toast-count">&times;${quantity}</span>
+        <span class="combo-toast-target">&#10148; ${escapeHTML(candidate.name)}</span>
+    `;
+    toast.classList.remove('show', 'combo-pulse', 'final');
+    void toast.offsetWidth; // restart animations
+    toast.classList.add('show', 'combo-pulse');
+    if (isFinal) toast.classList.add('final');
+
+    clearTimeout(comboToastTimer);
+    // Mid-combo: stay until the next increment arrives (or the combo stalls).
+    // Final: linger a moment so the landing is visible.
+    comboToastTimer = setTimeout(
+        () => toast.classList.remove('show'),
+        isFinal ? 2500 : 9000
     );
 }
