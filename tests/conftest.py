@@ -31,13 +31,15 @@ def tmp_data_dir():
 def client(tmp_data_dir):
     """FastAPI TestClient wired to isolated storage."""
     import app.main as m
+    from app import state
 
-    # Redirect every module-level path used at request time.
-    m.DATA_DIR = _DATA
-    m.SOUNDS_DIR = os.path.join(_DATA, "sounds")
-    os.makedirs(m.SOUNDS_DIR, exist_ok=True)
-    m.SOUND_CONFIG_FILE = os.path.join(_DATA, "sound_config.json")
-    m.ENV_FILE = os.path.join(tmp_data_dir, ".env")
+    # Redirect every module-level path used at request time. Routers read
+    # these from app.state at call time, so patching state is enough.
+    state.DATA_DIR = _DATA
+    state.SOUNDS_DIR = os.path.join(_DATA, "sounds")
+    os.makedirs(state.SOUNDS_DIR, exist_ok=True)
+    state.SOUND_CONFIG_FILE = os.path.join(_DATA, "sound_config.json")
+    state.ENV_FILE = os.path.join(tmp_data_dir, ".env")
 
     from fastapi.testclient import TestClient
 

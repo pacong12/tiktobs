@@ -2,6 +2,8 @@ import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
+from app.state import manager
+
 logger = logging.getLogger("app.poll")
 
 class PollManager:
@@ -129,7 +131,6 @@ class PollManager:
             archived = await self.stop_poll()
 
             # Broadcast the expiration to all websockets
-            from app.main import manager
             poll_status = await self.get_status()
             await manager.broadcast({
                 "type": "poll_update",

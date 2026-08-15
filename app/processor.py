@@ -7,6 +7,7 @@ from app import database
 from app.bus import event_bus
 from app.models import TikTokEvent
 from app.poll import poll_manager
+from app.state import manager
 
 logger = logging.getLogger("app.processor")
 
@@ -63,9 +64,6 @@ class EventProcessor:
                     comment_text = event.data.get("comment", "")
                     is_vote_registered = await poll_manager.record_vote(event.username, comment_text)
                     if is_vote_registered:
-                        from app.main import (
-                            manager,  # import locally to avoid circular dependencies
-                        )
                         poll_status = await poll_manager.get_status()
                         await manager.broadcast({
                             "type": "poll_update",
@@ -76,9 +74,6 @@ class EventProcessor:
                     diamond_count = int(event.data.get("diamond_count") or 0)
                     success, candidate_name, votes_added = await poll_manager.record_gift_vote(gift_name, diamond_count)
                     if success:
-                        from app.main import (
-                            manager,
-                        )
                         poll_status = await poll_manager.get_status()
                         await manager.broadcast({
                             "type": "poll_update",

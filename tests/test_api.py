@@ -91,9 +91,9 @@ async def test_clear_events_deletes_stored_events(client):
 # ---------- Running text (ticker) ----------
 
 def test_ticker_defaults(client, tmp_path, monkeypatch):
-    from app import main as app_main
+    from app import state
 
-    monkeypatch.setattr(app_main, "TICKER_CONFIG_FILE", str(tmp_path / "ticker.json"))
+    monkeypatch.setattr(state, "TICKER_CONFIG_FILE", str(tmp_path / "ticker.json"))
 
     resp = client.get("/api/ticker")
     assert resp.status_code == 200
@@ -104,10 +104,10 @@ def test_ticker_defaults(client, tmp_path, monkeypatch):
     assert cfg["messages"] == []
 
 def test_ticker_update_validation_and_persistence(client, tmp_path, monkeypatch):
-    from app import main as app_main
+    from app import state
 
     config_file = tmp_path / "ticker.json"
-    monkeypatch.setattr(app_main, "TICKER_CONFIG_FILE", str(config_file))
+    monkeypatch.setattr(state, "TICKER_CONFIG_FILE", str(config_file))
 
     # Update with messy input: blanks stripped, values clamped/saved.
     resp = client.post("/api/ticker", json={

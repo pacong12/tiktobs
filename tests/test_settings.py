@@ -6,9 +6,9 @@ import pytest
 @pytest.fixture()
 def clean_key_state(monkeypatch):
     """Ensure settings tests see a known key state and restore it afterwards."""
-    import app.main as m
+    from app import state
 
-    monkeypatch.setattr(m, "sign_api_key", "")
+    monkeypatch.setattr(state, "sign_api_key", "")
     monkeypatch.delenv("TIKTOK_SIGN_API_KEY", raising=False)
     yield
 
@@ -67,18 +67,18 @@ def test_settings_post_empty_string_clears_key(client, clean_key_state, monkeypa
 
 
 def test_test_endpoints_can_be_disabled(client, monkeypatch):
-    import app.main as m
+    from app.routers import testsim
 
-    monkeypatch.setattr(m, "TEST_ENDPOINTS_ENABLED", False)
+    monkeypatch.setattr(testsim, "TEST_ENDPOINTS_ENABLED", False)
     for path in ("/api/test/comment-vote", "/api/test/gift-vote", "/api/test/gift-normal"):
         resp = client.post(path)
         assert resp.status_code == 403, path
 
 
 def test_test_endpoints_enabled_by_default(client, monkeypatch):
-    import app.main as m
+    from app.routers import testsim
 
-    monkeypatch.setattr(m, "TEST_ENDPOINTS_ENABLED", True)
+    monkeypatch.setattr(testsim, "TEST_ENDPOINTS_ENABLED", True)
     # No active poll -> 400 (business error), proving the gate itself passed.
     resp = client.post("/api/test/comment-vote")
     assert resp.status_code == 400
