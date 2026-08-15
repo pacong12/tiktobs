@@ -60,6 +60,28 @@
                 </div>
 
                 <div class="glass-card">
+                    <h2 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">🔐 API Access Token</h2>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 18px;">
+                        If the server runs with <code>TIKTOBS_API_TOKEN</code> set (in <code>.env</code>), every API
+                        call and overlay needs that token. Enter it here once — this browser stores it locally and
+                        sends it automatically with every request. For OBS Browser Sources, append
+                        <code>?token=YOUR_TOKEN</code> to the overlay URL instead.
+                    </p>
+                    <div style="margin-bottom: 16px;">
+                        <span id="token-server-status" style="font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 12px; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);">Checking server…</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="api-token-input">Token for this browser (stored in localStorage)</label>
+                        <input type="password" id="api-token-input" placeholder="TIKTOBS_API_TOKEN value" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 12px 14px; color: #fff; font-family: monospace; font-size: 13px; margin-top: 6px;">
+                    </div>
+                    <div style="margin-top: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" id="save-token-btn" class="btn primary" style="padding: 10px 20px; font-size: 13px; font-weight: 700;">💾 Save Token</button>
+                        <button type="button" id="clear-token-btn" class="btn secondary hidden" style="padding: 10px 20px; font-size: 13px; font-weight: 700;">🗑️ Clear</button>
+                        <span id="token-status-msg" style="font-size: 13px; font-weight: 600; color: #00ff87;" class="hidden"></span>
+                    </div>
+                </div>
+
+                <div class="glass-card">
                     <h2 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">📢 Running Text (Ticker Overlay)</h2>
                     <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 25px;">
                         Scrolling text for ads, announcements, and other notices. Add the overlay to OBS via
@@ -107,6 +129,7 @@
         </main>
     </div>
 
+    <script src="auth.js?v=1"></script>
     <script>
         const settingsForm = document.getElementById('settings-form');
         const keyInput = document.getElementById('sign-api-key-input');
@@ -128,6 +151,10 @@
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await fetch('/api/settings');
+                if (res.status === 401) {
+                    keyInput.placeholder = '🔒 Masukkan API access token di bawah dulu';
+                    return;
+                }
                 if (res.ok) {
                     const data = await res.json();
                     if (data.has_key) {
@@ -219,6 +246,71 @@
                 alert('Terjadi kesalahan saat menghapus key.');
             }
         });
+
+        // ---------- API access token (client-side storage) ----------
+        const tokenInput = document.getElementById('api-token-input');
+        const saveTokenBtn = document.getElementById('save-token-btn');
+        const clearTokenBtn = document.getElementById('clear-token-btn');
+        const tokenStatusMsg = document.getElementById('token-status-msg');
+        const tokenServerStatus = document.getElementById('token-server-status');
+
+        function showTokenStatus(text, color = '#00ff87') {
+            tokenStatusMsg.textContent = text;
+            tokenStatusMsg.style.color = color;
+            tokenStatusMsg.classList.remove('hidden');
+            setTimeout(() => tokenStatusMsg.classList.add('hidden'), 4000);
+        }
+
+        function refreshTokenUI() {
+            if (window.TiktobsAuth && window.TiktobsAuth.token) {
+                tokenInput.placeholder = '•••• (token tersimpan di browser ini)';
+                clearTokenBtn.classList.remove('hidden');
+            } else {
+                tokenInput.placeholder = 'TIKTOBS_API_TOKEN value';
+                clearTokenBtn.classList.add('hidden');
+            }
+        }
+
+        async function refreshTokenServerStatus() {
+            try {
+                const res = await fetch('/api/auth/status');
+                if (!res.ok) throw new Error('bad status');
+                const data = await res.json();
+                if (data.token_required) {
+                    tokenServerStatus.textContent = 'Server: token REQUIRED';
+                    tokenServerStatus.style.color = '#ffd166';
+                } else {
+                    tokenServerStatus.textContent = 'Server: terbuka (token tidak diset)';
+                    tokenServerStatus.style.color = '#00ff87';
+                }
+            } catch (err) {
+                tokenServerStatus.textContent = 'Server tidak merespons';
+                tokenServerStatus.style.color = '#ff4a5a';
+            }
+        }
+
+        saveTokenBtn.addEventListener('click', () => {
+            const value = tokenInput.value.trim();
+            if (!value) {
+                showTokenStatus('Masukkan token dulu.', '#ffd166');
+                return;
+            }
+            window.TiktobsAuth.set(value);
+            tokenInput.value = '';
+            refreshTokenUI();
+            showTokenStatus('✓ Token disimpan. Memuat ulang…');
+            setTimeout(() => location.reload(), 700);
+        });
+
+        clearTokenBtn.addEventListener('click', () => {
+            window.TiktobsAuth.set('');
+            refreshTokenUI();
+            showTokenStatus('Token dihapus dari browser ini.', '#ffd166');
+        });
+
+        refreshTokenServerStatus();
+        refreshTokenUI();
+
         // ---------- Running Text (ticker) management ----------
         const tickerForm = document.getElementById('ticker-form');
         const tickerEnabled = document.getElementById('ticker-enabled');
