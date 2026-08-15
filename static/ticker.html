@@ -4,22 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OBS Running Text Overlay</title>
-    <link rel="stylesheet" href="ticker-style.css">
+    <link rel="stylesheet" href="ticker-style.css?v=2">
     <!-- Google Fonts: Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Running text / ticker bar (ads, announcements, ...) -->
+    <!-- Running text / ticker bar (ads, announcements, ...) with a fixed
+         red LIVE badge on the left, like a news lower-third -->
     <div class="ticker-wrap hidden" id="ticker-wrap">
-        <div class="ticker-track" id="ticker-track">
-            <span class="ticker-content" id="ticker-content-a"></span>
-            <span class="ticker-content" id="ticker-content-b"></span>
+        <div class="ticker-live"><span class="ticker-live-dot"></span>LIVE</div>
+        <div class="ticker-area">
+            <div class="ticker-track" id="ticker-track">
+                <span class="ticker-content" id="ticker-content-a"></span>
+                <span class="ticker-content" id="ticker-content-b"></span>
+            </div>
         </div>
     </div>
 
     <script src="auth.js?v=1"></script>
-    <script src="ticker.js"></script>
+    <script src="ticker.js?v=2"></script>
 </body>
 </html>

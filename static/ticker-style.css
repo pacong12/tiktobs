@@ -18,10 +18,53 @@ body {
     right: 0;
     bottom: 0;
     overflow: hidden;
-    padding: 10px 0;
+    display: flex;
+    align-items: stretch;
     background: linear-gradient(90deg, rgba(16, 12, 34, 0.88), rgba(30, 12, 48, 0.88), rgba(16, 12, 34, 0.88));
     border-top: 1.5px solid rgba(0, 240, 255, 0.4);
     box-shadow: 0 -4px 24px rgba(0, 240, 255, 0.12);
+}
+
+/* Red LIVE badge pinned on the left, news-broadcast style */
+.ticker-live {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 26px 0 18px;
+    background: linear-gradient(180deg, #ff3030 0%, #c40000 100%);
+    color: #ffffff;
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 4px 0 16px rgba(255, 0, 0, 0.35);
+    z-index: 2;
+}
+
+/* Pulsing white dot (on-air indicator) */
+.ticker-live-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ffffff;
+    animation: live-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+    50% { opacity: 0.45; box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); }
+}
+
+/* Scrollable area to the right of the LIVE badge */
+.ticker-area {
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
 }
 
 /* The track holds two identical copies of the content so the loop is seamless. */
