@@ -4,8 +4,11 @@ let pollTimerInterval = null;
 let customGifts = []; // user-defined gifts loaded from /api/gifts
 
 // TikTok popular gift catalog (name + diamond value) for the Gift Boost dropdown.
-// TikTok has hundreds of gifts and they vary by region, so a "Ketik manual" option
-// is always included to let the user type any gift name exactly.
+// Values marked below were verified against TikTok's live gift catalog (749 gifts)
+// from https://github.com/WaGi-Coding/tiktok-gift-ids.
+// CAUTION: TikTok reuses gift names with different prices (e.g. "Love you" exists
+// as both a 1-coin and a 199-coin gift), and some gifts vary by region — that is
+// why a "Ketik manual" option is always included.
 const GIFT_CATALOG = [
     { name: 'Rose', d: 1 },
     { name: 'TikTok', d: 1 },
@@ -17,15 +20,15 @@ const GIFT_CATALOG = [
     { name: 'Friendship Necklace', d: 10 },
     { name: 'Perfume', d: 20 },
     { name: 'Doughnut', d: 30 },
-    { name: 'Love you', d: 49 },
+    { name: 'Love you', d: 199 },
     { name: 'Cap', d: 99 },
     { name: 'Star', d: 99 },
     { name: 'Hand Hearts', d: 100 },
     { name: 'Confetti', d: 100 },
     { name: 'Sunglasses', d: 199 },
     { name: 'Hearts', d: 199 },
-    { name: 'Rosa', d: 199 },
-    { name: 'Corgi', d: 399 },
+    { name: 'Rosa', d: 10 },
+    { name: 'Corgi', d: 299 },
     { name: 'Coral', d: 499 },
     { name: 'Money Gun', d: 500 },
     { name: 'Dolphin', d: 700 },

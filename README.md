@@ -117,6 +117,31 @@ page ("Running Text" card) and apply to open overlays instantly.
 
 ---
 
+## TikTok Gift Schema (streak / combo handling)
+
+Gift events follow TikTok's `WebcastGiftMessage` protobuf schema. The two
+fields that matter for correct counting are:
+
+- `gift.type` — `1` means the gift is **streakable** (combo-able, e.g. Rose,
+  Finger Heart). Anything else is a one-shot gift (e.g. Lion, TikTok Universe).
+- `repeat_end` — `1` marks the **final** event of a streak, which carries the
+  full `repeat_count`. Mid-streak increments arrive as separate events with
+  `repeat_end=0` and a growing `repeat_count`.
+
+Therefore a `Rose x5` combo emits five events. Counting every event (or
+summing their growing quantities) would inflate totals, so tiktobs only
+tallies votes and leaderboard diamonds from the final (`repeat_end=1`)
+event, using `repeat_count x diamond_count`. Mid-streak events are still
+stored and broadcast so the live feed stays responsive.
+
+A verified snapshot of TikTok's gift catalog (749 gifts: id, name, coin
+price) is bundled at `app/gift_catalog.json` for reference. Note that TikTok
+reuses gift names with different prices (e.g. "Love you" exists as both a
+1-coin and a 199-coin gift), so gift names are matched strictly and
+case-insensitively.
+
+---
+
 ## Project Structure
 
 - `app/`: Python backend source code.
@@ -128,8 +153,9 @@ page ("Running Text" card) and apply to open overlays instantly.
   - `database.py`: Handles SQLite schemas and persistence.
   - `models.py`: Defines the `TikTokEvent` model.
   - `bus.py`: EventBus publish-subscribe utility.
-  - `processor.py`: Normalizes, validates, and routes events.
+  - `processor.py`: Normalizes, validates, and routes events (including streak-safe gift counting).
   - `poll.py`: In-memory poll state machine.
+  - `gift_catalog.json`: Verified reference of 749 TikTok gifts (id, name, coins).
   - `providers/`: TikTok Live client connection wrappers.
 - `static/`: Frontend dashboard assets (HTML, CSS, JS).
 - `docs/`: Technical integration details.

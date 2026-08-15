@@ -402,6 +402,13 @@ async def _aggregate_leaderboard(where: str, params: tuple) -> list[dict]:
         FROM tiktok_events
         WHERE event_type = 'gift'
           AND username IS NOT NULL AND username != ''
+          /* TikTok streak schema: gift_type=1 with repeat_end=0 is a mid-streak
+             increment; the final event (repeat_end=1) already carries the full
+             quantity, so increments must be excluded to avoid inflation. */
+          AND NOT (
+              COALESCE(json_extract(payload, '$.data.gift_type'), 0) = 1
+              AND COALESCE(json_extract(payload, '$.data.repeat_end'), 1) = 0
+          )
     """
     if where:
         sql += " AND " + where

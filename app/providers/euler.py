@@ -218,7 +218,19 @@ class EulerWebSocketProvider(TikTokProvider):
                         m_data.get("repeat_count") or 
                         1
                     )
-                    
+
+                    # Streak schema: repeatEnd=1 marks the final event of a
+                    # combo (carries the full repeatCount); gift type 1 =
+                    # streakable. Both are optional — the processor treats
+                    # missing values conservatively. (`repeatEnd` can be 0,
+                    # so use m_data.get without truthy fallbacks.)
+                    repeat_end = m_data.get("repeatEnd")
+                    if repeat_end is None:
+                        repeat_end = m_data.get("repeat_end")
+                    euler_gift_type = gift_details.get("type")
+                    if euler_gift_type is None:
+                        euler_gift_type = gift_obj.get("type")
+
                     raw_data = {
                         "msg_id": msg_id,
                         "user": {
@@ -229,9 +241,12 @@ class EulerWebSocketProvider(TikTokProvider):
                         "gift_name": gift_name,
                         "diamond_count": diamond_count,
                         "quantity": repeat_count,
+                        "repeat_end": repeat_end,
+                        "gift_type": euler_gift_type,
                         "gift": {
                             "name": gift_name,
-                            "diamond_count": diamond_count
+                            "diamond_count": diamond_count,
+                            "type": euler_gift_type
                         },
                         "repeat_count": repeat_count
                     }

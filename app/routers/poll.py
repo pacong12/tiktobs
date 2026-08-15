@@ -63,7 +63,15 @@ async def _apply_session_history_to_poll(session_id: str) -> dict:
         elif event["event_type"] == "gift":
             gift_name = data.get("gift_name", "")
             diamond_count = int(data.get("diamond_count") or 0)
-            success, _candidate_name, votes_added = await poll_manager.record_gift_vote(gift_name, diamond_count)
+            quantity = int(data.get("quantity") or 1)
+            # Same streak rules as the live processor: skip mid-streak
+            # increments (gift_type=1 & repeat_end=0); the final event
+            # carries the full quantity.
+            if data.get("gift_type") == 1 and data.get("repeat_end") == 0:
+                continue
+            success, _candidate_name, votes_added = await poll_manager.record_gift_vote(
+                gift_name, max(1, quantity) * max(1, diamond_count)
+            )
             if success:
                 applied["gifts"] += 1
                 applied["votes"] += votes_added

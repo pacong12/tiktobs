@@ -301,6 +301,61 @@ def test_start_poll_without_history_ignores_previous_events(client):
     assert all(c["votes"] == 0 for c in body["candidates"])
     client.post("/api/poll/stop")
 
+async def test_history_replay_counts_only_final_streak_event(client):
+    """Mid-streak increments in stored history must not inflate replayed votes."""
+    import uuid
+    from datetime import datetime, timezone
+
+    import app.main as app_main
+    from app import database
+
+    session_id = await database.create_session("streak_history_test")
+    old_session = app_main.processor.session_id
+    app_main.processor.session_id = session_id
+
+    async def gift_ev(quantity: int, repeat_end: int):
+        await database.insert_event(
+            session_id=session_id,
+            event_id=uuid.uuid4().hex,
+            event_type="gift",
+            username="combo_sender",
+            nickname="Combo",
+            payload={"data": {
+                "gift_name": "Rose",
+                "quantity": quantity,
+                "diamond_count": 1,
+                "gift_type": 1,
+                "repeat_end": repeat_end,
+            }},
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
+
+    # Rose x4 combo: three mid-streak increments + final event.
+    await gift_ev(1, 0)
+    await gift_ev(2, 0)
+    await gift_ev(3, 0)
+    await gift_ev(4, 1)
+
+    try:
+        resp = client.post("/api/poll/start", json={
+            "title": "Riwayat streak",
+            "candidates": [
+                {"name": "Merah", "gift_name": "Rose"},
+                {"name": "Biru"},
+            ],
+            "include_history": True,
+        })
+        assert resp.status_code == 200
+        body = resp.json()
+        # Only the final event counts: 1 gift, 4 votes (4 x 1 diamond).
+        assert body["history_applied"] == {"comments": 0, "gifts": 1, "votes": 4}
+        votes = {c["name"]: c["votes"] for c in body["candidates"]}
+        assert votes["Merah"] == 4
+        assert votes["Biru"] == 0
+    finally:
+        client.post("/api/poll/stop")
+        app_main.processor.session_id = old_session
+
 # ---------- Gift leaderboard scope ----------
 
 async def test_leaderboard_scope_all_reuses_history(client):

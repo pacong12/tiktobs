@@ -219,5 +219,98 @@ class TestPipeline(unittest.IsolatedAsyncioTestCase):
         # Close session
         await database.close_session(session_id)
 
+    async def test_streak_gifts_are_counted_once_via_final_event(self):
+        """TikTok streak schema (gift.type == 1).
+
+        A Rose x3 combo emits one event per increment (repeat_end=0 with a
+        growing repeat_count) plus a FINAL event (repeat_end=1) carrying the
+        full repeat_count. Mid-streak events must still reach the live feed,
+        but poll votes and leaderboard totals may only be tallied from the
+        final event — otherwise a single combo inflates the numbers.
+        """
+        from app import processor as processor_module
+        from app.poll import PollManager
+
+        local_pm = PollManager()
+        orig_pm = processor_module.poll_manager
+        processor_module.poll_manager = local_pm
+        try:
+            session_id = await database.create_session("streak_creator")
+            self.processor.set_session_id(session_id)
+
+            await local_pm.start_poll(
+                "Streak test",
+                [{"name": "Merah", "gift_name": "Rose"}],
+            )
+
+            base_ts = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+            def gift_payload(msg_id: str, quantity: int, repeat_end: int) -> dict:
+                return {
+                    "msg_id": msg_id,
+                    "timestamp": base_ts,
+                    "user": {"unique_id": "streak_sender", "nickname": "Streak Sender"},
+                    "gift_id": 5655,
+                    "repeat_count": quantity,
+                    "combo_count": quantity,
+                    "repeat_end": repeat_end,
+                    "gift": {
+                        "gift_id": 5655,
+                        "name": "Rose",
+                        "type": 1,  # streakable
+                        "diamond_count": 1,
+                    },
+                }
+
+            # Mid-streak increments, then the final event with the full count.
+            await self.processor.process_raw_event("gift", gift_payload("streak_1", 1, 0))
+            await self.processor.process_raw_event("gift", gift_payload("streak_2", 2, 0))
+            await self.processor.process_raw_event("gift", gift_payload("streak_final", 3, 1))
+
+            # All three events still reach the live feed/DB.
+            self.assertEqual(len(self.published_events), 3)
+
+            # Poll counted only the final event: 3 roses x 1 diamond = 3 votes.
+            status = await local_pm.get_status()
+            merah = next(c for c in status["candidates"] if c["name"] == "Merah")
+            self.assertEqual(merah["votes"], 3)
+
+            # Leaderboard likewise sums only the final event.
+            board = await database.get_session_leaderboard(session_id)
+            self.assertEqual(len(board), 1)
+            self.assertEqual(board[0]["username"], "streak_sender")
+            self.assertEqual(board[0]["total_diamonds"], 3)
+            self.assertEqual(board[0]["total_gifts"], 3)
+
+            await local_pm.stop_poll()
+            await database.close_session(session_id)
+        finally:
+            processor_module.poll_manager = orig_pm
+
+    async def test_gift_normalization_captures_streak_fields(self):
+        event = self.processor._normalize("gift", {
+            "msg_id": "gift_schema_1",
+            "user": {"unique_id": "norm_user", "nickname": "Norm"},
+            "repeat_count": 7,
+            "repeat_end": 1,
+            "gift": {"name": "Lion", "type": 2, "diamond_count": 29999},
+        })
+        self.assertEqual(event.data["quantity"], 7)
+        self.assertEqual(event.data["diamond_count"], 29999)
+        self.assertEqual(event.data["repeat_end"], 1)
+        self.assertEqual(event.data["gift_type"], 2)
+
+        # repeat_end=0 is meaningful and must survive normalization (a truthy
+        # `or` chain would have dropped it into None).
+        mid = self.processor._normalize("gift", {
+            "msg_id": "gift_schema_2",
+            "user": {"unique_id": "norm_user"},
+            "repeat_count": 2,
+            "repeat_end": 0,
+            "gift": {"name": "Rose", "type": 1, "diamond_count": 1},
+        })
+        self.assertEqual(mid.data["repeat_end"], 0)
+        self.assertEqual(mid.data["gift_type"], 1)
+
 if __name__ == "__main__":
     unittest.main()

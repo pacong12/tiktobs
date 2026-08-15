@@ -72,22 +72,39 @@ class EventProcessor:
                 elif event.event_type == "gift":
                     gift_name = event.data.get("gift_name", "")
                     diamond_count = int(event.data.get("diamond_count") or 0)
-                    success, candidate_name, votes_added = await poll_manager.record_gift_vote(gift_name, diamond_count)
-                    if success:
-                        poll_status = await poll_manager.get_status()
-                        await manager.broadcast({
-                            "type": "poll_update",
-                            "poll": poll_status
-                        })
-                        await manager.broadcast({
-                            "type": "poll_gift_vote",
-                            "username": event.username,
-                            "nickname": event.nickname or event.username,
-                            "gift_name": gift_name,
-                            "diamond_count": diamond_count,
-                            "candidate_name": candidate_name,
-                            "votes_added": votes_added
-                        })
+                    quantity = int(event.data.get("quantity") or 1)
+                    gift_type = event.data.get("gift_type")
+                    repeat_end = event.data.get("repeat_end")
+
+                    # TikTok streak semantics (gift.type == 1): the sender's
+                    # combo emits ONE event per increment (repeat_end=0, with a
+                    # growing repeat_count) and a FINAL event (repeat_end=1)
+                    # carrying the full repeat_count. Counting every increment
+                    # AND the final would multiply the total, so votes are only
+                    # tallied once, on the final/non-streak event, for
+                    # repeat_count x unit_diamonds. Mid-streak events are still
+                    # stored/broadcast above for the live feed.
+                    is_mid_streak = (gift_type == 1 and repeat_end == 0)
+
+                    if not is_mid_streak:
+                        total_diamonds = max(1, quantity) * max(1, diamond_count)
+                        success, candidate_name, votes_added = await poll_manager.record_gift_vote(gift_name, total_diamonds)
+                        if success:
+                            poll_status = await poll_manager.get_status()
+                            await manager.broadcast({
+                                "type": "poll_update",
+                                "poll": poll_status
+                            })
+                            await manager.broadcast({
+                                "type": "poll_gift_vote",
+                                "username": event.username,
+                                "nickname": event.nickname or event.username,
+                                "gift_name": gift_name,
+                                "diamond_count": total_diamonds,
+                                "quantity": quantity,
+                                "candidate_name": candidate_name,
+                                "votes_added": votes_added
+                            })
             else:
                 logger.debug(f"Duplicate event ignored: {event.event_type} - {event.id}")
 
@@ -176,11 +193,35 @@ class EventProcessor:
                 gift_details.get("diamond_count") or 
                 0
             )
-            
+
+            # --- TikTok gift schema (WebcastGiftMessage / Gift proto) ---
+            # repeat_end: 1 = this is the FINAL event of a streak (carries the
+            #   full repeat_count); 0 = mid-streak increment. 0 is meaningful,
+            #   so we must NOT use truthy `or` chaining here.
+            repeat_end = None
+            for key in ("repeat_end", "repeatEnd"):
+                if raw_data.get(key) is not None:
+                    repeat_end = int(raw_data.get(key))
+                    break
+
+            # gift.type: 1 = streakable (combo-able, e.g. Rose, Finger Heart),
+            #   anything else = non-streakable (big one-shot gifts like Lion).
+            gift_type = None
+            for src in (raw_data, gift_obj, gift_details):
+                for key in ("gift_type", "type"):
+                    v = src.get(key) if isinstance(src, dict) else None
+                    if isinstance(v, int):
+                        gift_type = v
+                        break
+                if gift_type is not None:
+                    break
+
             data["gift_id"] = gift_id
             data["gift_name"] = gift_name
             data["quantity"] = quantity
             data["diamond_count"] = diamond_count
+            data["repeat_end"] = repeat_end
+            data["gift_type"] = gift_type
         elif event_type == "like":
             data["count"] = int(raw_data.get("like_count") or raw_data.get("count") or 1)
         elif event_type == "follow":

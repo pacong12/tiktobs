@@ -259,6 +259,11 @@ class PollManager:
         """
         Records votes from a gift event.
         Gift voting bypasses the username check and adds multiple votes based on diamond value.
+
+        `diamond_count` is the TOTAL diamond contribution of the event as
+        computed by the processor (repeat_count x unit price; per TikTok's
+        streak schema only the final event of a combo is counted). 1 diamond
+        = 1 vote (minimum 1 vote).
         Returns (success, candidate_name, votes_added).
         """
         if not self.is_active or not gift_name:
