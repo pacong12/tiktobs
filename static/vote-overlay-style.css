@@ -143,7 +143,7 @@ body {
     height: 100%;
     padding: 0;
     overflow: visible;
-    background: linear-gradient(160deg, var(--card-fill-a) 0%, var(--card-fill-b) 60%, transparent 100%);
+    background: linear-gradient(165deg, var(--card-fill-a) 0%, var(--card-fill-b) 100%);
     border: 2px solid var(--card-color);
     border-radius: 16px;
     box-shadow: 0 0 14px var(--card-glow-soft), inset 0 0 16px var(--card-glow-soft);
@@ -369,7 +369,7 @@ body {
 .card-badge.badge-gift {
     padding: 4px;
     border-radius: 9px;
-    background: linear-gradient(150deg, var(--card-fill-a) 0%, rgba(8, 8, 15, 0.82) 55%, rgba(8, 8, 15, 0.6) 100%);
+    background: linear-gradient(150deg, var(--card-fill-gift) 0%, rgba(8, 8, 15, 0.72) 100%);
 }
 
 /* Official TikTok gift icon */

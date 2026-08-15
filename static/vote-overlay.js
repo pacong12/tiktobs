@@ -87,8 +87,11 @@ function renderPoll(poll) {
         card.style.setProperty('--card-glow-soft', hexToRgba(cardColor, 0.26));
         // Thin (subtle) color gradient so the transparent card is not empty,
         // yet still lets the no-bg PNG photo show through.
-        card.style.setProperty('--card-fill-a', hexToRgba(cardColor, 0.16));
-        card.style.setProperty('--card-fill-b', hexToRgba(cardColor, 0.02));
+        // Thin background gradient tinted with the BORDER color so each card
+        // clearly carries its candidate color (still subtle enough for no-bg PNGs).
+        card.style.setProperty('--card-fill-a', hexToRgba(cardColor, 0.20));
+        card.style.setProperty('--card-fill-b', hexToRgba(cardColor, 0.06));
+        card.style.setProperty('--card-fill-gift', hexToRgba(cardColor, 0.30));
 
         const bgHtml = c.image_url
             ? `<img src="${escapeHTML(c.image_url)}" class="candidate-bg" alt="">`
