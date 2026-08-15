@@ -15,8 +15,14 @@ HOST = "127.0.0.1"
 PORT = 8000
 
 def port_in_use(host: str, port: int) -> bool:
-    """Returns True if something is already bound to host:port."""
+    """Returns True if something is already bound to host:port.
+
+    Uses SO_REUSEADDR so that leftover TIME_WAIT connections from a
+    previous run do not cause a false 'port in use' error (uvicorn sets
+    SO_REUSEADDR on its listener too, so this mirrors its bind behavior).
+    """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             s.bind((host, port))
             return False
