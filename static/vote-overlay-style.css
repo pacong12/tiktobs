@@ -130,7 +130,7 @@ body {
 
 /* Bigger type on the featured rank-1 card (bento huge square / top3 wide card) */
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name { font-size: 24px; }
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name { font-size: 16px; }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-percentage,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-percentage { font-size: 20px; min-width: 56px; }
 .candidate-grid.grid-bento .candidate-card.rank-1 .progress-track,
@@ -143,17 +143,18 @@ body {
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badge .votes-value { font-size: 16px; }
 
 /* Slightly tighter type on the 1x1 bento cells */
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name { font-size: 14px; }
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name { font-size: 12px; }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-overlay { padding: 10px 12px; gap: 5px; }
 
 /* Compact internals for the small rest-tier squares */
-.candidate-grid.grid-rest .candidate-name { font-size: 12px; }
+.candidate-grid.grid-rest .candidate-head { top: 4px; left: 4px; gap: 5px; max-width: calc(100% - 66px); }
+.candidate-grid.grid-rest .candidate-name { font-size: 10px; padding: 2px 8px; }
 .candidate-grid.grid-rest .candidate-percentage { font-size: 11px; min-width: 32px; }
 .candidate-grid.grid-rest .candidate-badge { padding: 3px 8px; font-size: 8px; top: -8px; right: -6px; }
 .candidate-grid.grid-rest .candidate-badge .votes-value { font-size: 10px; }
 .candidate-grid.grid-rest .progress-track { height: 8px; }
 .candidate-grid.grid-rest .candidate-overlay { padding: 7px 9px; gap: 3px; }
-.candidate-grid.grid-rest .candidate-number { min-width: 20px; height: 20px; font-size: 10px; top: -6px; left: -6px; }
+.candidate-grid.grid-rest .candidate-number { min-width: 20px; height: 20px; font-size: 10px; }
 
 /* CANDIDATE CARD — the photo fills the entire card; the name, vote badge and
    progress bar float on top of it */
@@ -199,13 +200,24 @@ body {
 }
 
 /* Number badge (top-left corner) */
+.candidate-head {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    z-index: 6;
+    /* leave room for the votes chip on the top-right */
+    max-width: calc(100% - 96px);
+    pointer-events: none;
+}
+
 .candidate-number {
     display: flex;
     justify-content: center;
     align-items: center;
-    position: absolute;
-    top: -8px;
-    left: -8px;
+    flex-shrink: 0;
     min-width: 26px;
     height: 26px;
     background: rgba(20, 16, 34, 0.95);
@@ -214,7 +226,6 @@ body {
     font-weight: 700;
     color: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    z-index: 6;
 }
 
 .candidate-card.leading .candidate-number {
@@ -321,19 +332,26 @@ body {
 }
 
 .candidate-name {
-    font-size: 17px;
+    min-width: 0;
+    font-size: 13px;
     font-weight: 700;
     color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+    background: rgba(14, 12, 26, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 4px 12px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
 }
 
 .candidate-card.leading .candidate-name {
     color: #ffd700;
     font-weight: 800;
-    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5), 0 1px 6px rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 215, 0, 0.55);
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
 /* Bottom row: floating progress bar + percentage */
@@ -512,8 +530,8 @@ body {
    ============================================================ */
 .candidate-badges {
     position: absolute;
-    top: 24px;
-    left: 6px;
+    top: 28px;
+    right: 6px;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -570,10 +588,16 @@ body {
 }
 
 /* Featured rank-1 (bento / top-3 champion): bigger badges */
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-head,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-head {
+    top: 10px;
+    left: 10px;
+    gap: 9px;
+}
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badges,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badges {
-    top: 30px;
-    left: 10px;
+    top: 34px;
+    right: 10px;
     gap: 9px;
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .card-badge.badge-win,
@@ -589,8 +613,8 @@ body {
 
 /* Small rest-tier squares: compact badges, tucked tighter */
 .candidate-grid.grid-rest .candidate-badges {
-    top: 17px;
-    left: 4px;
+    top: 14px;
+    right: 4px;
     gap: 5px;
 }
 .candidate-grid.grid-rest .card-badge.badge-win {
