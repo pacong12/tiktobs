@@ -139,15 +139,21 @@ page ("Running Text" card) and apply to open overlays instantly.
 
 ### Gift Bubbles (floating candidate overlay)
 
-`/gift-bubbles.html` is a full-screen transparent layer. Every gift that maps
-to an active poll candidate spawns a small **square bubble** showing that
-candidate's photo (framed in their border color) with the official gift icon
-and `×N` count, then floats up the screen with a gentle sway and fades out.
+`/gift-bubbles.html` is a full-screen transparent layer. Incoming gifts spawn
+small **square bubbles** that float up the screen with a gentle sway and fade
+out:
 
-- Only gifts assigned to a candidate produce a bubble.
+- A gift assigned to an active poll candidate spawns a **candidate bubble** —
+  the candidate's photo framed in their border color, with the official gift
+  icon and `×N` count.
+- Any other gift spawns a **generic gift bubble** — a big official gift icon
+  and the sender's name (gold frame), so every gift still gets a visual.
 - Streakable/combo gifts (`gift_type == 1`) spawn a single bubble when the
   combo lands (`repeat_end == 1`), matching how poll votes are counted, so
   mid-combo events do not flood the screen.
+- Candidate bubbles are driven by both the `event` stream and the
+  `poll_gift_vote` message (what the Poll Admin "simulate gift vote" button
+  emits), with de-duplication so a real candidate gift never bubbles twice.
 - A safety cap keeps at most 18 bubbles on screen at once.
 
 ### Vote Overlay Badges (wins + gifts)

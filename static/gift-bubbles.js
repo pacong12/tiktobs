@@ -1,15 +1,31 @@
-// Gift Bubbles overlay — every settled gift that maps to a candidate spawns a
-// small square "bubble" (the candidate's card) that floats up the screen.
+// Gift Bubbles overlay — incoming gifts spawn small square "bubbles" that
+// float up the screen.
+//
+//   • Gifts ASSIGNED to a candidate  -> a candidate bubble (their photo framed
+//     in their border color, gift icon + ×N).
+//   • Any OTHER gift                 -> a generic gift bubble (big gift icon +
+//     sender name) so every gift still gets a visual.
 //
 // Counting rule matches the poll: streakable gifts (gift_type === 1) emit one
-// event per combo increment, but a bubble only appears on the FINAL event
-// (repeat_end === 1) so mid-combo spam does not flood the screen.
+// event per combo increment, but a bubble only appears once the combo lands
+// (repeat_end === 1), so mid-combo events do not flood the screen.
+//
+// Dedup: a real candidate gift fires BOTH an `event` and a `poll_gift_vote`
+// message. The `event` path spawns the bubble (it carries the streak quantity);
+// the `poll_gift_vote` path is what the Poll Admin "simulate gift vote" button
+// emits on its own, so it only spawns when the gift did NOT just bubble via an
+// `event`. This keeps real gifts from bubbling twice while still letting the
+// simulation button work.
 
 let socket = null;
 let currentPoll = null;
 
 // Hard cap so a gift storm cannot pile up hundreds of bubbles at once.
 const MAX_BUBBLES = 18;
+
+// giftKey -> timestamp of the last candidate bubble spawned from an `event`.
+const recentCandidateBubbles = new Map();
+const DEDUP_MS = 1500;
 
 const stage = document.getElementById('bubble-stage');
 
@@ -49,6 +65,9 @@ function connectWebSocket() {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
                 currentPoll = msg.poll;
+            } else if (msg.type === 'poll_gift_vote') {
+                // Candidate gift vote (real boost or the Poll Admin simulate button).
+                handlePollGiftVote(msg);
             } else if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
                 handleGiftEvent(msg.event);
             }
@@ -67,46 +86,80 @@ function connectWebSocket() {
     };
 }
 
-function handleGiftEvent(giftEvent) {
-    if (!currentPoll || !currentPoll.is_active || !currentPoll.candidates) return;
-    const data = giftEvent.data || {};
-    const giftKey = normalizeGiftName(data.gift_name);
-    if (!giftKey) return;
-
-    // Only gifts assigned to a candidate get a bubble.
-    const candidate = currentPoll.candidates.find(
+// Find the candidate a gift is assigned to (by normalized gift name).
+function findCandidateByGift(giftName) {
+    if (!currentPoll || !currentPoll.is_active || !currentPoll.candidates) return null;
+    const giftKey = normalizeGiftName(giftName);
+    if (!giftKey) return null;
+    return currentPoll.candidates.find(
         c => normalizeGiftName(c.gift_name) === giftKey
-    );
-    if (!candidate) return;
+    ) || null;
+}
 
+// --- Message handlers -------------------------------------------------------
+
+function handleGiftEvent(giftEvent) {
+    const data = giftEvent.data || {};
     // Streakable gifts bubble only when the combo lands (repeat_end === 1).
     const isStreak = data.gift_type === 1;
     if (isStreak && data.repeat_end !== 1) return;
 
-    spawnBubble(candidate, data);
+    const candidate = findCandidateByGift(data.gift_name);
+    if (candidate) {
+        spawnCandidateBubble(candidate, data);
+        recentCandidateBubbles.set(normalizeGiftName(data.gift_name), Date.now());
+    } else {
+        // No candidate owns this gift — still celebrate it with a generic bubble.
+        spawnGenericBubble(data, giftEvent);
+    }
 }
 
-function spawnBubble(candidate, data) {
-    // Enforce the cap by dropping the oldest bubble still on screen.
+function handlePollGiftVote(msg) {
+    const giftKey = normalizeGiftName(msg.gift_name);
+    const last = recentCandidateBubbles.get(giftKey) || 0;
+    // A real gift already bubbled via the `event` path a moment ago -> skip.
+    if (Date.now() - last < DEDUP_MS) return;
+
+    const candidate = findCandidateByGift(msg.gift_name);
+    if (!candidate) return;
+
+    spawnCandidateBubble(candidate, {
+        gift_name: msg.gift_name,
+        quantity: msg.quantity || 1
+    });
+    recentCandidateBubbles.set(giftKey, Date.now());
+}
+
+// --- Bubble spawning --------------------------------------------------------
+
+// Shared setup: enforce the cap, randomize path/speed, attach cleanup.
+function prepareBubble() {
     const live = stage.querySelectorAll('.gift-bubble');
     if (live.length >= MAX_BUBBLES) {
         live[0].remove();
     }
 
-    const qty = data.quantity || 1;
-    const cardColor = (candidate.color || '').trim() || CARD_PALETTE[(candidate.id || 0) % CARD_PALETTE.length];
-
     const bubble = document.createElement('div');
     bubble.className = 'gift-bubble';
-    bubble.style.setProperty('--bub-color', cardColor);
-    bubble.style.setProperty('--bub-glow', hexToRgba(cardColor, 0.6));
-    bubble.style.setProperty('--bub-fill', hexToRgba(cardColor, 0.22));
-    // Random sway amplitude + direction, spawn position and travel speed so
-    // each bubble drifts on its own path.
     bubble.style.setProperty('--sway', (Math.random() * 26 + 8).toFixed(0) + 'px');
     bubble.style.left = (Math.random() * 76 + 10).toFixed(1) + '%';
     const duration = (Math.random() * 3.5 + 6).toFixed(1); // 6s .. 9.5s
     bubble.style.animationDuration = duration + 's';
+
+    stage.appendChild(bubble);
+    bubble.addEventListener('animationend', () => bubble.remove());
+    setTimeout(() => { if (bubble.isConnected) bubble.remove(); }, (parseFloat(duration) + 2) * 1000);
+    return bubble;
+}
+
+function spawnCandidateBubble(candidate, data) {
+    const qty = data.quantity || 1;
+    const cardColor = (candidate.color || '').trim() || CARD_PALETTE[(candidate.id || 0) % CARD_PALETTE.length];
+
+    const bubble = prepareBubble();
+    bubble.style.setProperty('--bub-color', cardColor);
+    bubble.style.setProperty('--bub-glow', hexToRgba(cardColor, 0.6));
+    bubble.style.setProperty('--bub-fill', hexToRgba(cardColor, 0.22));
 
     const media = candidate.image_url
         ? `<img src="${escapeHTML(candidate.image_url)}" class="bub-img" alt="">`
@@ -121,12 +174,30 @@ function spawnBubble(candidate, data) {
         </div>
         <div class="bub-name">${escapeHTML(candidate.name)}</div>
     `;
+}
 
-    stage.appendChild(bubble);
+function spawnGenericBubble(data, giftEvent) {
+    const qty = data.quantity || 1;
+    const accent = '#ffd60a'; // gold — no candidate color to inherit
 
-    // Remove when the float-up animation finishes (plus a safety timeout).
-    bubble.addEventListener('animationend', () => bubble.remove());
-    setTimeout(() => { if (bubble.isConnected) bubble.remove(); }, (parseFloat(duration) + 2) * 1000);
+    const bubble = prepareBubble();
+    bubble.classList.add('generic');
+    bubble.style.setProperty('--bub-color', accent);
+    bubble.style.setProperty('--bub-glow', hexToRgba(accent, 0.6));
+    bubble.style.setProperty('--bub-fill', hexToRgba(accent, 0.16));
+
+    const iconLarge = giftIconHtml(data.gift_name, 'bub-gift-big')
+        || `<span class="bub-emoji-big">${getGiftEmoji(data.gift_name)}</span>`;
+    const iconSmall = giftIconHtml(data.gift_name, 'bub-gift-icon') || getGiftEmoji(data.gift_name);
+    const sender = giftEvent.nickname || giftEvent.username || data.gift_name || '';
+
+    bubble.innerHTML = `
+        <div class="bub-card">
+            <div class="bub-media bub-media-generic">${iconLarge}</div>
+            <div class="bub-gift">${iconSmall}<span class="bub-qty">&times;${qty}</span></div>
+        </div>
+        <div class="bub-name">${escapeHTML(sender)}</div>
+    `;
 }
 
 // --- Shared helpers (self-contained for the OBS browser source) -----------

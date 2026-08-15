@@ -127,3 +127,27 @@ body {
     85%  { transform: translateY(-88vh) translateX(calc(var(--sway, 12px) * -0.6)) scale(0.95); opacity: 0.85; }
     100% { transform: translateY(calc(-100vh - 240px)) translateX(0) scale(0.9); opacity: 0; }
 }
+
+/* --- Generic gift bubble (gift not assigned to any candidate) ------------- */
+
+/* Centered large gift icon instead of a candidate photo. */
+.bub-media-generic {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.25));
+}
+
+.bub-gift-big {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 0 8px var(--bub-glow, rgba(255, 214, 10, 0.6)));
+}
+
+.bub-emoji-big {
+    font-size: 46px;
+    line-height: 1;
+    filter: drop-shadow(0 0 8px var(--bub-glow, rgba(255, 214, 10, 0.6)));
+}
