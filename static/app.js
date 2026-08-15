@@ -208,15 +208,27 @@ async function handleDisconnect() {
 }
 
 // WEBSOCKET BROADCAST RECEIVER
+function updateServerLink(state) {
+    const link = document.getElementById('server-link');
+    const text = document.getElementById('server-link-text');
+    if (!link || !text) return;
+    link.className = 'server-link ' + state;
+    text.textContent = state === 'online' ? 'Server: online'
+        : state === 'connecting' ? 'Server: connecting…'
+        : 'Server: offline';
+}
+
 function connectWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
 
     addConsoleLog('Connecting to WebSocket server...', 'system');
+    updateServerLink('connecting');
     socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
         addConsoleLog('WebSocket channel connected successfully.', 'success');
+        updateServerLink('online');
     };
 
     socket.onmessage = (event) => {
@@ -230,6 +242,7 @@ function connectWebSocket() {
 
     socket.onclose = () => {
         addConsoleLog('WebSocket link severed. Reconnecting in 3 seconds...', 'error');
+        updateServerLink('offline');
         setTimeout(connectWebSocket, 3000);
     };
 

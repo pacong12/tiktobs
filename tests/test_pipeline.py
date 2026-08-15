@@ -1,5 +1,6 @@
 import asyncio
 import os
+import tempfile
 import unittest
 from datetime import datetime, timezone
 
@@ -8,12 +9,16 @@ from app.bus import event_bus
 from app.models import TikTokEvent
 from app.processor import EventProcessor
 
-TEST_DB_DIR = "data"
+# Isolated temp DB so the suite never touches the real data/ directory.
+TEST_DB_DIR = tempfile.mkdtemp(prefix="tiktobs_pipeline_")
 TEST_DB_PATH = os.path.join(TEST_DB_DIR, "test_tiktok_live.db")
 
 class TestPipeline(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        # Override DB path to test database
+        # Close any connection opened by earlier test files, then point the
+        # shared connection at our isolated test database.
+        self._orig_db_path = database.DB_PATH
+        await database.close_db()
         database.DB_PATH = TEST_DB_PATH
         if os.path.exists(TEST_DB_PATH):
             os.remove(TEST_DB_PATH)
@@ -26,16 +31,18 @@ class TestPipeline(unittest.IsolatedAsyncioTestCase):
         event_bus.subscribe(self.on_event_published)
 
     async def asyncTearDown(self):
-        # Unsubscribe and clean up test db
+        # Unsubscribe, release the connection (so the files can be deleted and
+        # no aiosqlite worker thread is left behind), restore the DB path.
         event_bus.unsubscribe(self.on_event_published)
-        if os.path.exists(TEST_DB_PATH):
-            try:
-                os.remove(TEST_DB_PATH)
-            except PermissionError:
-                # database connection might still be closing asynchronously, wait briefly
-                await asyncio.sleep(0.5)
-                if os.path.exists(TEST_DB_PATH):
-                    os.remove(TEST_DB_PATH)
+        await database.close_db()
+        database.DB_PATH = self._orig_db_path
+        for suffix in ("", "-shm", "-wal"):
+            path = TEST_DB_PATH + suffix
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
     async def on_event_published(self, event: TikTokEvent):
         self.published_events.append(event)

@@ -70,8 +70,21 @@
                         </div>
 
                         <div class="input-group" style="margin-top: 15px;">
+                            <label class="label-inline">
+                                <span>Gift Kustom (masuk ke dropdown Gift Boost)</span>
+                                <button id="add-custom-gift-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 10px;">➕ Simpan</button>
+                            </label>
+                            <div class="custom-gift-row">
+                                <input type="text" id="custom-gift-name" class="field-input" placeholder="Nama gift persis (mis. Singa Emas)">
+                                <input type="number" id="custom-gift-diamonds" class="field-input" min="0" placeholder="💎" title="Jumlah diamond (opsional)">
+                            </div>
+                            <div class="custom-gift-list" id="custom-gift-list"></div>
+                        </div>
+
+                        <div class="input-group" style="margin-top: 15px;">
                             <label for="poll-duration-input">Durasi dalam Detik (opsional)</label>
                             <input type="number" id="poll-duration-input" class="field-input" min="5" placeholder="e.g. 60 (kosongkan = tanpa batas)">
+                            <div class="duration-hint" id="duration-hint">Kosongkan untuk voting tanpa batas waktu.</div>
                         </div>
 
                         <button id="start-poll-btn" class="btn primary btn-block">🚀 Mulai Voting Live</button>
@@ -186,7 +199,10 @@
                 <div class="glass-card" style="margin-top: 24px;">
                     <div class="history-head">
                         <h2 class="card-title">📜 Riwayat Ronde</h2>
-                        <button id="clear-rounds-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; border-color: rgba(255,74,90,0.3); color: #ff4a5a;">🗑️ Hapus Semua</button>
+                        <div style="display:flex; gap:8px; flex-grow:0;">
+                            <a href="/api/poll/rounds/export.csv" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; text-decoration:none;">📥 CSV</a>
+                            <button id="clear-rounds-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; border-color: rgba(255,74,90,0.3); color: #ff4a5a;">🗑️ Hapus Semua</button>
+                        </div>
                     </div>
                     <div id="rounds-history-list" class="rounds-list">
                         <!-- round cards injected here -->

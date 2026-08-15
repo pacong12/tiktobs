@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -159,6 +160,9 @@ async def lifespan(app: FastAPI):
     
     # Subscribe WebSocket broadcasting to EventBus
     event_bus.subscribe(ws_broadcast_subscriber)
+
+    # Restore a poll that was active when the app last shut down (survives restarts).
+    await poll_manager.restore()
     
     yield
     
@@ -320,6 +324,14 @@ async def get_rankings_api(anchor_id: str):
 @app.post("/api/poll/start")
 async def start_poll_api(req: StartPollRequest):
     """Starts a new voting session and broadcasts the poll details."""
+    # Server-side validation (the frontend enforces this too, but the API must not trust it).
+    if len(req.candidates) < 2:
+        raise HTTPException(status_code=400, detail="A poll needs at least 2 candidates")
+    for c in req.candidates:
+        if not (c.name or "").strip():
+            raise HTTPException(status_code=400, detail="Candidate name cannot be empty")
+    if req.duration_seconds is not None and req.duration_seconds < 5:
+        raise HTTPException(status_code=400, detail="Poll duration must be at least 5 seconds")
     candidates = [c.model_dump() for c in req.candidates]
     await poll_manager.start_poll(req.title, candidates, req.duration_seconds, req.round_name or "")
     poll_status = await poll_manager.get_status()
@@ -367,6 +379,64 @@ async def clear_poll_rounds_api():
     """Deletes all archived rounds."""
     await database.clear_poll_rounds()
     return {"status": "ok"}
+
+@app.get("/api/poll/rounds/export.csv")
+async def export_poll_rounds_csv_api():
+    """Exports all archived rounds (one row per candidate) as a CSV download."""
+    import csv
+    import io
+    rounds = await database.get_poll_rounds(limit=10000)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        "round_id", "round_name", "title", "started_at", "ended_at",
+        "duration_seconds", "total_votes", "candidate_name", "candidate_votes", "candidate_percentage", "gift_name"
+    ])
+    for r in rounds:
+        for c in r.get("candidates", []):
+            writer.writerow([
+                r.get("id"), r.get("round_name"), r.get("title"),
+                r.get("started_at") or "", r.get("ended_at") or "",
+                r.get("duration_seconds") if r.get("duration_seconds") is not None else "",
+                r.get("total_votes"),
+                c.get("name"), c.get("votes"), c.get("percentage"), c.get("gift_name") or ""
+            ])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=poll-rounds.csv"},
+    )
+
+# Custom Gift Catalog Endpoints (user-added gifts for the Gift Boost dropdown)
+class CustomGiftRequest(BaseModel):
+    name: str
+    diamonds: int | None = None
+
+@app.get("/api/gifts")
+async def list_custom_gifts_api():
+    """Returns user-added gifts (merged with the built-in catalog on the client)."""
+    gifts = await database.get_custom_gifts()
+    return {"gifts": gifts}
+
+@app.post("/api/gifts")
+async def add_custom_gift_api(req: CustomGiftRequest):
+    """Adds (or updates) a user-defined gift."""
+    name = (req.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Gift name cannot be empty")
+    if len(name) > 60:
+        raise HTTPException(status_code=400, detail="Gift name too long (max 60 chars)")
+    diamonds = max(0, int(req.diamonds or 0))
+    await database.add_custom_gift(name, diamonds)
+    return {"status": "success", "gift": {"name": name, "diamonds": diamonds}}
+
+@app.delete("/api/gifts/{name}")
+async def delete_custom_gift_api(name: str):
+    """Removes a user-defined gift."""
+    deleted = await database.delete_custom_gift(name.strip())
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Custom gift not found")
+    return {"status": "success", "deleted": name}
 
 # Sound Management Endpoints
 DEFAULT_SOUND_CONFIG = {
@@ -486,6 +556,10 @@ async def upload_sound_api(file: UploadFile = File(...)):
     safe_name = os.path.basename(file.filename)
     save_path = os.path.join(SOUNDS_DIR, safe_name)
     content = await file.read()
+    # Guard against huge uploads filling up the disk.
+    MAX_SOUND_BYTES = 25 * 1024 * 1024  # 25 MB
+    if len(content) > MAX_SOUND_BYTES:
+        raise HTTPException(status_code=400, detail="File too large (max 25 MB)")
     with open(save_path, "wb") as f:
         f.write(content)
         

@@ -1451,3 +1451,89 @@ body {
 .candidate-gift-select option { background: #14192b; color: #fff; }
 
 .candidate-gift-manual { width: 100%; box-sizing: border-box; }
+
+/* Duration hint */
+.duration-hint {
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+/* Custom gift manager */
+.custom-gift-row {
+    display: grid;
+    grid-template-columns: 1fr 90px;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.custom-gift-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.custom-gift-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.25);
+    border-radius: 14px;
+    color: var(--color-text);
+}
+
+.custom-gift-del {
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0 2px;
+    opacity: 0.8;
+}
+.custom-gift-del:hover { opacity: 1; }
+
+.custom-gift-empty {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+/* Server connection badge (dashboard <-> backend) */
+.server-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    color: var(--color-text-muted);
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.server-link-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-text-muted);
+}
+
+.server-link.online { color: var(--color-success); border-color: rgba(16, 185, 129, 0.3); }
+.server-link.online .server-link-dot { background: var(--color-success); box-shadow: 0 0 8px var(--color-success); }
+
+.server-link.connecting { color: var(--color-warning); border-color: rgba(245, 158, 11, 0.3); }
+.server-link.connecting .server-link-dot { background: var(--color-warning); animation: pulse-dot 1s infinite; }
+
+.server-link.offline { color: var(--color-danger); border-color: rgba(255, 74, 90, 0.3); }
+.server-link.offline .server-link-dot { background: var(--color-danger); }
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}

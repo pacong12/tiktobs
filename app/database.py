@@ -119,6 +119,22 @@ async def init_db():
             ended_at TEXT NOT NULL
         );
     """)
+
+    # Single-row table persisting the currently active poll so it survives restarts.
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS active_poll (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            state TEXT NOT NULL -- JSON blob of the full poll state
+        );
+    """)
+
+    # User-defined gifts added to the Gift Boost dropdown catalog.
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS custom_gifts (
+            name TEXT PRIMARY KEY,
+            diamonds INTEGER NOT NULL DEFAULT 0
+        );
+    """)
     await db.commit()
 
 
@@ -189,6 +205,70 @@ async def clear_poll_rounds() -> None:
     async with _write_lock:
         await db.execute("DELETE FROM poll_rounds")
         await db.commit()
+
+# ---------------------------------------------------------------------------
+# Active poll persistence (restart-safe voting state)
+# ---------------------------------------------------------------------------
+
+async def save_active_poll(state: dict) -> None:
+    """Upserts the active poll state blob (single row)."""
+    db = await _get_shared_db()
+    async with _write_lock:
+        await db.execute(
+            "INSERT INTO active_poll (id, state) VALUES (1, ?) "
+            "ON CONFLICT(id) DO UPDATE SET state = excluded.state;",
+            (json.dumps(state),),
+        )
+        await db.commit()
+
+async def get_active_poll() -> dict | None:
+    """Returns the persisted active poll state, or None."""
+    db = await _get_shared_db()
+    async with db.execute("SELECT state FROM active_poll WHERE id = 1;") as cursor:
+        row = await cursor.fetchone()
+    if not row:
+        return None
+    try:
+        return json.loads(row[0])
+    except (ValueError, TypeError):
+        return None
+
+async def clear_active_poll() -> None:
+    """Removes the persisted active poll row."""
+    db = await _get_shared_db()
+    async with _write_lock:
+        await db.execute("DELETE FROM active_poll;")
+        await db.commit()
+
+# ---------------------------------------------------------------------------
+# Custom gift catalog (user-added gifts for the Gift Boost dropdown)
+# ---------------------------------------------------------------------------
+
+async def get_custom_gifts() -> list[dict]:
+    """Returns user-added gifts ordered by name."""
+    db = await _get_shared_db()
+    async with db.execute("SELECT name, diamonds FROM custom_gifts ORDER BY name;") as cursor:
+        rows = await cursor.fetchall()
+    return [{"name": r[0], "diamonds": r[1]} for r in rows]
+
+async def add_custom_gift(name: str, diamonds: int) -> None:
+    """Adds (or updates) a user-defined gift."""
+    db = await _get_shared_db()
+    async with _write_lock:
+        await db.execute(
+            "INSERT INTO custom_gifts (name, diamonds) VALUES (?, ?) "
+            "ON CONFLICT(name) DO UPDATE SET diamonds = excluded.diamonds;",
+            (name, diamonds),
+        )
+        await db.commit()
+
+async def delete_custom_gift(name: str) -> bool:
+    """Removes a user-defined gift. Returns True if a row was deleted."""
+    db = await _get_shared_db()
+    async with _write_lock:
+        cursor = await db.execute("DELETE FROM custom_gifts WHERE name = ?;", (name,))
+        await db.commit()
+        return cursor.rowcount > 0
 
 async def create_session(username: str) -> str:
     """Creates a new LIVE session and stores it in the database. Returns the session ID."""
