@@ -12,9 +12,12 @@ body {
     display: none !important;
 }
 
-/* OVERLAY CONTAINER — transparan untuk OBS (background & border dihapus) */
+/* OVERLAY CONTAINER — transparan untuk OBS (background & border dihapus).
+   Fluid up to 500px so it also fits small/Android screens. */
 .overlay-container {
     width: 500px;
+    max-width: calc(100vw - 20px);
+    box-sizing: border-box;
     padding: 20px;
     margin: 10px;
     display: flex;
