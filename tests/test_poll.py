@@ -36,26 +36,30 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(status["candidates"][1]["votes"], 0)
         self.assertEqual(status["candidates"][1]["percentage"], 0.0)
 
-    async def test_vote_by_id_and_prevention_of_double_voting(self):
+    async def test_every_comment_counts_even_from_same_user(self):
         await self.poll_manager.start_poll(self.title, self.candidates)
 
         # Vote for Candidate 1 (Alice) using ID "1"
         success = await self.poll_manager.record_vote("user1", "1")
         self.assertTrue(success)
 
-        # Try to vote again from the same user (should be rejected)
+        # Same user votes again for Candidate 2 -> counted again.
         success = await self.poll_manager.record_vote("user1", "2")
-        self.assertFalse(success)
+        self.assertTrue(success)
+
+        # Same user votes for Alice by name -> counted again.
+        success = await self.poll_manager.record_vote("user1", "alice")
+        self.assertTrue(success)
 
         # Vote from another user for Candidate 1 using ID "#1" (with hash prefix)
         success = await self.poll_manager.record_vote("user2", " #1 ")
         self.assertTrue(success)
 
         status = await self.poll_manager.get_status()
-        self.assertEqual(status["total_votes"], 2)
-        self.assertEqual(status["candidates"][0]["votes"], 2)  # Alice has 2 votes
-        self.assertEqual(status["candidates"][0]["percentage"], 100.0)
-        self.assertEqual(status["candidates"][1]["votes"], 0)  # Bob has 0 votes
+        self.assertEqual(status["total_votes"], 4)
+        self.assertEqual(status["candidates"][0]["votes"], 3)  # Alice: "1", "alice", "#1"
+        self.assertEqual(status["candidates"][1]["votes"], 1)  # Bob: "2"
+        self.assertEqual(status["unique_voters"], 2)
 
     async def test_vote_by_name_case_insensitive(self):
         # Adding a short candidate named 'Yo'
@@ -194,22 +198,22 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(status["candidates"][2]["votes"], 1)
         self.assertEqual(status["total_votes"], 3)
 
-    async def test_one_user_one_vote_across_formats(self):
+    async def test_repeat_voter_across_formats(self):
         await self.poll_manager.start_poll(self.title, self.candidates)
 
-        # First comment vote succeeds (by number).
+        # Every matching comment counts, in any format...
         self.assertTrue(await self.poll_manager.record_vote("user1", "01"))
-        # Same user trying again by name -> rejected.
-        self.assertFalse(await self.poll_manager.record_vote("user1", "bob"))
-        # Same user trying again by number -> rejected.
-        self.assertFalse(await self.poll_manager.record_vote("user1", "2"))
-        # Username casing/whitespace variants are the same voter.
-        self.assertFalse(await self.poll_manager.record_vote(" User1 ", "2"))
-        self.assertFalse(await self.poll_manager.record_vote("USER1", "alice"))
+        self.assertTrue(await self.poll_manager.record_vote("user1", "bob"))
+        self.assertTrue(await self.poll_manager.record_vote("user1", "2"))
+        # ...even from username casing/whitespace variants of the same user.
+        self.assertTrue(await self.poll_manager.record_vote(" User1 ", "2"))
+        self.assertTrue(await self.poll_manager.record_vote("USER1", "alice"))
 
         status = await self.poll_manager.get_status()
-        self.assertEqual(status["total_votes"], 1)
-        self.assertEqual(status["candidates"][0]["votes"], 1)
+        self.assertEqual(status["total_votes"], 5)
+        self.assertEqual(status["candidates"][0]["votes"], 2)  # "01" + "alice"
+        self.assertEqual(status["candidates"][1]["votes"], 3)  # "bob" + "2" + "2"
+        self.assertEqual(status["unique_voters"], 1)
 
     async def test_gift_matching_is_strict_and_normalized(self):
         candidates = [

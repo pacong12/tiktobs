@@ -24,7 +24,9 @@ def normalize_gift_name(name: str) -> str:
 class PollManager:
     """
     Manages the active polling state in memory.
-    Tracks candidates, votes, and voters to prevent duplicate votes.
+    Tracks candidates, votes, and unique voters (stats only).
+    Every matching comment counts as a vote — a user may vote as many
+    times as they comment.
     Supports countdown timers and automatic poll stopping.
     Completed rounds are archived to the database for later review.
     """
@@ -33,7 +35,7 @@ class PollManager:
         self.title = ""
         self.round_name = ""
         self.candidates = []  # List of {"id": "1", "name": "Name", "image_url": "...", "votes": 0}
-        self.voters = set()   # Set of usernames who have voted
+        self.voters = set()   # Set of usernames who voted at least once (stat only, never blocks)
         self.expires_at = None  # datetime | None
         self.started_at = None  # datetime | None
         self.duration_seconds = None  # int | None
@@ -191,9 +193,9 @@ class PollManager:
           2. Candidate ID (kept for backwards compatibility).
           3. Name mention (substring for names > 2 chars, exact otherwise).
 
-        Strictly one comment vote per user per poll: once a username has a
-        vote recorded, all later comments from that user are ignored
-        (gift votes are separate and always allowed).
+        Every matching comment counts: a user can vote as many times as they
+        comment (spam-voting). Duplicate *messages* are still filtered at the
+        event level by msg_id, and gift votes remain a separate fast track.
         """
         username_key = (username or "").strip().lower()
         if not self.is_active or not username_key:
@@ -205,10 +207,6 @@ class PollManager:
             return False
 
         async with self.lock:
-            if username_key in self.voters:
-                # Already voted: one user = one comment vote
-                return False
-
             clean_comment = comment_text.strip().lower()
             clean_comment_no_hash = clean_comment.removeprefix("#").strip()
 
@@ -248,7 +246,7 @@ class PollManager:
 
             if matched_candidate:
                 matched_candidate["votes"] += 1
-                self.voters.add(username_key)
+                self.voters.add(username_key)  # unique-voter stat only
                 logger.info(f"Vote recorded: User @{username_key} voted for {matched_candidate['name']}.")
                 await self._persist_state()
                 return True
@@ -391,6 +389,7 @@ class PollManager:
                 "title": self.title,
                 "round_name": self.round_name,
                 "total_votes": total_votes,
+                "unique_voters": len(self.voters),
                 "candidates": status_candidates,
                 "expires_at": self.expires_at.isoformat() if self.expires_at else None,
                 "time_left": time_left

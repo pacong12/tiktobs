@@ -1,4 +1,4 @@
-"""Unit tests for PollManager persistence, restore, and vote dedup."""
+"""Unit tests for PollManager persistence, restore, and repeat voting."""
 
 import asyncio
 
@@ -33,14 +33,17 @@ async def test_start_persists_and_stop_clears():
     assert await database.get_active_poll() is None
 
 
-async def test_vote_dedup():
+async def test_repeat_votes_all_count():
     pm = await _fresh()
     await pm.start_poll("T", [{"name": "A"}, {"name": "B"}], round_name="R2")
     assert await pm.record_vote("alice", "1") is True
-    assert await pm.record_vote("alice", "2") is False  # same voter, blocked
+    assert await pm.record_vote("alice", "2") is True   # same voter counts again
     assert await pm.record_vote("bob", "B") is True
     status = await pm.get_status()
-    assert status["total_votes"] == 2
+    assert status["total_votes"] == 3
+    assert status["candidates"][0]["votes"] == 1
+    assert status["candidates"][1]["votes"] == 2
+    assert status["unique_voters"] == 2
     await pm.stop_poll()
 
 
@@ -73,8 +76,12 @@ async def test_restore_recovers_votes_and_voters():
     assert status["is_active"] is True
     assert status["round_name"] == "RR"
     assert status["total_votes"] == 1
-    # Voter list survives so double-votes stay blocked.
-    assert await pm2.record_vote("alice", "1") is False
+    assert status["unique_voters"] == 1
+    # Voter list survives as a unique-voter stat; repeat votes still count.
+    assert await pm2.record_vote("alice", "1") is True
+    status = await pm2.get_status()
+    assert status["total_votes"] == 2
+    assert status["unique_voters"] == 1
 
     await pm2.stop_poll()
 

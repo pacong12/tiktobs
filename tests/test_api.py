@@ -237,7 +237,7 @@ async def test_start_poll_include_history_replays_session_events(client):
     # Pre-poll history of this session.
     await ev("comment", "voter_a", {"comment": "1"})            # -> Merah
     await ev("comment", "voter_b", {"comment": "pilih Biru!"})  # -> Biru (name mention)
-    await ev("comment", "voter_a", {"comment": "1"})            # same user, counts once
+    await ev("comment", "voter_a", {"comment": "1"})            # same user, counts again
     await ev("gift", "whale", {"gift_name": "Rose", "quantity": 1, "diamond_count": 25})  # -> Biru
     await ev("comment", "noise", {"comment": "haha lucu banget"})  # matches nothing
 
@@ -250,12 +250,12 @@ async def test_start_poll_include_history_replays_session_events(client):
         assert resp.status_code == 200
         body = resp.json()
 
-        assert body["history_applied"]["comments"] == 2
+        assert body["history_applied"]["comments"] == 3
         assert body["history_applied"]["gifts"] == 1
-        assert body["history_applied"]["votes"] == 27  # 2 comment votes + 25 diamonds
+        assert body["history_applied"]["votes"] == 28  # 3 comment votes + 25 diamonds
 
         votes = {c["name"]: c["votes"] for c in body["candidates"]}
-        assert votes["Merah"] == 1
+        assert votes["Merah"] == 2
         assert votes["Biru"] == 26  # 1 comment + 25 gift votes
     finally:
         client.post("/api/poll/stop")
