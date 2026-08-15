@@ -132,9 +132,23 @@ the full URL):
 | Recent Gifts Ticker | `/recent-gifts.html` | Feed of the latest gifts |
 | Vote / Poll | `/vote-overlay.html` | Live poll progress |
 | Running Text | `/ticker.html` | Scrolling text for ads, announcements, etc. |
+| Gift Bubbles | `/gift-bubbles.html` | Floating square candidate bubbles on incoming gifts |
 
 The running text messages, speed, and direction are managed on the Settings
 page ("Running Text" card) and apply to open overlays instantly.
+
+### Gift Bubbles (floating candidate overlay)
+
+`/gift-bubbles.html` is a full-screen transparent layer. Every gift that maps
+to an active poll candidate spawns a small **square bubble** showing that
+candidate's photo (framed in their border color) with the official gift icon
+and `×N` count, then floats up the screen with a gentle sway and fades out.
+
+- Only gifts assigned to a candidate produce a bubble.
+- Streakable/combo gifts (`gift_type == 1`) spawn a single bubble when the
+  combo lands (`repeat_end == 1`), matching how poll votes are counted, so
+  mid-combo events do not flood the screen.
+- A safety cap keeps at most 18 bubbles on screen at once.
 
 ### Vote Overlay Badges (wins + gifts)
 

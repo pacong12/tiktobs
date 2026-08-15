@@ -377,6 +377,7 @@ body {
 .overlay-link-item[data-accent="green"] { --ol-accent: #00ff87; }
 .overlay-link-item[data-accent="gold"] { --ol-accent: #ffd700; }
 .overlay-link-item[data-accent="violet"] { --ol-accent: #a78bfa; }
+.overlay-link-item[data-accent="orange"] { --ol-accent: #ff9100; }
 
 .overlay-link-label {
     font-size: 12.5px;

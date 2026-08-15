@@ -1,0 +1,129 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: transparent;
+    font-family: 'Outfit', sans-serif;
+    overflow: hidden;
+}
+
+/* Full-screen transparent stage the bubbles float up through. */
+.bubble-stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* One floating bubble: a small square candidate card + caption beneath it. */
+.gift-bubble {
+    position: absolute;
+    bottom: -190px;
+    width: 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    animation-name: floatUp;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    will-change: transform, opacity;
+}
+
+/* The square candidate card. */
+.bub-card {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    border-radius: 16px;
+    border: 2px solid var(--bub-color, #00e5ff);
+    box-shadow:
+        0 0 14px var(--bub-glow, rgba(0, 229, 255, 0.6)),
+        inset 0 0 10px var(--bub-fill, rgba(0, 229, 255, 0.2));
+    background: var(--bub-fill, rgba(0, 229, 255, 0.2));
+    overflow: hidden;
+}
+
+.bub-media {
+    position: absolute;
+    inset: 0;
+}
+
+.bub-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Fallback avatar when the candidate has no photo. */
+.bub-img.default-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Gift badge pinned to the bottom-right corner of the card. */
+.bub-gift {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgba(10, 8, 24, 0.88);
+    border: 1px solid var(--bub-color, #00e5ff);
+    box-shadow: 0 0 8px var(--bub-glow, rgba(0, 229, 255, 0.6));
+    backdrop-filter: blur(4px);
+}
+
+.bub-gift-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
+}
+
+.bub-qty {
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 4px var(--bub-glow, rgba(0, 229, 255, 0.6));
+    line-height: 1;
+}
+
+/* Candidate name caption under the card. */
+.bub-name {
+    max-width: 130px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow:
+        0 0 6px var(--bub-glow, rgba(0, 229, 255, 0.6)),
+        0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* Float from below the screen, sway gently, exit above the top. */
+@keyframes floatUp {
+    0%   { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+    7%   { transform: translateY(-7vh) translateX(var(--sway, 12px)) scale(1.05); opacity: 1; }
+    12%  { transform: translateY(-12vh) translateX(var(--sway, 12px)) scale(1); opacity: 1; }
+    35%  { transform: translateY(-36vh) translateX(calc(var(--sway, 12px) * -1)) scale(1); opacity: 1; }
+    60%  { transform: translateY(-62vh) translateX(var(--sway, 12px)) scale(1); opacity: 1; }
+    85%  { transform: translateY(-88vh) translateX(calc(var(--sway, 12px) * -0.6)) scale(0.95); opacity: 0.85; }
+    100% { transform: translateY(calc(-100vh - 240px)) translateX(0) scale(0.9); opacity: 0; }
+}
