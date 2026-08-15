@@ -97,3 +97,21 @@ async def test_leaderboard_sql_aggregation():
     assert (alice["total_diamonds"], alice["total_gifts"]) == (50, 6)
     assert nully["nickname"] == "nully"  # NULL nickname falls back to username
     assert (nully["total_diamonds"], nully["total_gifts"]) == (6, 2)
+
+
+async def test_write_recovers_from_dead_connection():
+    """A broken underlying sqlite connection must self-heal on the next write."""
+    await database.init_db()
+
+    # Kill the raw sqlite connection (on its own worker thread) behind
+    # aiosqlite's back, so the wrapper thinks it is still open.
+    conn = await database._get_shared_db()
+    await conn._execute(conn._conn.close)
+
+    # The first attempt fails, _execute_write resets the shared connection,
+    # the retry reopens a fresh one, and the write succeeds.
+    session_id = await database.create_session("recovery_test")
+    assert session_id
+
+    # And the connection keeps working afterwards.
+    assert await database.create_session("recovery_test_2")

@@ -74,6 +74,38 @@ class get_db_connection:
         # Intentionally do not close the shared connection.
         return False
 
+async def _reset_shared_db() -> None:
+    """Discards the shared connection so the next access reopens a fresh one."""
+    global _shared_db
+    if _shared_db is not None:
+        try:
+            await _shared_db.close()
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Ignoring error while resetting DB connection: {e}")
+        finally:
+            _shared_db = None
+
+async def _execute_write(sql: str, params: tuple = ()):
+    """Runs a single write statement with one automatic recovery attempt.
+
+    If the shared connection errors out (stale handle, corruption, etc.) it is
+    discarded and reopened, then the statement is retried once. Returns the
+    cursor so callers can read rowcount / lastrowid.
+    """
+    last_err: Exception | None = None
+    async with _write_lock:
+        for attempt in (1, 2):
+            try:
+                db = await _get_shared_db()
+                cursor = await db.execute(sql, params)
+                await db.commit()
+                return cursor
+            except aiosqlite.Error as e:
+                last_err = e
+                logger.warning(f"DB write failed (attempt {attempt}/2): {e}")
+                await _reset_shared_db()
+    raise last_err
+
 async def init_db():
     """Initializes the database and creates the necessary tables if they do not exist."""
     os.makedirs(DB_DIR, exist_ok=True)
@@ -148,18 +180,15 @@ async def save_poll_round(
     ended_at: str,
 ) -> int:
     """Archives a completed voting round. Returns the new round's row id."""
-    db = await _get_shared_db()
-    async with _write_lock:
-        cursor = await db.execute(
-            """
-            INSERT INTO poll_rounds
-                (round_name, title, total_votes, candidates, duration_seconds, started_at, ended_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (round_name, title, total_votes, json.dumps(candidates), duration_seconds, started_at, ended_at),
-        )
-        await db.commit()
-        return cursor.lastrowid
+    cursor = await _execute_write(
+        """
+        INSERT INTO poll_rounds
+            (round_name, title, total_votes, candidates, duration_seconds, started_at, ended_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (round_name, title, total_votes, json.dumps(candidates), duration_seconds, started_at, ended_at),
+    )
+    return cursor.lastrowid
 
 
 async def get_poll_rounds(limit: int = 100) -> list[dict]:
@@ -193,18 +222,12 @@ async def get_poll_rounds(limit: int = 100) -> list[dict]:
 
 async def delete_poll_round(round_id: int) -> None:
     """Deletes a single archived round by id."""
-    db = await _get_shared_db()
-    async with _write_lock:
-        await db.execute("DELETE FROM poll_rounds WHERE id = ?", (round_id,))
-        await db.commit()
+    await _execute_write("DELETE FROM poll_rounds WHERE id = ?", (round_id,))
 
 
 async def clear_poll_rounds() -> None:
     """Deletes all archived rounds."""
-    db = await _get_shared_db()
-    async with _write_lock:
-        await db.execute("DELETE FROM poll_rounds")
-        await db.commit()
+    await _execute_write("DELETE FROM poll_rounds")
 
 # ---------------------------------------------------------------------------
 # Active poll persistence (restart-safe voting state)
@@ -212,14 +235,11 @@ async def clear_poll_rounds() -> None:
 
 async def save_active_poll(state: dict) -> None:
     """Upserts the active poll state blob (single row)."""
-    db = await _get_shared_db()
-    async with _write_lock:
-        await db.execute(
-            "INSERT INTO active_poll (id, state) VALUES (1, ?) "
-            "ON CONFLICT(id) DO UPDATE SET state = excluded.state;",
-            (json.dumps(state),),
-        )
-        await db.commit()
+    await _execute_write(
+        "INSERT INTO active_poll (id, state) VALUES (1, ?) "
+        "ON CONFLICT(id) DO UPDATE SET state = excluded.state;",
+        (json.dumps(state),),
+    )
 
 async def get_active_poll() -> dict | None:
     """Returns the persisted active poll state, or None."""
@@ -235,10 +255,7 @@ async def get_active_poll() -> dict | None:
 
 async def clear_active_poll() -> None:
     """Removes the persisted active poll row."""
-    db = await _get_shared_db()
-    async with _write_lock:
-        await db.execute("DELETE FROM active_poll;")
-        await db.commit()
+    await _execute_write("DELETE FROM active_poll;")
 
 # ---------------------------------------------------------------------------
 # Custom gift catalog (user-added gifts for the Gift Boost dropdown)
@@ -253,35 +270,26 @@ async def get_custom_gifts() -> list[dict]:
 
 async def add_custom_gift(name: str, diamonds: int) -> None:
     """Adds (or updates) a user-defined gift."""
-    db = await _get_shared_db()
-    async with _write_lock:
-        await db.execute(
-            "INSERT INTO custom_gifts (name, diamonds) VALUES (?, ?) "
-            "ON CONFLICT(name) DO UPDATE SET diamonds = excluded.diamonds;",
-            (name, diamonds),
-        )
-        await db.commit()
+    await _execute_write(
+        "INSERT INTO custom_gifts (name, diamonds) VALUES (?, ?) "
+        "ON CONFLICT(name) DO UPDATE SET diamonds = excluded.diamonds;",
+        (name, diamonds),
+    )
 
 async def delete_custom_gift(name: str) -> bool:
     """Removes a user-defined gift. Returns True if a row was deleted."""
-    db = await _get_shared_db()
-    async with _write_lock:
-        cursor = await db.execute("DELETE FROM custom_gifts WHERE name = ?;", (name,))
-        await db.commit()
-        return cursor.rowcount > 0
+    cursor = await _execute_write("DELETE FROM custom_gifts WHERE name = ?;", (name,))
+    return cursor.rowcount > 0
 
 async def create_session(username: str) -> str:
     """Creates a new LIVE session and stores it in the database. Returns the session ID."""
     session_id = uuid.uuid4().hex[:8]  # Compact 8-character ID
     connected_at = datetime.now(timezone.utc).isoformat()
 
-    db = await _get_shared_db()
-    async with _write_lock:
-        await db.execute(
-            "INSERT INTO live_sessions (id, username, connected_at, status) VALUES (?, ?, ?, ?)",
-            (session_id, username, connected_at, "CONNECTED")
-        )
-        await db.commit()
+    await _execute_write(
+        "INSERT INTO live_sessions (id, username, connected_at, status) VALUES (?, ?, ?, ?)",
+        (session_id, username, connected_at, "CONNECTED"),
+    )
 
     return session_id
 
@@ -289,15 +297,12 @@ async def close_session(session_id: str):
     """Closes an active session by updating status and disconnection timestamp."""
     disconnected_at = datetime.now(timezone.utc).isoformat()
     try:
-        db = await _get_shared_db()
-        async with _write_lock:
-            await db.execute(
-                "UPDATE live_sessions SET disconnected_at = ?, status = ? WHERE id = ?",
-                (disconnected_at, "DISCONNECTED", session_id)
-            )
-            await db.commit()
-    except aiosqlite.OperationalError as e:
-        logger.warning(f"Database locked or error closing session {session_id} (safe to ignore during shutdown): {e}")
+        await _execute_write(
+            "UPDATE live_sessions SET disconnected_at = ?, status = ? WHERE id = ?",
+            (disconnected_at, "DISCONNECTED", session_id),
+        )
+    except aiosqlite.Error as e:
+        logger.warning(f"Database error closing session {session_id} (safe to ignore during shutdown): {e}")
 
 async def insert_event(
     session_id: str,
@@ -315,18 +320,15 @@ async def insert_event(
     """
     payload_str = json.dumps(payload)
     try:
-        db = await _get_shared_db()
-        async with _write_lock:
-            cursor = await db.execute(
-                """
-                INSERT OR IGNORE INTO tiktok_events (id, session_id, event_type, username, nickname, payload, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (event_id, session_id, event_type, username, nickname, payload_str, created_at),
-            )
-            await db.commit()
-            return cursor.rowcount > 0
-    except aiosqlite.OperationalError as e:
+        cursor = await _execute_write(
+            """
+            INSERT OR IGNORE INTO tiktok_events (id, session_id, event_type, username, nickname, payload, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (event_id, session_id, event_type, username, nickname, payload_str, created_at),
+        )
+        return cursor.rowcount > 0
+    except aiosqlite.Error as e:
         logger.error(f"Failed to insert event {event_id} due to database error: {e}")
         return False
 
@@ -396,11 +398,8 @@ async def get_session_leaderboard(session_id: str) -> list[dict]:
 async def purge_events_before(before_iso: str) -> int:
     """Deletes all events with created_at older than the given ISO timestamp.
     Returns the number of deleted rows."""
-    db = await _get_shared_db()
-    async with _write_lock:
-        cursor = await db.execute(
-            "DELETE FROM tiktok_events WHERE created_at < ?",
-            (before_iso,),
-        )
-        await db.commit()
-        return cursor.rowcount
+    cursor = await _execute_write(
+        "DELETE FROM tiktok_events WHERE created_at < ?",
+        (before_iso,),
+    )
+    return cursor.rowcount

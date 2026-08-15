@@ -197,6 +197,9 @@ class TikTokLiveProvider(TikTokProvider):
             return getattr(self.client, "connected", False)
         return False
 
+    async def is_connecting(self) -> bool:
+        return self._is_connecting
+
     def _register_handlers(self):
         if not self.client:
             return

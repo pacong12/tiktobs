@@ -281,7 +281,7 @@ async def connect_to_live(req: ConnectRequest):
 
 @app.post("/api/disconnect")
 async def disconnect_live():
-    if not await live_provider.is_connected() and not live_provider._is_connecting:
+    if not await live_provider.is_connected() and not await live_provider.is_connecting():
         return {"status": "already_disconnected"}
 
     await live_provider.disconnect()
@@ -295,7 +295,7 @@ async def disconnect_live():
 @app.get("/api/status")
 async def get_connection_status():
     is_connected = await live_provider.is_connected()
-    is_connecting = live_provider._is_connecting
+    is_connecting = await live_provider.is_connecting()
     
     status_str = "disconnected"
     if is_connected:

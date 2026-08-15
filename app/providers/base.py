@@ -29,3 +29,10 @@ class TikTokProvider(ABC):
     @abstractmethod
     async def is_connected(self) -> bool:
         """Returns True if currently connected to a stream, False otherwise."""
+
+    async def is_connecting(self) -> bool:
+        """Returns True while a connection attempt is in progress.
+
+        Concrete providers override this; the default is False so callers
+        never need to reach into private attributes."""
+        return False

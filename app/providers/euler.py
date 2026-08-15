@@ -165,6 +165,10 @@ class EulerWebSocketProvider(TikTokProvider):
         """Returns connection state."""
         return self._is_connected_flag
 
+    async def is_connecting(self) -> bool:
+        """Returns True while a connection attempt is in progress."""
+        return self._is_connecting
+
     async def _handle_websocket_message(self, message: str):
         """Translates raw EulerStream events into standard normalized schema."""
         try:
