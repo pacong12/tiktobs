@@ -120,6 +120,7 @@ function renderPoll(poll) {
                 <div class="candidate-number">${String(c.id).padStart(2, '0')}</div>
                 ${giftHtml}
             </div>
+            <div class="candidate-info-bg"></div>
             <div class="candidate-info">
                 <div class="candidate-info-row">
                     <span class="candidate-votes">${c.votes.toLocaleString()}</span>
