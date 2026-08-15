@@ -101,6 +101,14 @@ body {
     filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
 }
 
+/* Official TikTok gift icon inside the badge */
+.gift-emoji-badge .gift-icon-img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    display: block;
+}
+
 .gift-info {
     flex-grow: 1;
     min-width: 0;
