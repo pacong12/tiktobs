@@ -97,31 +97,34 @@ function renderPoll(poll) {
     // Rank candidates: most votes first. Sort a copy descending.
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
-    // Build a horizontal row card: name + vote chip on top, progress bar +
-    // percentage at the bottom, and the photo as a floating badge in the
-    // top-right corner (styled entirely via CSS).
+    // Build a card where the candidate photo fills the whole card; the vote
+    // badge floats in the top-right corner and the progress bar + percentage
+    // float along the bottom (all layered above the photo).
     const buildCard = (c) => {
         const isLeading = maxVotes > 0 && c.votes === maxVotes;
         const card = document.createElement('div');
         card.className = `glass-card candidate-card ${isLeading ? 'leading' : ''}`;
 
-        const avatarHtml = c.image_url
-            ? `<img src="${escapeHTML(c.image_url)}" class="candidate-avatar" alt="Avatar">`
-            : `<div class="candidate-avatar default-avatar" style="background: ${getGradientForName(c.name)};">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
+        const bgHtml = c.image_url
+            ? `<img src="${escapeHTML(c.image_url)}" class="candidate-bg" alt="">`
+            : `<div class="candidate-bg default-avatar" style="background: ${getGradientForName(c.name)};">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
 
         card.innerHTML = `
+            <div class="candidate-media">
+                ${bgHtml}
+                <div class="candidate-scrim"></div>
+            </div>
             <div class="candidate-number">${c.id}</div>
-            <div class="candidate-top">
+            <div class="candidate-badge"><span class="votes-value">${c.votes.toLocaleString()}</span> votes</div>
+            <div class="candidate-overlay">
                 <span class="candidate-name">${escapeHTML(c.name)}</span>
-                <span class="candidate-votes-chip"><span class="votes-value">${c.votes.toLocaleString()}</span> votes</span>
-            </div>
-            <div class="candidate-bottom">
-                <div class="progress-track">
-                    <div class="progress-fill" style="width: ${c.percentage}%"></div>
+                <div class="candidate-bottom">
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width: ${c.percentage}%"></div>
+                    </div>
+                    <span class="candidate-percentage">${c.percentage}%</span>
                 </div>
-                <span class="candidate-percentage">${c.percentage}%</span>
             </div>
-            ${avatarHtml}
         `;
         return card;
     };
