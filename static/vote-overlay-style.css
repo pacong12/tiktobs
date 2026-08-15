@@ -245,16 +245,14 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-/* Percentage badge beside the vote count */
+/* Percentage beside the vote count: NO badge, same size/style as votes */
 .candidate-pct {
-    font-size: 13px;
+    font-size: 30px;
     font-weight: 800;
+    line-height: 1;
     color: #ffffff;
-    background: rgba(8, 8, 15, 0.72);
-    border: 1px solid var(--card-color);
-    padding: 3px 8px;
-    clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
-    text-shadow: 0 0 6px var(--card-glow);
+    -webkit-text-stroke: 1.25px var(--card-color);
+    text-shadow: 0 0 12px var(--card-glow), 0 2px 6px rgba(0, 0, 0, 0.85);
     font-variant-numeric: tabular-nums;
 }
 
@@ -404,8 +402,8 @@ body {
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-pct,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-pct {
-    font-size: 16px;
-    padding: 4px 10px;
+    font-size: 42px;
+    -webkit-text-stroke-width: 1.75px;
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name {
@@ -444,8 +442,8 @@ body {
     -webkit-text-stroke-width: 1px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-pct {
-    font-size: 10px;
-    padding: 2px 6px;
+    font-size: 20px;
+    -webkit-text-stroke-width: 1px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name {
     font-size: 16px;
@@ -482,8 +480,8 @@ body {
     -webkit-text-stroke-width: 0.9px;
 }
 .candidate-grid.grid-rest .candidate-pct {
-    font-size: 9px;
-    padding: 1px 5px;
+    font-size: 16px;
+    -webkit-text-stroke-width: 0.9px;
 }
 .candidate-grid.grid-rest .candidate-name {
     font-size: 14px;
