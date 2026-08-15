@@ -262,7 +262,7 @@ body {
 .candidate-name {
     min-width: 0;
     max-width: 100%;
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 800;
     color: #ffffff;
     white-space: nowrap;
@@ -407,7 +407,7 @@ body {
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name {
-    font-size: 19px;
+    font-size: 27px;
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .card-badge.badge-win,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge.badge-win {
@@ -446,7 +446,7 @@ body {
     padding: 2px 6px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name {
-    font-size: 12px;
+    font-size: 16px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge.badge-win {
     font-size: 10px;
@@ -484,7 +484,7 @@ body {
     padding: 1px 5px;
 }
 .candidate-grid.grid-rest .candidate-name {
-    font-size: 10px;
+    font-size: 14px;
 }
 .candidate-grid.grid-rest .card-badge.badge-win {
     font-size: 8px;
