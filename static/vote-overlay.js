@@ -91,7 +91,7 @@ function renderPoll(poll) {
         const giftLabel = (c.gift_name || '').trim();
         const badgeParts = [];
         if (wins > 0) {
-            badgeParts.push(`<span class="card-badge badge-win" title="Round wins this session">&#127942; &times;${wins}</span>`);
+            badgeParts.push(`<span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span>`);
         }
         if (giftLabel) {
             badgeParts.push(`<span class="card-badge badge-gift">${getGiftEmoji(giftLabel)} ${escapeHTML(giftLabel)}</span>`);

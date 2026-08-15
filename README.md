@@ -119,7 +119,7 @@ page ("Running Text" card) and apply to open overlays instantly.
 
 Each candidate card on the vote overlay can carry two floating badges:
 
-- **Win badge** (🏆 ×N) — how many poll rounds that candidate has won so far
+- **Win badge** (win ×N) — how many poll rounds that candidate has won so far
   in the current session. A win is recorded every time a round ends with a
   single clear winner (at least one vote cast, no tie). Wins are stored in the
   database keyed by the live session (or `local` when no live connection), so
