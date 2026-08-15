@@ -130,6 +130,13 @@ Each candidate card on the vote overlay can carry two floating badges:
 Both badges update live via WebSocket and scale down automatically on the
 smaller bento-grid cards.
 
+### Reuse candidates from history
+
+On the Poll Admin page, every card in the **Riwayat Ronde** (round history)
+panel has a **♻️ Pakai lagi** button. Clicking it refills the candidate setup
+form with that round's candidates (name, photo URL, and assigned gift), so you
+can re-run the same match-up without retyping anything.
+
 ---
 
 ## TikTok Gift Schema (streak / combo handling)

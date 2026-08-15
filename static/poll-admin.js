@@ -77,9 +77,9 @@ function buildGiftControl(preset) {
 
     // Pre-fill from an existing value (e.g. when reopening an active poll).
     if (preset) {
-        const known = allGifts.some(g => g.name.toLowerCase() === preset.toLowerCase());
+        const known = GIFT_CATALOG.some(g => g.name.toLowerCase() === preset.toLowerCase());
         if (known) {
-            select.value = allGifts.find(g => g.name.toLowerCase() === preset.toLowerCase()).name;
+            select.value = GIFT_CATALOG.find(g => g.name.toLowerCase() === preset.toLowerCase()).name;
         } else {
             select.value = '__custom__';
             manual.value = preset;
@@ -95,6 +95,55 @@ function buildGiftControl(preset) {
     wrap.appendChild(select);
     wrap.appendChild(manual);
     return wrap;
+}
+
+// Builds one candidate input row, optionally pre-filled (used when loading
+// a past round's candidates back into the setup form).
+function createCandidateRow(name = '', imageUrl = '', giftPreset = null) {
+    const rowCount = candidatesInputList.querySelectorAll('.candidate-input-row').length + 1;
+    const row = document.createElement('div');
+    row.className = 'candidate-input-row';
+    row.innerHTML = `
+        <input type="text" class="field-input candidate-name-input" placeholder="Pilihan ${rowCount}">
+        <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
+        <div class="candidate-gift-cell"></div>
+        <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
+    `;
+    row.querySelector('.candidate-name-input').value = name;
+    row.querySelector('.candidate-image-input').value = imageUrl || '';
+    row.querySelector('.candidate-gift-cell').replaceWith(buildGiftControl(giftPreset));
+    return row;
+}
+
+// Replaces the whole candidate form with the candidates of an archived round.
+function loadCandidatesIntoForm(candidates) {
+    if (!Array.isArray(candidates) || candidates.length < 2) {
+        alert('Ronde ini tidak punya cukup kandidat untuk dipakai ulang.');
+        return;
+    }
+    candidatesInputList.innerHTML = '';
+    candidates.forEach(c => {
+        candidatesInputList.appendChild(
+            createCandidateRow(c.name || '', c.image_url || '', c.gift_name || null)
+        );
+    });
+    // Bring the form into view so the user sees the loaded candidates.
+    document.getElementById('poll-setup-section')?.scrollIntoView({ behavior: 'smooth' });
+    showToast(`${candidates.length} kandidat dari riwayat dimuat ke form.`);
+}
+
+// Small transient toast for admin feedback.
+function showToast(message) {
+    let toast = document.getElementById('admin-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'admin-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
 // Reads the chosen gift name from a candidate row (dropdown or manual entry).
@@ -158,17 +207,7 @@ function setupEventListeners() {
     // Add option candidate rows
     if (addCandidateBtn) {
         addCandidateBtn.addEventListener('click', () => {
-            const rowCount = candidatesInputList.querySelectorAll('.candidate-input-row').length + 1;
-            const newRow = document.createElement('div');
-            newRow.className = 'candidate-input-row';
-            newRow.innerHTML = `
-                <input type="text" class="field-input candidate-name-input" placeholder="Pilihan ${rowCount}">
-                <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
-                <div class="candidate-gift-cell"></div>
-                <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
-            `;
-            newRow.querySelector('.candidate-gift-cell').replaceWith(buildGiftControl());
-            candidatesInputList.appendChild(newRow);
+            candidatesInputList.appendChild(createCandidateRow());
         });
     }
 
@@ -215,6 +254,22 @@ function setupEventListeners() {
     // Stop poll
     if (stopPollBtn) {
         stopPollBtn.addEventListener('click', handleStopPoll);
+    }
+
+    // Load a past round's candidates back into the setup form
+    if (roundsHistoryList) {
+        roundsHistoryList.addEventListener('click', (e) => {
+            const btn = e.target.closest('.round-reuse-btn');
+            if (!btn) return;
+            const card = btn.closest('.round-card');
+            if (!card || !card.dataset.candidates) return;
+            try {
+                const candidates = JSON.parse(card.dataset.candidates);
+                loadCandidatesIntoForm(candidates);
+            } catch (err) {
+                console.error('Failed to parse archived candidates:', err);
+            }
+        });
     }
 
     // Clear round history
@@ -384,6 +439,14 @@ function renderRounds(rounds) {
 
         const card = document.createElement('div');
         card.className = 'round-card';
+        // Archived candidates (name, image_url, gift_name) travel with the
+        // card so the "Pakai lagi" button can refill the setup form.
+        const reusableCandidates = (r.candidates || []).map(c => ({
+            name: c.name || '',
+            image_url: c.image_url || '',
+            gift_name: c.gift_name || ''
+        }));
+        card.dataset.candidates = JSON.stringify(reusableCandidates);
         card.innerHTML = `
             <div class="round-card-head">
                 <div style="min-width:0;">
@@ -391,7 +454,10 @@ function renderRounds(rounds) {
                     <div class="round-title">${escapeHTML(r.title)}</div>
                     <div class="round-meta">${endedStr} • durasi: ${durText} • total: ${r.total_votes} suara</div>
                 </div>
-                <button class="round-delete-btn" data-id="${r.id}" title="Hapus ronde">🗑️</button>
+                <div class="round-card-actions">
+                    <button class="round-reuse-btn" title="Pakai kandidat ronde ini lagi" type="button">♻️ Pakai lagi</button>
+                    <button class="round-delete-btn" data-id="${r.id}" title="Hapus ronde">🗑️</button>
+                </div>
             </div>
             ${rowsHtml}
         `;

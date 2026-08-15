@@ -1594,3 +1594,53 @@ body {
     font-variant-numeric: tabular-nums;
     text-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
 }
+
+/* --- Round history: reuse-candidates button + action cluster --- */
+.round-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.round-reuse-btn {
+    background: rgba(46, 213, 115, 0.10);
+    border: 1px solid rgba(46, 213, 115, 0.3);
+    color: #2ed573;
+    padding: 4px 9px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+}
+.round-reuse-btn:hover {
+    background: rgba(46, 213, 115, 0.22);
+    box-shadow: 0 0 10px rgba(46, 213, 115, 0.25);
+}
+
+/* --- Small transient admin toast --- */
+#admin-toast {
+    position: fixed;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: rgba(18, 14, 30, 0.95);
+    border: 1px solid rgba(46, 213, 115, 0.4);
+    color: #eafff1;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 11px 22px;
+    border-radius: 30px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 999;
+}
+#admin-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
