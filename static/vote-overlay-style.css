@@ -82,29 +82,15 @@ body {
     gap: 14px;
 }
 
-/* GRID GROUPS: top 2 (rank #1 & #2) in 2 columns, the rest in 3 columns. */
-.candidate-grid {
-    display: grid;
-    gap: 12px;
-}
-.candidate-grid.grid-top  { grid-template-columns: repeat(2, 1fr); }
-.candidate-grid.grid-rest { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
-/* CANDIDATE CARD (vertical: photo on top, name + progress + votes below) */
+/* CANDIDATE CARD (horizontal row: name + votes on top, progress bar +
+   percentage at the bottom, avatar as a floating badge in the top-right corner) */
 .candidate-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 8px;
-    padding: 14px 12px;
     position: relative;
+    padding: 12px 78px 12px 18px; /* right space reserved for the floating badge */
     overflow: visible;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     animation: card-pop-in 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
-
-.grid-rest .candidate-card { padding: 10px 8px; gap: 6px; }
 
 @keyframes card-pop-in {
     from { opacity: 0; transform: scale(0.9) translateY(12px); }
@@ -164,14 +150,28 @@ body {
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
 }
 
-/* Candidate image/avatar (square with rounded corners; size set inline per rank) */
+/* Candidate image as a small floating badge in the card's top-right corner */
 .candidate-avatar {
-    border-radius: 16px;
+    position: absolute;
+    top: -10px;
+    right: -8px;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
     object-fit: cover;
-    border: 3px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-    flex-shrink: 0;
-    transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2.5px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    z-index: 6;
+    animation: badge-float 3s ease-in-out infinite;
+}
+
+.candidate-avatar.default-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 24px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .candidate-card.leading .candidate-avatar {
@@ -179,30 +179,29 @@ body {
     box-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
 }
 
-/* Candidate Main Info and Progress Bar (full width in vertical card) */
-.candidate-main {
-    width: 100%;
+@keyframes badge-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
 }
 
-.candidate-info {
+/* Top row: candidate name (left) + vote chip (right) */
+.candidate-top {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: baseline;
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: 10px;
+    margin-bottom: 8px;
 }
 
 .candidate-name {
-    font-size: 15px;
+    flex: 1;
+    font-size: 16px;
     font-weight: 600;
     color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
 }
-
-.grid-rest .candidate-name { font-size: 13px; }
 
 .candidate-card.leading .candidate-name {
     color: #ffd700;
@@ -210,10 +209,40 @@ body {
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
+/* Vote chip on the top row */
+.candidate-votes-chip {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.candidate-votes-chip .votes-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Bottom row: floating progress bar + percentage */
+.candidate-bottom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.candidate-bottom .progress-track {
+    flex: 1;
+}
+
 .candidate-percentage {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 800;
     color: #00f0ff;
+    min-width: 44px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .candidate-card.leading .candidate-percentage {
@@ -271,19 +300,6 @@ body {
     to { background-position: 20px 0, 0 0; }
 }
 
-/* Vote Count indicator (centered under progress bar) */
-.candidate-votes {
-    text-align: center;
-}
-
-.votes-value {
-    display: block;
-    font-size: 17px;
-    font-weight: 700;
-    color: #ffffff;
-    font-variant-numeric: tabular-nums;
-}
-
 /* FLICKERING FIRE EFFECT FOR LEADER */
 .candidate-card.leading .votes-value::after {
     content: " 🔥";
@@ -295,14 +311,6 @@ body {
 @keyframes fire-flicker-anim {
     0% { transform: scale(1); filter: drop-shadow(0 0 2px #ff4500); }
     100% { transform: scale(1.2); filter: drop-shadow(0 0 8px #ff8c00); }
-}
-
-.votes-label {
-    display: block;
-    font-size: 9px;
-    color: rgba(255, 255, 255, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 /* Footer Info */
