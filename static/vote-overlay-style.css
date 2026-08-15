@@ -22,7 +22,7 @@ body {
     gap: 14px;
 }
 
-/* Glassmorphism base card styling */
+/* Glassmorphism base card styling (header / inactive state only) */
 .glass-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
@@ -128,62 +128,25 @@ body {
     grid-row: span 2;
 }
 
-/* Bigger type on the featured rank-1 card (bento huge square / top3 wide card) */
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name { font-size: 16px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-percentage,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-percentage { font-size: 20px; min-width: 56px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .progress-track,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .progress-track { height: 16px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-overlay,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-overlay { padding: 16px 18px; gap: 8px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badge { padding: 6px 14px; font-size: 12px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge .votes-value,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badge .votes-value { font-size: 16px; }
-
-/* Tighter type on the 1x1 bento cells; the merged pill stacks the name BELOW
-   the number chip and stays clear of the votes chip on the top-right */
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-head {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    border-radius: 16px;
-    padding: 6px 9px;
-    max-width: calc(100% - 84px);
-}
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name {
-    font-size: 12px;
-    max-width: 100%;
-}
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-overlay { padding: 10px 12px; gap: 5px; }
-
-/* Compact internals for the small rest-tier squares */
-.candidate-grid.grid-rest .candidate-head {
-    top: 4px;
-    left: 4px;
-    gap: 3px;
-    flex-direction: column;
-    align-items: flex-start;
-    border-radius: 13px;
-    padding: 4px 7px;
-    max-width: calc(100% - 64px);
-}
-.candidate-grid.grid-rest .candidate-name { font-size: 10px; max-width: 100%; }
-.candidate-grid.grid-rest .candidate-percentage { font-size: 11px; min-width: 32px; }
-.candidate-grid.grid-rest .candidate-badge { padding: 3px 8px; font-size: 8px; top: -8px; right: -6px; }
-.candidate-grid.grid-rest .candidate-badge .votes-value { font-size: 10px; }
-.candidate-grid.grid-rest .progress-track { height: 8px; }
-.candidate-grid.grid-rest .candidate-overlay { padding: 7px 9px; gap: 3px; }
-.candidate-grid.grid-rest .candidate-number { min-width: 20px; height: 20px; font-size: 10px; }
-
-/* CANDIDATE CARD — the photo fills the entire card; the name, vote badge and
-   progress bar float on top of it */
+/* ============================================================
+   CANDIDATE CARD — futuristic transparent frame.
+   The card itself is transparent (hosts usually upload no-bg PNGs),
+   framed by a neon border in the candidate's own color. Every accent
+   (number chip, votes outline, percentage, win badge) follows
+   --card-color, set per card from the Poll Admin color picker.
+   ============================================================ */
 .candidate-card {
+    --card-color: #00e5ff;
+    --card-glow: rgba(0, 229, 255, 0.55);
+    --card-glow-soft: rgba(0, 229, 255, 0.26);
     position: relative;
     height: 100%;
     padding: 0;
     overflow: visible;
+    background: linear-gradient(160deg, var(--card-fill-a) 0%, var(--card-fill-b) 60%, transparent 100%);
+    border: 2px solid var(--card-color);
+    border-radius: 16px;
+    box-shadow: 0 0 14px var(--card-glow-soft), inset 0 0 16px var(--card-glow-soft);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     animation: card-pop-in 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
@@ -193,11 +156,10 @@ body {
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* DRAMATIC HIGH-IMPACT LEADING CARD */
+/* Leading card: same candidate color, just a stronger neon presence */
 .candidate-card.leading {
-    border: 2px solid #ffd700;
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(22, 16, 40, 0.9) 50%, rgba(255, 215, 0, 0.15) 100%);
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.45), inset 0 0 10px rgba(255, 215, 0, 0.2);
+    border-width: 3px;
+    box-shadow: 0 0 24px var(--card-glow), inset 0 0 20px var(--card-glow-soft);
     transform: scale(1.02);
     z-index: 5;
 }
@@ -220,56 +182,8 @@ body {
     50% { transform: translateX(-50%) rotate(-6deg) translateY(-5px); }
 }
 
-/* Unified number+name pill (top-left corner) */
-.candidate-head {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    z-index: 6;
-    /* leave room for the votes chip on the top-right */
-    max-width: calc(100% - 96px);
-    pointer-events: none;
-    /* number + name merged into a single pill */
-    background: rgba(14, 12, 26, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 999px;
-    padding: 4px 12px 4px 4px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
-
-/* Leading candidate gets a subtle gold outline on the merged pill */
-.candidate-card.leading .candidate-head {
-    border-color: rgba(255, 215, 0, 0.55);
-}
-
-.candidate-number {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-shrink: 0;
-    min-width: 26px;
-    height: 26px;
-    background: rgba(20, 16, 34, 0.95);
-    border-radius: 50%;
-    font-size: 13px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.candidate-card.leading .candidate-number {
-    background: linear-gradient(135deg, #ffd700, #ffa500);
-    color: #12121c;
-    border-color: #ffd700;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-}
-
 /* Photo fills the whole card (clipped by .candidate-media so the crown and
-   floating badges can sit outside the card edges) */
+   edge badges can sit outside the card edges) */
 .candidate-media {
     position: absolute;
     inset: 0;
@@ -295,172 +209,97 @@ body {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-/* Dark gradient scrim so overlaid text stays readable on any photo */
-.candidate-scrim {
+/* ============================================================
+   INFO STACK (bottom): one HORIZONTAL row [number][votes][%]
+   with the candidate name underneath it. Thin gradient card bg.
+   ============================================================ */
+.candidate-info {
     position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        180deg,
-        rgba(10, 8, 20, 0.25) 0%,
-        rgba(10, 8, 20, 0.45) 55%,
-        rgba(10, 8, 20, 0.82) 100%
-    );
-}
-
-/* Floating vote badge in the top-right corner */
-.candidate-badge {
-    position: absolute;
-    top: -10px;
-    right: -8px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
     z-index: 6;
-    background: rgba(14, 12, 26, 0.85);
-    border: 1.5px solid rgba(255, 255, 255, 0.25);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 11px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.7);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    animation: badge-float 3s ease-in-out infinite;
+    pointer-events: none;
 }
 
-.candidate-badge .votes-value {
-    font-size: 14px;
+/* Horizontal row: number chip + votes + percentage */
+.candidate-info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+/* Sequence number: wrapped in a solid chip the same color as the border */
+.candidate-number {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    background: var(--card-color);
+    color: #08080f;
+    font-size: 16px;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
+    filter: drop-shadow(0 0 6px var(--card-glow));
+}
+
+/* Votes + percentage row */
+.candidate-votes-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Vote count: white digits outlined in the border color */
+.candidate-votes {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1;
     color: #ffffff;
+    -webkit-text-stroke: 1.25px var(--card-color);
+    text-shadow: 0 0 12px var(--card-glow), 0 2px 6px rgba(0, 0, 0, 0.85);
     font-variant-numeric: tabular-nums;
 }
 
-.candidate-card.leading .candidate-badge {
-    background: linear-gradient(135deg, #ffd700, #ffa500);
-    border-color: #ffd700;
-    color: rgba(18, 18, 28, 0.8);
-    box-shadow: 0 0 16px rgba(255, 215, 0, 0.6);
+/* Percentage badge beside the vote count */
+.candidate-pct {
+    font-size: 13px;
+    font-weight: 800;
+    color: #ffffff;
+    background: rgba(8, 8, 15, 0.72);
+    border: 1px solid var(--card-color);
+    padding: 3px 8px;
+    clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
+    text-shadow: 0 0 6px var(--card-glow);
+    font-variant-numeric: tabular-nums;
 }
 
-.candidate-card.leading .candidate-badge .votes-value {
-    color: #12121c;
-}
-
-@keyframes badge-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
-
-/* Floating content layer: name at the bottom-left, bar + % along the bottom */
-.candidate-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 4;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: 6px;
-    padding: 12px 14px;
-}
-
+/* Candidate name under the votes row */
 .candidate-name {
     min-width: 0;
-    font-size: 13px;
-    font-weight: 700;
+    max-width: 100%;
+    font-size: 15px;
+    font-weight: 800;
     color: #ffffff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-}
-
-.candidate-card.leading .candidate-name {
-    color: #ffd700;
-    font-weight: 800;
-    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.7);
-}
-
-/* Bottom row: floating progress bar + percentage */
-.candidate-bottom {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.candidate-bottom .progress-track {
-    flex: 1;
-}
-
-.candidate-percentage {
-    font-size: 15px;
-    font-weight: 800;
-    color: #00f0ff;
-    min-width: 44px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
-.candidate-card.leading .candidate-percentage {
-    color: #ffd700;
-    text-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
-}
-
-/* Progress bar track (dark so it stays visible over bright photos) */
-.progress-track {
-    height: 12px;
-    background: rgba(8, 8, 16, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
-}
-
-/* CANDY STRIPE ANIMATED PROGRESS FILLS */
-.progress-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(
-        45deg,
-        rgba(255, 255, 255, 0.15) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(255, 255, 255, 0.15) 50%,
-        rgba(255, 255, 255, 0.15) 75%,
-        transparent 75%,
-        transparent
-    ), linear-gradient(90deg, #00f0ff, #0072ff);
-    background-size: 20px 20px, 100% 100%;
-    border-radius: 6px;
-    transition: width 0.8s cubic-bezier(0.1, 0.8, 0.25, 1);
-    animation: move-stripes 1.2s linear infinite;
-    box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
-}
-
-.candidate-card.leading .progress-fill {
-    background: linear-gradient(
-        45deg,
-        rgba(255, 255, 255, 0.2) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(255, 255, 255, 0.2) 50%,
-        rgba(255, 255, 255, 0.2) 75%,
-        transparent 75%,
-        transparent
-    ), linear-gradient(90deg, #ffd700, #ff8c00);
-    background-size: 20px 20px, 100% 100%;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
-}
-
-@keyframes move-stripes {
-    from { background-position: 0 0, 0 0; }
-    to { background-position: 20px 0, 0 0; }
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95), 0 0 10px var(--card-glow-soft);
 }
 
 /* FLICKERING FIRE EFFECT FOR LEADER */
-.candidate-card.leading .votes-value::after {
+.candidate-card.leading .candidate-votes::after {
     content: " 🔥";
-    font-size: 13px;
+    font-size: 0.55em;
     display: inline-block;
     animation: fire-flicker-anim 0.8s infinite alternate ease-in-out;
 }
@@ -468,6 +307,188 @@ body {
 @keyframes fire-flicker-anim {
     0% { transform: scale(1); filter: drop-shadow(0 0 2px #ff4500); }
     100% { transform: scale(1.2); filter: drop-shadow(0 0 8px #ff8c00); }
+}
+
+/* ============================================================
+   EDGE BADGES — win history + assigned gift, pinned onto the
+   top border edge, futuristic styling in the border color.
+   ============================================================ */
+.edge-badges {
+    position: absolute;
+    top: -13px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 7;
+    pointer-events: none;
+}
+
+.card-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    white-space: nowrap;
+    background: rgba(8, 8, 15, 0.88);
+    border: 1px solid var(--card-color);
+    box-shadow: 0 0 10px var(--card-glow-soft);
+}
+
+/* Win badge: skewed HUD tag following the border color */
+.card-badge.badge-win {
+    color: var(--card-color);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    padding: 4px 12px;
+    transform: skewX(-14deg);
+    text-shadow: 0 0 8px var(--card-glow);
+}
+
+/* Gift badge: official icon in a small color-matched frame */
+.card-badge.badge-gift {
+    padding: 3px;
+    border-radius: 8px;
+}
+
+/* Official TikTok gift icon */
+.card-badge .gift-icon {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+/* Combo toast keeps its own icon sizing */
+.combo-toast .gift-icon-toast {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+}
+
+/* ============================================================
+   TIER SCALING — featured rank-1 / bento 1x1 / rest squares
+   ============================================================ */
+
+/* Featured rank-1 (bento huge square / top3 champion): bigger everything */
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-info,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-info {
+    bottom: 14px;
+    left: 14px;
+    right: 14px;
+    gap: 8px;
+}
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-number,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-number {
+    min-width: 40px;
+    height: 40px;
+    font-size: 20px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+}
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-votes,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-votes {
+    font-size: 42px;
+    -webkit-text-stroke-width: 1.75px;
+}
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-pct,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-pct {
+    font-size: 16px;
+    padding: 4px 10px;
+}
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name {
+    font-size: 19px;
+}
+.candidate-grid.grid-bento .candidate-card.rank-1 .card-badge.badge-win,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge.badge-win {
+    font-size: 13px;
+    padding: 5px 14px;
+}
+.candidate-grid.grid-bento .candidate-card.rank-1 .card-badge .gift-icon,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge .gift-icon {
+    width: 34px;
+    height: 34px;
+}
+
+/* Bento 1x1 cells: compact stack */
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-info {
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    gap: 4px;
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-number {
+    min-width: 24px;
+    height: 24px;
+    font-size: 12px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%);
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-votes {
+    font-size: 20px;
+    -webkit-text-stroke-width: 1px;
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-pct {
+    font-size: 10px;
+    padding: 2px 6px;
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name {
+    font-size: 12px;
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .edge-badges {
+    top: -10px;
+    right: 8px;
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge.badge-win {
+    font-size: 9px;
+    padding: 3px 9px;
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge .gift-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Small rest-tier squares: tightest stack */
+.candidate-grid.grid-rest .candidate-info {
+    bottom: 6px;
+    left: 6px;
+    right: 6px;
+    gap: 3px;
+}
+.candidate-grid.grid-rest .candidate-number {
+    min-width: 20px;
+    height: 20px;
+    font-size: 10px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+}
+.candidate-grid.grid-rest .candidate-votes {
+    font-size: 16px;
+    -webkit-text-stroke-width: 0.9px;
+}
+.candidate-grid.grid-rest .candidate-pct {
+    font-size: 9px;
+    padding: 1px 5px;
+}
+.candidate-grid.grid-rest .candidate-name {
+    font-size: 10px;
+}
+.candidate-grid.grid-rest .edge-badges {
+    top: -9px;
+    right: 6px;
+    gap: 4px;
+}
+.candidate-grid.grid-rest .card-badge.badge-win {
+    font-size: 8px;
+    padding: 2px 7px;
+    letter-spacing: 0.8px;
+}
+.candidate-grid.grid-rest .card-badge .gift-icon {
+    width: 16px;
+    height: 16px;
 }
 
 /* Inactive State waiting indicator */
@@ -548,100 +569,4 @@ body {
     0%   { transform: scale(1); }
     45%  { transform: scale(1.45); }
     100% { transform: scale(1); }
-}
-
-/* ============================================================
-   CANDIDATE SESSION BADGES — accumulated wins + assigned gift
-   Rendered inside the bottom overlay (above the progress bar),
-   on top of the dark scrim: never covers the face and can never
-   collide with the head (number+name) or the votes chip.
-   ============================================================ */
-.candidate-badges {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 7px;
-    pointer-events: none;
-}
-
-.card-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 20px;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    line-height: 1;
-    white-space: nowrap;
-}
-
-/* Win badge: compact gold pill (text only) */
-.card-badge.badge-win {
-    background: linear-gradient(135deg, #ffd700, #ff9d00);
-    color: #241a02;
-    border: 1px solid rgba(255, 240, 180, 0.9);
-    padding: 4px 10px;
-    font-size: 12px;
-    box-shadow: 0 0 12px rgba(255, 200, 60, 0.5), 0 2px 8px rgba(0, 0, 0, 0.45);
-}
-
-/* Gift badge: bare official icon, no chrome */
-.card-badge.badge-gift {
-    background: transparent;
-    border: none;
-    padding: 0;
-    box-shadow: none;
-}
-
-/* Official TikTok gift icon */
-.card-badge .gift-icon {
-    width: 30px;
-    height: 30px;
-    object-fit: contain;
-    display: block;
-    flex-shrink: 0;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
-}
-
-/* Combo toast keeps its own icon sizing */
-.combo-toast .gift-icon-toast {
-    width: 26px;
-    height: 26px;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
-}
-
-/* Featured rank-1 (bento / top-3 champion): bigger badges */
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-head,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-head {
-    top: 10px;
-    left: 10px;
-    gap: 9px;
-}
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badges,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badges {
-    gap: 9px;
-}
-.candidate-grid.grid-bento .candidate-card.rank-1 .card-badge.badge-win,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge.badge-win {
-    font-size: 15px;
-    padding: 5px 13px;
-}
-.candidate-grid.grid-bento .candidate-card.rank-1 .card-badge .gift-icon,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge .gift-icon {
-    width: 38px;
-    height: 38px;
-}
-
-/* Small rest-tier squares: compact badges, tucked tighter */
-.candidate-grid.grid-rest .candidate-badges {
-    gap: 5px;
-}
-.candidate-grid.grid-rest .card-badge.badge-win {
-    font-size: 10px;
-    padding: 2px 7px;
-}
-.candidate-grid.grid-rest .card-badge .gift-icon {
-    width: 20px;
-    height: 20px;
 }

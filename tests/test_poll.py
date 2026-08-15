@@ -256,5 +256,18 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         status = await self.poll_manager.get_status()
         self.assertFalse(status["is_active"])
 
+
+    async def test_candidate_color_passthrough(self):
+        """Per-candidate accent color is stored and exposed in the status."""
+        candidates = [
+            {"name": "Alice", "color": "#00e5ff"},
+            {"name": "Bob"},  # no color -> empty string (overlay palette fallback)
+        ]
+        await self.poll_manager.start_poll(self.title, candidates)
+        status = await self.poll_manager.get_status()
+        self.assertEqual(status["candidates"][0]["color"], "#00e5ff")
+        self.assertEqual(status["candidates"][1]["color"], "")
+
+
 if __name__ == "__main__":
     unittest.main()

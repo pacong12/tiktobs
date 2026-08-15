@@ -99,7 +99,11 @@ function buildGiftControl(preset) {
 
 // Builds one candidate input row, optionally pre-filled (used when loading
 // a past round's candidates back into the setup form).
-function createCandidateRow(name = '', imageUrl = '', giftPreset = null) {
+// Futuristic neon palette used to auto-assign card border colors when a
+// candidate does not pick one explicitly.
+const CARD_PALETTE = ['#00e5ff', '#ff2d78', '#ffd60a', '#7c4dff', '#00ff9d', '#ff9100'];
+
+function createCandidateRow(name = '', imageUrl = '', giftPreset = null, color = '') {
     const rowCount = candidatesInputList.querySelectorAll('.candidate-input-row').length + 1;
     const row = document.createElement('div');
     row.className = 'candidate-input-row';
@@ -107,10 +111,14 @@ function createCandidateRow(name = '', imageUrl = '', giftPreset = null) {
         <input type="text" class="field-input candidate-name-input" placeholder="Pilihan ${rowCount}">
         <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
         <div class="candidate-gift-cell"></div>
+        <input type="color" class="candidate-color-input" title="Warna border kartu overlay" value="">
         <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
     `;
     row.querySelector('.candidate-name-input').value = name;
     row.querySelector('.candidate-image-input').value = imageUrl || '';
+    // Default to the palette color for this row index unless reusing a saved one.
+    row.querySelector('.candidate-color-input').value =
+        color || CARD_PALETTE[(rowCount - 1) % CARD_PALETTE.length];
     row.querySelector('.candidate-gift-cell').replaceWith(buildGiftControl(giftPreset));
     return row;
 }
@@ -124,7 +132,7 @@ function loadCandidatesIntoForm(candidates) {
     candidatesInputList.innerHTML = '';
     candidates.forEach(c => {
         candidatesInputList.appendChild(
-            createCandidateRow(c.name || '', c.image_url || '', c.gift_name || null)
+            createCandidateRow(c.name || '', c.image_url || '', c.gift_name || null, c.color || '')
         );
     });
     // Bring the form into view so the user sees the loaded candidates.
@@ -195,6 +203,19 @@ async function initPollAdmin() {
     document.querySelectorAll('.candidate-gift-cell').forEach(cell => {
         cell.replaceWith(buildGiftControl());
     });
+
+    // Ensure every candidate row has a border-color picker (the two initial
+    // rows are hardcoded in HTML without one). Palette defaults by row index.
+    candidatesInputList.querySelectorAll('.candidate-input-row').forEach((row, i) => {
+        if (row.querySelector('.candidate-color-input')) return;
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.className = 'candidate-color-input';
+        colorInput.title = 'Warna border kartu overlay';
+        colorInput.value = CARD_PALETTE[i % CARD_PALETTE.length];
+        row.insertBefore(colorInput, row.querySelector('.candidate-remove-btn'));
+    });
+
     setupEventListeners();
     setupSoundEvents();
     await loadCurrentSound();
@@ -319,8 +340,9 @@ async function handleStartPoll() {
         const name = row.querySelector('.candidate-name-input').value.trim();
         const imageUrl = row.querySelector('.candidate-image-input').value.trim() || null;
         const giftName = readGiftValue(row);
+        const colorVal = row.querySelector('.candidate-color-input')?.value || '';
         if (name) {
-            candidates.push({ name, image_url: imageUrl, gift_name: giftName });
+            candidates.push({ name, image_url: imageUrl, gift_name: giftName, color: colorVal });
         }
     });
 

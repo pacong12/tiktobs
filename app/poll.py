@@ -83,6 +83,7 @@ class PollManager:
                 name_val = (c.get("name") or "").strip()
                 img_val = (c.get("image_url") or "").strip()
                 gift_val = (c.get("gift_name") or "").strip()
+                color_val = (c.get("color") or "").strip()
                 gift_key = normalize_gift_name(gift_val)
                 if gift_key:
                     if gift_key in gift_owners:
@@ -97,6 +98,7 @@ class PollManager:
                     "name": name_val,
                     "image_url": img_val,
                     "gift_name": gift_val,
+                    "color": color_val,
                     "votes": 0
                 })
 
@@ -158,6 +160,7 @@ class PollManager:
                         "name": c["name"],
                         "image_url": c["image_url"],
                         "gift_name": c.get("gift_name", ""),
+                        "color": c.get("color", ""),
                         "votes": c["votes"],
                         "percentage": pct,
                     })
@@ -449,6 +452,7 @@ class PollManager:
                     "name": c["name"],
                     "image_url": c["image_url"],
                     "gift_name": c.get("gift_name", ""),
+                    "color": c.get("color", ""),
                     "votes": votes,
                     "percentage": pct,
                     "wins": wins_map.get(_candidate_key(c["name"]), 0)

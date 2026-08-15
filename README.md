@@ -145,11 +145,23 @@ Each candidate card on the vote overlay can carry two floating badges:
   single clear winner (at least one vote cast, no tie). Wins are stored in the
   database keyed by the live session (or `local` when no live connection), so
   they accumulate across rounds and survive app restarts within the session.
-- **Gift badge** — the gift assigned to the candidate, shown with its official TikTok icon (loaded from the TikTok CDN, with emoji fallback) plus the name, so
-  viewers instantly see which gift boosts which candidate.
+- **Gift badge** — the gift assigned to the candidate, shown as its official
+  TikTok icon only (loaded from the TikTok CDN, emoji fallback; hover for the
+  name), so viewers instantly see which gift boosts which candidate.
 
-Both badges update live via WebSocket and scale down automatically on the
-smaller bento-grid cards.
+Both badges pin onto the card's top border in a futuristic style that follows
+the candidate's border color, update live via WebSocket, and scale down
+automatically on the smaller bento-grid cards.
+
+### Card colors & layout
+
+- Each candidate can have an **accent color** (border color), picked in Poll
+  Admin via a color input. When empty, a built-in neon palette is assigned by
+  rank. The color drives the border, number chip, votes outline, percentage
+  badge, win badge, and a thin card gradient.
+- Cards are transparent with a thin color gradient so no-background PNGs show
+  through. Bottom of each card: one horizontal row `[number][votes][%]` with
+  the candidate name underneath (no progress bar).
 
 ### Reuse candidates from history
 

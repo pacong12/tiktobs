@@ -986,11 +986,24 @@ body {
 /* Candidate rows */
 .candidate-input-row {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr auto;
+    grid-template-columns: 1.2fr 1fr 1fr 44px auto;
     gap: 8px;
     margin-bottom: 10px;
     align-items: center;
 }
+
+/* Card border color picker */
+.candidate-color-input {
+    width: 44px;
+    height: 34px;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+}
+.candidate-color-input::-webkit-color-swatch-wrapper { padding: 2px; }
+.candidate-color-input::-webkit-color-swatch { border-radius: 5px; border: none; }
 
 .candidate-input-row .field-input {
     margin-top: 0;

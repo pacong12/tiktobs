@@ -73,20 +73,29 @@ function renderPoll(poll) {
 
     candidatesList.className = 'candidates-list';
     candidatesList.innerHTML = '';
-    // Build a card where the candidate photo fills the whole card; the vote
-    // badge floats in the top-right corner and the progress bar + percentage
-    // float along the bottom (all layered above the photo).
-    const buildCard = (c) => {
+    // Futuristic transparent card: the candidate photo (usually a no-bg PNG)
+    // fills the card, framed by a neon border in the candidate's own color.
+    // Info stack (top-left): number chip -> votes + percentage -> name.
+    // Win/gift badges pin onto the top border edge.
+    const buildCard = (c, rankIdx) => {
         const isLeading = maxVotes > 0 && c.votes === maxVotes;
+        const cardColor = (c.color || '').trim() || CARD_PALETTE[rankIdx % CARD_PALETTE.length];
         const card = document.createElement('div');
-        card.className = `glass-card candidate-card ${isLeading ? 'leading' : ''}`;
+        card.className = `candidate-card ${isLeading ? 'leading' : ''}`;
+        card.style.setProperty('--card-color', cardColor);
+        card.style.setProperty('--card-glow', hexToRgba(cardColor, 0.55));
+        card.style.setProperty('--card-glow-soft', hexToRgba(cardColor, 0.26));
+        // Thin (subtle) color gradient so the transparent card is not empty,
+        // yet still lets the no-bg PNG photo show through.
+        card.style.setProperty('--card-fill-a', hexToRgba(cardColor, 0.16));
+        card.style.setProperty('--card-fill-b', hexToRgba(cardColor, 0.02));
 
         const bgHtml = c.image_url
             ? `<img src="${escapeHTML(c.image_url)}" class="candidate-bg" alt="">`
             : `<div class="candidate-bg default-avatar" style="background: ${getGradientForName(c.name)};">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
 
-        // Session badges: accumulated poll wins (persisted, restart-safe)
-        // and the gift assigned to this candidate.
+        // Edge badges pinned onto the border: accumulated poll wins
+        // (persisted, restart-safe) + the gift assigned to this candidate.
         const wins = c.wins || 0;
         const giftLabel = (c.gift_name || '').trim();
         const badgeParts = [];
@@ -101,27 +110,19 @@ function renderPoll(poll) {
             badgeParts.push(`<span class="card-badge badge-gift" title="${escapeHTML(giftLabel)}">${labelHtml}</span>`);
         }
         const badgesHtml = badgeParts.length
-            ? `<div class="candidate-badges">${badgeParts.join('')}</div>`
+            ? `<div class="edge-badges">${badgeParts.join('')}</div>`
             : '';
 
         card.innerHTML = `
-            <div class="candidate-media">
-                ${bgHtml}
-                <div class="candidate-scrim"></div>
-            </div>
-            <div class="candidate-head">
-                <div class="candidate-number">${c.id}</div>
-                <span class="candidate-name">${escapeHTML(c.name)}</span>
-            </div>
-            <div class="candidate-badge"><span class="votes-value">${c.votes.toLocaleString()}</span> votes</div>
-            <div class="candidate-overlay">
-                ${badgesHtml}
-                <div class="candidate-bottom">
-                    <div class="progress-track">
-                        <div class="progress-fill" style="width: ${c.percentage}%"></div>
-                    </div>
-                    <span class="candidate-percentage">${c.percentage}%</span>
+            <div class="candidate-media">${bgHtml}</div>
+            ${badgesHtml}
+            <div class="candidate-info">
+                <div class="candidate-info-row">
+                    <div class="candidate-number">${c.id}</div>
+                    <span class="candidate-votes">${c.votes.toLocaleString()}</span>
+                    <span class="candidate-pct">${c.percentage}%</span>
                 </div>
+                <div class="candidate-name">${escapeHTML(c.name)}</div>
             </div>
         `;
         return card;
@@ -131,7 +132,7 @@ function renderPoll(poll) {
         const bentoGrid = document.createElement('div');
         bentoGrid.className = 'candidate-grid grid-bento';
         ranked.slice(0, 3).forEach((c, i) => {
-            const card = buildCard(c);
+            const card = buildCard(c, i);
             if (i === 0) card.classList.add('rank-1');
             bentoGrid.appendChild(card);
         });
@@ -141,7 +142,7 @@ function renderPoll(poll) {
         if (rest.length > 0) {
             const restGrid = document.createElement('div');
             restGrid.className = 'candidate-grid grid-rest';
-            rest.forEach(c => restGrid.appendChild(buildCard(c)));
+            rest.forEach((c, i) => restGrid.appendChild(buildCard(c, i + 3)));
             candidatesList.appendChild(restGrid);
         }
     } else if (count === 3) {
@@ -150,7 +151,7 @@ function renderPoll(poll) {
         const grid = document.createElement('div');
         grid.className = 'candidate-grid grid-top3';
         ranked.forEach((c, i) => {
-            const card = buildCard(c);
+            const card = buildCard(c, i);
             if (i === 0) card.classList.add('rank-1');
             grid.appendChild(card);
         });
@@ -158,7 +159,7 @@ function renderPoll(poll) {
     } else {
         const grid = document.createElement('div');
         grid.className = 'candidate-grid cols-2';
-        ranked.forEach(c => grid.appendChild(buildCard(c)));
+        ranked.forEach((c, i) => grid.appendChild(buildCard(c, i)));
         candidatesList.appendChild(grid);
     }
 }
@@ -195,6 +196,19 @@ function connectWebSocket() {
     socket.onerror = (err) => {
         console.error('Poll overlay WebSocket error:', err);
     };
+}
+
+// Futuristic neon palette — fallback border color per candidate when the
+// host did not pick one in the Poll Admin.
+const CARD_PALETTE = ['#00e5ff', '#ff2d78', '#ffd60a', '#7c4dff', '#00ff9d', '#ff9100'];
+
+// Converts #rrggbb (or #rgb) to an rgba() string for glow effects.
+function hexToRgba(hex, alpha) {
+    let h = String(hex || '').trim().replace('#', '');
+    if (h.length === 3) h = h.split('').map(ch => ch + ch).join('');
+    if (!/^[0-9a-fA-F]{6}$/.test(h)) return `rgba(0, 229, 255, ${alpha})`;
+    const n = parseInt(h, 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
 // Generate deterministic linear gradients based on candidate name string hash

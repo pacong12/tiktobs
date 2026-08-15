@@ -11,6 +11,9 @@ class CandidateInput(BaseModel):
     name: str
     image_url: str | None = None
     gift_name: str | None = None
+    # Accent color for the vote overlay card border (hex like #00e5ff).
+    # Optional: the overlay falls back to its built-in palette.
+    color: str | None = None
 
 
 class StartPollRequest(BaseModel):
