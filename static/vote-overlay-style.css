@@ -142,13 +142,30 @@ body {
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge .votes-value,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badge .votes-value { font-size: 16px; }
 
-/* Slightly tighter type on the 1x1 bento cells */
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name { font-size: 12px; }
+/* Tighter type on the 1x1 bento cells; the name drops BELOW the number chip
+   because there is not enough horizontal room beside it */
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    max-width: calc(100% - 14px);
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name {
+    font-size: 12px;
+    max-width: 100%;
+}
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-overlay { padding: 10px 12px; gap: 5px; }
 
 /* Compact internals for the small rest-tier squares */
-.candidate-grid.grid-rest .candidate-head { top: 4px; left: 4px; gap: 5px; max-width: calc(100% - 66px); }
-.candidate-grid.grid-rest .candidate-name { font-size: 10px; padding: 2px 8px; }
+.candidate-grid.grid-rest .candidate-head {
+    top: 4px;
+    left: 4px;
+    gap: 3px;
+    flex-direction: column;
+    align-items: flex-start;
+    max-width: calc(100% - 10px);
+}
+.candidate-grid.grid-rest .candidate-name { font-size: 10px; padding: 2px 8px; max-width: 100%; }
 .candidate-grid.grid-rest .candidate-percentage { font-size: 11px; min-width: 32px; }
 .candidate-grid.grid-rest .candidate-badge { padding: 3px 8px; font-size: 8px; top: -8px; right: -6px; }
 .candidate-grid.grid-rest .candidate-badge .votes-value { font-size: 10px; }
