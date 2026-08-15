@@ -1668,3 +1668,10 @@ body {
     vertical-align: middle;
     display: inline-block;
 }
+
+/* Empty/error state for the dynamic overlay list */
+.overlay-links-empty {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    padding: 8px 2px;
+}

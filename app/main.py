@@ -18,7 +18,7 @@ from app.auth import TokenAuthMiddleware
 from app.bus import event_bus
 from app.poll import poll_manager
 from app.processor import EventProcessor
-from app.routers import connection, events, media, poll, settings, testsim
+from app.routers import connection, events, media, overlays, poll, settings, testsim
 
 logger = state.logger
 
@@ -101,6 +101,7 @@ app.include_router(events.router)
 app.include_router(poll.router)
 app.include_router(media.router)
 app.include_router(settings.router)
+app.include_router(overlays.router)
 # The test-endpoint gate is enforced per-request inside the router so the
 # disable flag can be toggled at runtime (tests monkeypatch it).
 app.include_router(testsim.router)

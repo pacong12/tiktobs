@@ -129,6 +129,45 @@ async def _fetch_one(sql: str, params: tuple = ()):
     rows = await _fetch_all(sql, params, as_rows=False)
     return rows[0] if rows else None
 
+# Built-in OBS browser-source overlays. Used to seed the `overlays` table so
+# the dashboard list is DB-backed and extensible without editing HTML.
+DEFAULT_OVERLAYS = [
+    {"key": "leaderboard", "label": "Gift Leaderboard", "url": "/overlay.html",
+     "icon": "\U0001F48E", "description": "Top gifters \u2014 session or full history", "accent": "cyan"},
+    {"key": "gift-alert", "label": "Gift Alert (Sound)", "url": "/gift-alert.html",
+     "icon": "\U0001F381", "description": "Animated alert + sound on incoming gifts", "accent": "pink"},
+    {"key": "recent-gifts", "label": "Recent Gifts Ticker", "url": "/recent-gifts.html",
+     "icon": "\U0001F389", "description": "Feed of the latest gifts", "accent": "green"},
+    {"key": "vote-overlay", "label": "Vote / Poll Overlay", "url": "/vote-overlay.html",
+     "icon": "\U0001F5F3\uFE0F", "description": "Live poll progress", "accent": "gold"},
+    {"key": "ticker", "label": "Running Text (Ticker)", "url": "/ticker.html",
+     "icon": "\U0001F4E2", "description": "Scrolling text for ads/announcements", "accent": "violet"},
+    {"key": "gift-bubbles", "label": "Gift Bubbles (Floating)", "url": "/gift-bubbles.html",
+     "icon": "\U0001FAE7", "description": "Floating square candidate bubbles on gifts", "accent": "orange"},
+]
+
+async def get_overlays(only_enabled: bool = True) -> list[dict]:
+    """Returns the OBS overlay registry ordered for display."""
+    where = "WHERE enabled = 1" if only_enabled else ""
+    rows = await _fetch_all(
+        f"SELECT key, label, url, icon, description, accent, sort_order, enabled "
+        f"FROM overlays {where} ORDER BY sort_order ASC, id ASC;",
+        as_rows=True,
+    )
+    return [
+        {
+            "key": row["key"],
+            "label": row["label"],
+            "url": row["url"],
+            "icon": row["icon"] or "",
+            "description": row["description"] or "",
+            "accent": row["accent"] or "cyan",
+            "sort_order": row["sort_order"],
+            "enabled": bool(row["enabled"]),
+        }
+        for row in rows
+    ]
+
 async def init_db():
     """Initializes the database and creates the necessary tables if they do not exist."""
     os.makedirs(DB_DIR, exist_ok=True)
@@ -198,6 +237,33 @@ async def init_db():
         );
     """)
     await db.execute("CREATE INDEX IF NOT EXISTS idx_poll_wins_session ON poll_wins(session_id, candidate_key);")
+
+    # Registry of the OBS browser-source overlays shown on the dashboard.
+    # Seeded with the built-in set on first run (INSERT OR IGNORE keyed on
+    # `key`, so future overlays appear automatically while any locally edited
+    # rows are preserved).
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS overlays (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key TEXT NOT NULL UNIQUE,
+            label TEXT NOT NULL,
+            url TEXT NOT NULL,
+            icon TEXT,
+            description TEXT,
+            accent TEXT,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            enabled INTEGER NOT NULL DEFAULT 1
+        );
+    """)
+    for i, ov in enumerate(DEFAULT_OVERLAYS):
+        await db.execute(
+            """
+            INSERT OR IGNORE INTO overlays
+                (key, label, url, icon, description, accent, sort_order, enabled)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1);
+            """,
+            (ov["key"], ov["label"], ov["url"], ov["icon"], ov["description"], ov["accent"], i),
+        )
 
     # Legacy cleanup: the user-defined gift catalog was removed; the built-in
     # catalog (static/poll-admin.js) + manual entry cover all cases now.

@@ -60,6 +60,7 @@ async function initApp() {
     await checkStatus();
     await loadRecentEvents();
     await loadLeaderboard();
+    await loadOverlays();
     connectWebSocket();
 }
 
@@ -82,31 +83,8 @@ function setupEventListeners() {
         }
     });
 
-    // Copy overlay URL to clipboard (for OBS Browser Source)
-    document.querySelectorAll('.ol-btn.copy').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const fullUrl = window.location.origin + btn.dataset.url;
-            try {
-                await navigator.clipboard.writeText(fullUrl);
-            } catch {
-                // Fallback for non-secure contexts
-                const ta = document.createElement('textarea');
-                ta.value = fullUrl;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-            }
-            const original = btn.textContent;
-            btn.textContent = 'Copied!';
-            btn.classList.add('copied');
-            showToast(`URL copied: ${fullUrl}`);
-            setTimeout(() => {
-                btn.textContent = original;
-                btn.classList.remove('copied');
-            }, 1500);
-        });
-    });
+    // Overlay copy buttons are wired in loadOverlays()/wireOverlayCopyButton()
+    // because the overlay list is rendered dynamically from GET /api/overlays.
 
     // Modal close
     modalCloseBtn.addEventListener('click', () => {
@@ -590,6 +568,67 @@ async function loadLeaderboard() {
     } catch (error) {
         console.error('Failed to load gift leaderboard:', error);
     }
+}
+
+// --- OBS overlay registry (persisted in the DB) ---------------------------
+
+async function loadOverlays() {
+    const list = document.getElementById('overlay-links-list');
+    if (!list) return;
+    try {
+        const response = await fetch('/api/overlays');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        renderOverlays(list, data.overlays || []);
+    } catch (error) {
+        console.error('Failed to load overlay list:', error);
+        list.innerHTML = '<div class="overlay-links-empty">Failed to load overlay list.</div>';
+    }
+}
+
+function renderOverlays(list, overlays) {
+    list.innerHTML = '';
+    overlays.forEach(ov => {
+        const item = document.createElement('div');
+        item.className = 'overlay-link-item';
+        item.dataset.accent = ov.accent || 'cyan';
+        item.innerHTML = `
+            <span class="overlay-link-label" title="${escapeHTML(ov.description)}"><span class="ol-icon">${escapeHTML(ov.icon)}</span> ${escapeHTML(ov.label)}</span>
+            <div class="overlay-link-actions">
+                <a href="${escapeHTML(ov.url)}" target="_blank" class="ol-btn open">Open</a>
+                <button class="ol-btn copy" data-url="${escapeHTML(ov.url)}">Copy</button>
+            </div>
+        `;
+        list.appendChild(item);
+        const copyBtn = item.querySelector('.ol-btn.copy');
+        if (copyBtn) wireOverlayCopyButton(copyBtn);
+    });
+}
+
+// Copy overlay URL to clipboard (for OBS Browser Source)
+function wireOverlayCopyButton(btn) {
+    btn.addEventListener('click', async () => {
+        const fullUrl = window.location.origin + btn.dataset.url;
+        try {
+            await navigator.clipboard.writeText(fullUrl);
+        } catch {
+            // Fallback for non-secure contexts
+            const ta = document.createElement('textarea');
+            ta.value = fullUrl;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        showToast(`URL copied: ${fullUrl}`);
+        setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('copied');
+        }, 1500);
+    });
 }
 
 function renderDashboardLeaderboard() {
