@@ -306,6 +306,18 @@ async def get_recent_events_api():
     events = await database.get_recent_events(limit=100)
     return events
 
+@app.post("/api/events/clear")
+async def clear_events_api():
+    """Deletes all stored events and tells every client to clear its stream.
+
+    Destructive by design: the dashboard "Clear" button calls this. It also
+    resets the gift leaderboard, which aggregates these same events.
+    """
+    deleted = await database.clear_events()
+    await manager.broadcast({"type": "stream_cleared"})
+    logger.info(f"Event stream cleared via API ({deleted} event(s) deleted).")
+    return {"status": "ok", "deleted": deleted}
+
 @app.get("/api/leaderboard")
 async def get_leaderboard_api():
     """Returns the aggregated gift leaderboard for the active session."""

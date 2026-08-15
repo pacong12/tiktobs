@@ -54,6 +54,40 @@ def test_poll_lifecycle_and_archive(client):
     assert any(r["round_name"] == "Ronde Uji 1" for r in rounds)
 
 
+# ---------- Event stream clear ----------
+
+async def test_clear_events_deletes_stored_events(client):
+    from datetime import datetime, timezone
+
+    from app import database
+
+    # Seed a few events directly through the database layer.
+    session_id = await database.create_session("clear_test")
+    for i in range(3):
+        await database.insert_event(
+            session_id=session_id,
+            event_id=f"clear-evt-{i}",
+            event_type="comment",
+            username=f"u{i}",
+            nickname=f"U{i}",
+            payload={"data": {"comment": "hi"}},
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
+
+    resp = client.post("/api/events/clear")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["deleted"] >= 3
+
+    # The stream source is empty now.
+    assert client.get("/api/events/recent").json() == []
+
+    # Clearing again is a harmless no-op.
+    again = client.post("/api/events/clear")
+    assert again.status_code == 200
+    assert again.json()["deleted"] == 0
+
 # ---------- Custom gifts ----------
 
 def test_custom_gift_crud(client):

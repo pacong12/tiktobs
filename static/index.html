@@ -160,14 +160,17 @@
                 <div class="glass-card stream-card">
                     <div class="card-header">
                         <h2>Event Stream</h2>
-                        <div class="stream-filters" id="filter-tabs">
-                            <button class="filter-tab active" data-filter="all">ALL</button>
-                            <button class="filter-tab" data-filter="gift">🎁 GIFTS</button>
-                            <button class="filter-tab" data-filter="comment">💬 COMMENTS</button>
-                            <button class="filter-tab" data-filter="like">❤️ LIKES</button>
-                            <button class="filter-tab" data-filter="follow">👤 FOLLOWS</button>
-                            <button class="filter-tab" data-filter="share">🔄 SHARES</button>
-                            <button class="filter-tab" data-filter="viewer">👀 VIEWERS</button>
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <div class="stream-filters" id="filter-tabs">
+                                <button class="filter-tab active" data-filter="all">ALL</button>
+                                <button class="filter-tab" data-filter="gift">🎁 GIFTS</button>
+                                <button class="filter-tab" data-filter="comment">💬 COMMENTS</button>
+                                <button class="filter-tab" data-filter="like">❤️ LIKES</button>
+                                <button class="filter-tab" data-filter="follow">👤 FOLLOWS</button>
+                                <button class="filter-tab" data-filter="share">🔄 SHARES</button>
+                                <button class="filter-tab" data-filter="viewer">👀 VIEWERS</button>
+                            </div>
+                            <button id="clear-stream-btn" class="btn text-btn" title="Clear the event stream and delete stored events">🗑️ Clear</button>
                         </div>
                     </div>
                     

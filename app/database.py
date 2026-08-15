@@ -389,6 +389,16 @@ async def get_session_leaderboard(session_id: str) -> list[dict]:
             for row in rows
         ]
 
+async def clear_events() -> int:
+    """Deletes ALL stored TikTok events (across every session).
+
+    Used by the dashboard's "Clear" action. Returns the number of deleted
+    rows. Note: this also resets the gift leaderboard, which aggregates
+    these events.
+    """
+    cursor = await _execute_write("DELETE FROM tiktok_events")
+    return cursor.rowcount
+
 async def purge_events_before(before_iso: str) -> int:
     """Deletes all events with created_at older than the given ISO timestamp.
     Returns the number of deleted rows."""

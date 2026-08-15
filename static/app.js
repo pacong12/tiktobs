@@ -18,6 +18,7 @@ const infoUsername = document.getElementById('info-username');
 
 const filterTabs = document.getElementById('filter-tabs');
 const eventStreamBody = document.getElementById('event-stream-body');
+const clearStreamBtn = document.getElementById('clear-stream-btn');
 const consoleLogs = document.getElementById('console-logs');
 const clearLogsBtn = document.getElementById('clear-logs');
 
@@ -65,6 +66,7 @@ function setupEventListeners() {
         consoleLogs.innerHTML = '';
         addConsoleLog('Logs cleared.', 'system');
     });
+    clearStreamBtn.addEventListener('click', handleClearStream);
 
     // Filter tab clicks
     filterTabs.addEventListener('click', (e) => {
@@ -207,6 +209,49 @@ async function handleDisconnect() {
     }
 }
 
+// Clears the visible stream, counters, and inspector panels.
+function resetStreamPanels() {
+    eventCache = [];
+    counters.gift = 0;
+    counters.comment = 0;
+    counters.like = 0;
+    counters.follow = 0;
+    counters.share = 0;
+    counters.viewer = 0;
+
+    updateCounterDOM();
+    renderEventStream();
+
+    // Clear inspector panels
+    inspectorEventId.textContent = 'No event selected';
+    inspectorJson.textContent = 'Select an event from the stream above to inspect its properties and payload structure.';
+    rawEventType.textContent = 'Waiting for data...';
+    rawEventJson.textContent = 'Raw data packets received from the TikTok provider will populate here in real-time.';
+}
+
+async function handleClearStream() {
+    const confirmed = confirm(
+        'Clear the event stream?\n\n' +
+        'This also deletes the stored events from the database and resets the gift leaderboard.'
+    );
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch('/api/events/clear', { method: 'POST' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        // The server broadcasts 'stream_cleared' to every client (including
+        // this one); if the WebSocket happens to be down, clear locally.
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            resetStreamPanels();
+        }
+        addConsoleLog(`Event stream cleared (${data.deleted} stored event(s) deleted).`, 'system');
+    } catch (error) {
+        console.error('Clear stream error:', error);
+        addConsoleLog('Failed to clear the event stream.', 'error');
+    }
+}
+
 // WEBSOCKET BROADCAST RECEIVER
 function updateServerLink(state) {
     const link = document.getElementById('server-link');
@@ -268,6 +313,10 @@ function handleWSMessage(msg) {
             addConsoleLog(`Connection Failed: ${msg.error || 'Server error'}`, 'error');
         }
     } 
+    else if (msg.type === 'stream_cleared') {
+        resetStreamPanels();
+        addConsoleLog('Event stream cleared (synced from server).', 'system');
+    }
     else if (msg.type === 'event') {
         const event = msg.event;
         
@@ -374,22 +423,7 @@ function updateConnectionUI(status, username = null, sessionId = null, anchorId 
 }
 
 function clearSessionData() {
-    eventCache = [];
-    counters.gift = 0;
-    counters.comment = 0;
-    counters.like = 0;
-    counters.follow = 0;
-    counters.share = 0;
-    counters.viewer = 0;
-
-    updateCounterDOM();
-    renderEventStream();
-
-    // Clear inspector panels
-    inspectorEventId.textContent = 'No event selected';
-    inspectorJson.textContent = 'Select an event from the stream above to inspect its properties and payload structure.';
-    rawEventType.textContent = 'Waiting for data...';
-    rawEventJson.textContent = 'Raw data packets received from the TikTok provider will populate here in real-time.';
+    resetStreamPanels();
 }
 
 // COUNTERS PROCESSING
