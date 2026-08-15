@@ -142,13 +142,15 @@ body {
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge .votes-value,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badge .votes-value { font-size: 16px; }
 
-/* Tighter type on the 1x1 bento cells; the name drops BELOW the number chip
-   because there is not enough horizontal room beside it */
+/* Tighter type on the 1x1 bento cells; the merged pill stacks the name BELOW
+   the number chip and stays clear of the votes chip on the top-right */
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-head {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    max-width: calc(100% - 14px);
+    border-radius: 16px;
+    padding: 6px 9px;
+    max-width: calc(100% - 84px);
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name {
     font-size: 12px;
@@ -163,9 +165,11 @@ body {
     gap: 3px;
     flex-direction: column;
     align-items: flex-start;
-    max-width: calc(100% - 10px);
+    border-radius: 13px;
+    padding: 4px 7px;
+    max-width: calc(100% - 64px);
 }
-.candidate-grid.grid-rest .candidate-name { font-size: 10px; padding: 2px 8px; max-width: 100%; }
+.candidate-grid.grid-rest .candidate-name { font-size: 10px; max-width: 100%; }
 .candidate-grid.grid-rest .candidate-percentage { font-size: 11px; min-width: 32px; }
 .candidate-grid.grid-rest .candidate-badge { padding: 3px 8px; font-size: 8px; top: -8px; right: -6px; }
 .candidate-grid.grid-rest .candidate-badge .votes-value { font-size: 10px; }
@@ -216,18 +220,30 @@ body {
     50% { transform: translateX(-50%) rotate(-6deg) translateY(-5px); }
 }
 
-/* Number badge (top-left corner) */
+/* Unified number+name pill (top-left corner) */
 .candidate-head {
     position: absolute;
     top: 6px;
     left: 6px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 7px;
     z-index: 6;
     /* leave room for the votes chip on the top-right */
     max-width: calc(100% - 96px);
     pointer-events: none;
+    /* number + name merged into a single pill */
+    background: rgba(14, 12, 26, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 4px 12px 4px 4px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Leading candidate gets a subtle gold outline on the merged pill */
+.candidate-card.leading .candidate-head {
+    border-color: rgba(255, 215, 0, 0.55);
 }
 
 .candidate-number {
@@ -356,18 +372,12 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: rgba(14, 12, 26, 0.78);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 999px;
-    padding: 4px 12px;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
 }
 
 .candidate-card.leading .candidate-name {
     color: #ffd700;
     font-weight: 800;
-    border-color: rgba(255, 215, 0, 0.55);
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
