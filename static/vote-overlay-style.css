@@ -75,9 +75,13 @@ body {
     line-height: 1.4;
 }
 
-/* Candidates List — two tiers: the 3 candidates with the most votes get
-   large cards (.grid-top); any remaining candidates render smaller below
-   (.grid-rest). With only 2 or 3 candidates everyone is in the top tier. */
+/* Candidates List — layout tiers (all cards stay SQUARE):
+   - 2-4 candidates : simple square grid (2 cols for 2/4, 3 cols for 3)
+   - 5+ candidates  : BENTO grid — rank #1 spans a huge 2x2 square,
+     ranks #2/#3 fill the right column as squares, the rest render as
+     small squares below.
+   Row heights match the column widths of the fixed 460px content area
+   so every cell is a square. */
 .candidates-list {
     display: flex;
     flex-direction: column;
@@ -86,28 +90,47 @@ body {
 
 .candidate-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--grid-gap, 14px);
+    gap: 12px;
 }
-.candidate-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
 
-.candidate-grid.grid-top  { --card-h: 150px; --grid-gap: 16px; }
-.candidate-grid.grid-rest { --card-h: 92px;  --grid-gap: 10px; }
+/* Square cells: (460 - gaps) / columns */
+.candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 224px; }
+.candidate-grid.cols-3     { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 145px; }
+.candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 145px; }
+.candidate-grid.grid-rest  { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 107px; gap: 10px; }
 
-/* Compact internals for rest-tier (small) cards */
-.candidate-grid.grid-rest .candidate-name { font-size: 13px; }
-.candidate-grid.grid-rest .candidate-percentage { font-size: 12px; min-width: 36px; }
-.candidate-grid.grid-rest .candidate-badge { padding: 3px 9px; font-size: 9px; top: -8px; right: -6px; }
-.candidate-grid.grid-rest .candidate-badge .votes-value { font-size: 11px; }
-.candidate-grid.grid-rest .progress-track { height: 9px; }
-.candidate-grid.grid-rest .candidate-overlay { padding: 8px 10px; gap: 4px; }
-.candidate-grid.grid-rest .candidate-number { min-width: 22px; height: 22px; font-size: 11px; top: -6px; left: -6px; }
+/* Bento: rank #1 takes a 2x2 square (very large), #2/#3 stack on the right */
+.candidate-grid.grid-bento .candidate-card.rank-1 {
+    grid-column: span 2;
+    grid-row: span 2;
+}
+
+/* Bigger type on the huge bento card */
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name { font-size: 24px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-percentage { font-size: 20px; min-width: 56px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .progress-track { height: 16px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-overlay { padding: 16px 18px; gap: 8px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge { padding: 6px 14px; font-size: 12px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge .votes-value { font-size: 16px; }
+
+/* Slightly tighter type on the 1x1 bento cells */
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name { font-size: 14px; }
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-overlay { padding: 10px 12px; gap: 5px; }
+
+/* Compact internals for the small rest-tier squares */
+.candidate-grid.grid-rest .candidate-name { font-size: 12px; }
+.candidate-grid.grid-rest .candidate-percentage { font-size: 11px; min-width: 32px; }
+.candidate-grid.grid-rest .candidate-badge { padding: 3px 8px; font-size: 8px; top: -8px; right: -6px; }
+.candidate-grid.grid-rest .candidate-badge .votes-value { font-size: 10px; }
+.candidate-grid.grid-rest .progress-track { height: 8px; }
+.candidate-grid.grid-rest .candidate-overlay { padding: 7px 9px; gap: 3px; }
+.candidate-grid.grid-rest .candidate-number { min-width: 20px; height: 20px; font-size: 10px; top: -6px; left: -6px; }
 
 /* CANDIDATE CARD — the photo fills the entire card; the name, vote badge and
    progress bar float on top of it */
 .candidate-card {
     position: relative;
-    height: var(--card-h, 120px);
+    height: 100%;
     padding: 0;
     overflow: visible;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);

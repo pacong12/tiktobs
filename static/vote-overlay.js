@@ -97,15 +97,16 @@ function renderPoll(poll) {
     // Rank candidates: most votes first. Sort a copy descending.
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
-    // Two-tier layout based on vote ranking:
-    //   - The 3 candidates with the most votes get LARGE cards (.grid-top).
-    //     With only 2 or 3 candidates total, everyone is in this tier.
-    //   - Every remaining candidate gets a smaller card below (.grid-rest).
-    // Because `ranked` is sorted by votes, the top tier always holds the
-    // current top-1/2/3 and re-sorts live as votes come in.
+    // Layout tiers (all cards stay square):
+    //   2 candidates   -> 2 large squares side by side (duel view)
+    //   3 candidates   -> 3 large squares in one row
+    //   4 candidates   -> 2x2 large squares
+    //   5+ candidates  -> BENTO: rank #1 gets a huge 2x2 square, ranks #2/#3
+    //                     fill the right column as squares, every remaining
+    //                     candidate becomes a small square below.
+    // Because `ranked` is sorted by votes, the bento positions follow the
+    // live ranking and re-shuffle as votes come in.
     const count = ranked.length;
-    const topGroup = ranked.slice(0, count >= 4 ? 3 : count);
-    const restGroup = ranked.slice(topGroup.length);
 
     candidatesList.className = 'candidates-list';
     candidatesList.innerHTML = '';
@@ -141,16 +142,28 @@ function renderPoll(poll) {
         return card;
     };
 
-    const topGrid = document.createElement('div');
-    topGrid.className = 'candidate-grid grid-top' + (topGroup.length === 2 ? ' cols-2' : '');
-    topGroup.forEach(c => topGrid.appendChild(buildCard(c)));
-    candidatesList.appendChild(topGrid);
+    if (count >= 5) {
+        const bentoGrid = document.createElement('div');
+        bentoGrid.className = 'candidate-grid grid-bento';
+        ranked.slice(0, 3).forEach((c, i) => {
+            const card = buildCard(c);
+            if (i === 0) card.classList.add('rank-1');
+            bentoGrid.appendChild(card);
+        });
+        candidatesList.appendChild(bentoGrid);
 
-    if (restGroup.length > 0) {
-        const restGrid = document.createElement('div');
-        restGrid.className = 'candidate-grid grid-rest';
-        restGroup.forEach(c => restGrid.appendChild(buildCard(c)));
-        candidatesList.appendChild(restGrid);
+        const rest = ranked.slice(3);
+        if (rest.length > 0) {
+            const restGrid = document.createElement('div');
+            restGrid.className = 'candidate-grid grid-rest';
+            rest.forEach(c => restGrid.appendChild(buildCard(c)));
+            candidatesList.appendChild(restGrid);
+        }
+    } else {
+        const grid = document.createElement('div');
+        grid.className = 'candidate-grid ' + (count === 3 ? 'cols-3' : 'cols-2');
+        ranked.forEach(c => grid.appendChild(buildCard(c)));
+        candidatesList.appendChild(grid);
     }
 }
 
