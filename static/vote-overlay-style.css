@@ -351,14 +351,13 @@ body {
     60%, 100% { transform: translateX(320%) skewX(-22deg); }
 }
 
-/* Gift badge: official icon in a COLORED circular border (candidate color),
-   transparent inside (no background fill) */
+/* Gift badge: bare official icon, NO background / frame */
 .card-badge.badge-gift {
-    padding: 3px;
-    border: 1.5px solid var(--card-color);
-    border-radius: 50%;
+    padding: 0;
+    border: none;
+    border-radius: 0;
     background: transparent;
-    box-shadow: 0 0 8px var(--card-glow-soft);
+    box-shadow: none;
 }
 
 /* Official TikTok gift icon */
