@@ -234,21 +234,30 @@ body {
     max-width: 100%;
 }
 
-/* Sequence number: wrapped in a solid chip the same color as the border */
+/* Sequence number: solid chip in the border color, pinned to the TOP-RIGHT
+   corner of the card */
 .candidate-number {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 6;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 32px;
+    min-width: 34px;
     height: 32px;
-    padding: 0 8px;
-    background: var(--card-color);
-    color: #08080f;
+    padding: 0 7px;
+    background: rgba(8, 8, 15, 0.85);
+    border: 1.5px solid var(--card-color);
+    border-radius: 7px;
+    color: var(--card-color);
     font-size: 16px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
-    filter: drop-shadow(0 0 6px var(--card-glow));
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 8px var(--card-glow);
+    box-shadow: 0 0 10px var(--card-glow-soft);
+    pointer-events: none;
 }
 
 /* Votes + percentage row */
@@ -385,10 +394,12 @@ body {
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-number,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-number {
-    min-width: 40px;
+    top: 12px;
+    right: 12px;
+    min-width: 42px;
     height: 40px;
     font-size: 20px;
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+    border-radius: 8px;
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-votes,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-votes {
@@ -428,10 +439,13 @@ body {
     gap: 4px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-number {
-    min-width: 24px;
+    top: 8px;
+    right: 8px;
+    min-width: 26px;
     height: 24px;
     font-size: 12px;
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%);
+    border-radius: 6px;
+    padding: 0 5px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-votes {
     font-size: 20px;
@@ -445,16 +459,21 @@ body {
     font-size: 12px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .edge-badges {
-    top: -13px;
+    top: -12px;
     left: 8px;
+    gap: 4px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge.badge-win {
-    font-size: 11px;
-    padding: 4px 11px;
+    font-size: 10px;
+    padding: 3px 7px;
+    letter-spacing: 0.5px;
+}
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge.badge-gift {
+    padding: 3px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge .gift-icon {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
 }
 
 /* Small rest-tier squares: tightest stack */
@@ -465,10 +484,13 @@ body {
     gap: 3px;
 }
 .candidate-grid.grid-rest .candidate-number {
-    min-width: 20px;
+    top: 6px;
+    right: 6px;
+    min-width: 22px;
     height: 20px;
     font-size: 10px;
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+    border-radius: 5px;
+    padding: 0 4px;
 }
 .candidate-grid.grid-rest .candidate-votes {
     font-size: 16px;
@@ -482,18 +504,21 @@ body {
     font-size: 10px;
 }
 .candidate-grid.grid-rest .edge-badges {
-    top: -12px;
+    top: -11px;
     left: 6px;
-    gap: 5px;
+    gap: 3px;
 }
 .candidate-grid.grid-rest .card-badge.badge-win {
-    font-size: 10px;
-    padding: 3px 9px;
-    letter-spacing: 0.9px;
+    font-size: 8px;
+    padding: 2px 6px;
+    letter-spacing: 0.4px;
+}
+.candidate-grid.grid-rest .card-badge.badge-gift {
+    padding: 3px;
 }
 .candidate-grid.grid-rest .card-badge .gift-icon {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
 }
 
 /* Inactive State waiting indicator */

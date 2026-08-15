@@ -116,9 +116,9 @@ function renderPoll(poll) {
         card.innerHTML = `
             <div class="candidate-media">${bgHtml}</div>
             ${badgesHtml}
+            <div class="candidate-number">${String(c.id).padStart(2, '0')}</div>
             <div class="candidate-info">
                 <div class="candidate-info-row">
-                    <div class="candidate-number">${c.id}</div>
                     <span class="candidate-votes">${c.votes.toLocaleString()}</span>
                     <span class="candidate-pct">${c.percentage}%</span>
                 </div>
