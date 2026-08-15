@@ -94,7 +94,11 @@ function renderPoll(poll) {
             badgeParts.push(`<span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span>`);
         }
         if (giftLabel) {
-            badgeParts.push(`<span class="card-badge badge-gift">${getGiftEmoji(giftLabel)} ${escapeHTML(giftLabel)}</span>`);
+            const icon = giftIconHtml(giftLabel, 'gift-icon');
+            const labelHtml = icon
+                ? `${icon} ${escapeHTML(giftLabel)}`
+                : `${getGiftEmoji(giftLabel)} ${escapeHTML(giftLabel)}`;
+            badgeParts.push(`<span class="card-badge badge-gift">${labelHtml}</span>`);
         }
         const badgesHtml = badgeParts.length
             ? `<div class="candidate-badges">${badgeParts.join('')}</div>`
@@ -233,6 +237,21 @@ function normalizeGiftName(name) {
     return ((name || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
 }
 
+// Normalized key for the GIFT_ICONS map (same rules as the backend:
+// lowercase, emoji/punctuation stripped, whitespace collapsed).
+function giftIconKey(name) {
+    return ((name || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
+}
+
+// Returns an <img> tag with the official TikTok gift icon, or '' when the
+// gift has no known icon (callers fall back to the emoji mapping).
+function giftIconHtml(giftName, cls) {
+    const icons = window.GIFT_ICONS || {};
+    const url = icons[giftIconKey(giftName)];
+    if (!url) return '';
+    return `<img class="${cls}" src="${url}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+}
+
 function getGiftEmoji(giftName) {
     if (!giftName) return '🎁';
     const name = giftName.toLowerCase();
@@ -264,8 +283,12 @@ function handleGiftEventForToast(giftEvent) {
 
     const isFinal = data.repeat_end === 1;
     const quantity = data.quantity || 1;
+    const toastIcon = giftIconHtml(data.gift_name, 'gift-icon gift-icon-toast');
+    const toastGift = toastIcon
+        ? `${toastIcon} ${escapeHTML(data.gift_name)}`
+        : `${getGiftEmoji(data.gift_name)} ${escapeHTML(data.gift_name)}`;
     toast.innerHTML = `
-        <span class="combo-toast-gift">${getGiftEmoji(data.gift_name)} ${escapeHTML(data.gift_name)}</span>
+        <span class="combo-toast-gift">${toastGift}</span>
         <span class="combo-toast-count">&times;${quantity}</span>
         <span class="combo-toast-target">&#10148; ${escapeHTML(candidate.name)}</span>
     `;

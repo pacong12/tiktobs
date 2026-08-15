@@ -124,7 +124,7 @@ Each candidate card on the vote overlay can carry two floating badges:
   single clear winner (at least one vote cast, no tie). Wins are stored in the
   database keyed by the live session (or `local` when no live connection), so
   they accumulate across rounds and survive app restarts within the session.
-- **Gift badge** — the gift assigned to the candidate (emoji + name), so
+- **Gift badge** — the gift assigned to the candidate, shown with its official TikTok icon (loaded from the TikTok CDN, with emoji fallback) plus the name, so
   viewers instantly see which gift boosts which candidate.
 
 Both badges update live via WebSocket and scale down automatically on the
@@ -157,7 +157,7 @@ event, using `repeat_count x diamond_count`. Mid-streak events are still
 stored and broadcast so the live feed stays responsive.
 
 A verified snapshot of TikTok's gift catalog (749 gifts: id, name, coin
-price) is bundled at `app/gift_catalog.json` for reference. Note that TikTok
+price, icon URL) is bundled at `app/gift_catalog.json` for reference. The vote overlay resolves gift names to official TikTok icons via `static/gift-icons.js`. Note that TikTok
 reuses gift names with different prices (e.g. "Love you" exists as both a
 1-coin and a 199-coin gift), so gift names are matched strictly and
 case-insensitively.
