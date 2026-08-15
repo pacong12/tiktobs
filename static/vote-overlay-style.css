@@ -548,6 +548,9 @@ body {
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.22);
     backdrop-filter: blur(4px);
+    /* Icon-only badge: snug chip around the gift icon (no text) */
+    padding: 2px 4px;
+    gap: 0;
 }
 
 /* Featured cards (3-candidate champion / bento rank-1) get bigger badges */

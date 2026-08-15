@@ -94,11 +94,11 @@ function renderPoll(poll) {
             badgeParts.push(`<span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span>`);
         }
         if (giftLabel) {
+            // Icon only (no text); hover shows the gift name. Falls back to
+            // the emoji alone when the gift has no known icon.
             const icon = giftIconHtml(giftLabel, 'gift-icon');
-            const labelHtml = icon
-                ? `${icon} ${escapeHTML(giftLabel)}`
-                : `${getGiftEmoji(giftLabel)} ${escapeHTML(giftLabel)}`;
-            badgeParts.push(`<span class="card-badge badge-gift">${labelHtml}</span>`);
+            const labelHtml = icon || getGiftEmoji(giftLabel);
+            badgeParts.push(`<span class="card-badge badge-gift" title="${escapeHTML(giftLabel)}">${labelHtml}</span>`);
         }
         const badgesHtml = badgeParts.length
             ? `<div class="candidate-badges">${badgeParts.join('')}</div>`
