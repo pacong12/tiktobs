@@ -567,18 +567,41 @@ async def upload_sound_api(file: UploadFile = File(...)):
     return {"status": "success", "filename": safe_name, "url": f"/sounds/{safe_name}"}
 
 # Application Settings Endpoints (.env configuration)
+def _mask_key(key: str) -> str:
+    """Returns a masked representation of an API key that is safe to display."""
+    if not key:
+        return ""
+    if len(key) <= 4:
+        return "****"
+    return "\u2022" * 8 + key[-4:]
+
 @app.get("/api/settings")
 async def get_settings_api():
-    """Returns application configuration settings."""
-    env_key = os.getenv("TIKTOK_SIGN_API_KEY", "")
+    """Returns application settings. The raw API key is NEVER returned."""
+    env_key = os.getenv("TIKTOK_SIGN_API_KEY", "") or (sign_api_key or "")
     return {
-        "tiktok_sign_api_key": env_key
+        "has_key": bool(env_key),
+        "masked_key": _mask_key(env_key),
     }
 
 @app.post("/api/settings")
 async def update_settings_api(req: SettingsUpdateRequest):
-    """Updates .env settings dynamically and reloads runtime variables."""
-    new_key = (req.tiktok_sign_api_key or "").strip()
+    """Updates .env settings dynamically and reloads runtime variables.
+
+    Semantics of `tiktok_sign_api_key`:
+    - omitted / null  -> nothing changes
+    - empty string    -> the stored key is cleared
+    - anything else   -> the key is replaced
+    """
+    global sign_api_key
+    if req.tiktok_sign_api_key is None:
+        return {
+            "status": "unchanged",
+            "message": "No key provided; settings left unchanged.",
+        }
+
+    had_key = bool(os.getenv("TIKTOK_SIGN_API_KEY", "") or (sign_api_key or ""))
+    new_key = req.tiktok_sign_api_key.strip()
     
     os.environ["TIKTOK_SIGN_API_KEY"] = new_key
     
@@ -588,7 +611,6 @@ async def update_settings_api(req: SettingsUpdateRequest):
     except Exception:  # noqa: BLE001, S110
         pass
         
-    global sign_api_key
     sign_api_key = new_key
     
     env_path = ENV_FILE
@@ -608,11 +630,30 @@ async def update_settings_api(req: SettingsUpdateRequest):
             f.write(f'{k}="{v}"\n')
             
     logger.info("Environment settings updated successfully via API.")
-    return {"status": "success", "tiktok_sign_api_key": new_key}
+    # Switching between "key configured" and "no key" changes which provider
+    # the app would use, but the provider is only picked at startup.
+    restart_required = had_key != bool(new_key)
+    return {
+        "status": "success",
+        "has_key": bool(new_key),
+        "masked_key": _mask_key(new_key),
+        "restart_required": restart_required,
+        "note": "Restart the app to switch between the cloud and local TikTok provider." if restart_required else None,
+    }
 
-# Simulated Testing Endpoints
+# Simulated Testing Endpoints (can be disabled via TIKTOBS_TEST_ENDPOINTS=0)
+TEST_ENDPOINTS_ENABLED = os.getenv("TIKTOBS_TEST_ENDPOINTS", "1").strip().lower() not in ("0", "false", "no", "off")
+
+def _require_test_endpoints():
+    if not TEST_ENDPOINTS_ENABLED:
+        raise HTTPException(
+            status_code=403,
+            detail="Test endpoints are disabled. Set TIKTOBS_TEST_ENDPOINTS=1 to enable them.",
+        )
+
 @app.post("/api/test/comment-vote")
 async def simulate_comment_vote():
+    _require_test_endpoints()
     if not poll_manager.is_active:
         raise HTTPException(status_code=400, detail="No active poll to vote on")
     
@@ -639,6 +680,7 @@ async def simulate_comment_vote():
 
 @app.post("/api/test/gift-vote")
 async def simulate_gift_vote():
+    _require_test_endpoints()
     if not poll_manager.is_active:
         raise HTTPException(status_code=400, detail="No active poll to vote on")
     
@@ -679,6 +721,7 @@ async def simulate_gift_vote():
 
 @app.post("/api/test/gift-normal")
 async def simulate_gift_normal():
+    _require_test_endpoints()
     import random
     from datetime import datetime, timezone
     usernames = ["SultanMuda", "BagasGanteng", "RaraKawaii", "DikaGaming", "TiktokUser"]

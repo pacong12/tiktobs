@@ -50,10 +50,12 @@
                             </span>
                         </div>
 
-                        <div style="margin-top: 30px; display: flex; gap: 12px; align-items: center;">
+                        <div style="margin-top: 30px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                             <button type="submit" id="save-settings-btn" class="btn primary" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">💾 Save Configuration</button>
+                            <button type="button" id="clear-key-btn" class="btn secondary hidden" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">🗑️ Clear Key</button>
                             <span id="save-status-msg" style="font-size: 13px; font-weight: 600; color: #00ff87;" class="hidden">✓ Saved successfully!</span>
                         </div>
+                        <p id="restart-note" class="hidden" style="margin-top: 14px; font-size: 12px; color: #ffd166;">⚠️ Restart the app for the provider switch to take effect.</p>
                     </form>
                 </div>
             </section>
@@ -65,16 +67,29 @@
         const keyInput = document.getElementById('sign-api-key-input');
         const toggleBtn = document.getElementById('toggle-key-visibility');
         const saveBtn = document.getElementById('save-settings-btn');
+        const clearBtn = document.getElementById('clear-key-btn');
         const statusMsg = document.getElementById('save-status-msg');
+        const restartNote = document.getElementById('restart-note');
 
-        // Fetch settings on load
+        function showStatus(text, color = '#00ff87') {
+            statusMsg.textContent = text;
+            statusMsg.style.color = color;
+            statusMsg.classList.remove('hidden');
+            setTimeout(() => statusMsg.classList.add('hidden'), 4000);
+        }
+
+        // Fetch settings on load. The server never returns the raw key, only a
+        // masked preview, so we show it as a placeholder and keep the input empty.
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await fetch('/api/settings');
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.tiktok_sign_api_key) {
-                        keyInput.value = data.tiktok_sign_api_key;
+                    if (data.has_key) {
+                        keyInput.placeholder = `${data.masked_key} (saved \u2014 type a new value to replace)`;
+                        clearBtn.classList.remove('hidden');
+                    } else {
+                        keyInput.placeholder = 'Enter your EulerStream API Key';
                     }
                 }
             } catch (err) {
@@ -93,25 +108,37 @@
             }
         });
 
-        // Save settings
+        // Save settings. An empty input sends no key at all -> server keeps the
+        // current value (prevents accidentally overwriting the key with "").
         settingsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             saveBtn.disabled = true;
             saveBtn.textContent = 'Saving...';
             statusMsg.classList.add('hidden');
 
+            const value = keyInput.value.trim();
+            const body = value ? { tiktok_sign_api_key: value } : {};
+
             try {
                 const res = await fetch('/api/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tiktok_sign_api_key: keyInput.value.trim()
-                    })
+                    body: JSON.stringify(body)
                 });
 
                 if (res.ok) {
-                    statusMsg.classList.remove('hidden');
-                    setTimeout(() => statusMsg.classList.add('hidden'), 4000);
+                    const data = await res.json();
+                    if (data.status === 'unchanged') {
+                        showStatus('Nothing changed (input was empty).', '#ffd166');
+                    } else {
+                        showStatus('✓ Saved successfully!');
+                        keyInput.value = '';
+                        if (data.has_key) {
+                            keyInput.placeholder = `${data.masked_key} (saved \u2014 type a new value to replace)`;
+                            clearBtn.classList.remove('hidden');
+                        }
+                        if (data.restart_required) restartNote.classList.remove('hidden');
+                    }
                 } else {
                     alert('Gagal menyimpan pengaturan.');
                 }
@@ -121,6 +148,30 @@
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.textContent = '💾 Save Configuration';
+            }
+        });
+
+        // Explicitly clear the stored key (empty string = clear on the server).
+        clearBtn.addEventListener('click', async () => {
+            if (!confirm('Hapus API key yang tersimpan?')) return;
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tiktok_sign_api_key: '' })
+                });
+                if (res.ok) {
+                    showStatus('Key cleared.', '#ffd166');
+                    keyInput.placeholder = 'Enter your EulerStream API Key';
+                    clearBtn.classList.add('hidden');
+                    const data = await res.json();
+                    if (data.restart_required) restartNote.classList.remove('hidden');
+                } else {
+                    alert('Gagal menghapus key.');
+                }
+            } catch (err) {
+                console.error('Clear error:', err);
+                alert('Terjadi kesalahan saat menghapus key.');
             }
         });
     </script>
