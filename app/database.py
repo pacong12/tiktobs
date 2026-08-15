@@ -353,17 +353,16 @@ async def get_recent_events(limit: int = 100) -> list[dict]:
             })
         return events
 
-async def get_session_leaderboard(session_id: str) -> list[dict]:
+async def _aggregate_leaderboard(where: str, params: tuple) -> list[dict]:
     """
-    Calculates the gift leaderboard for a given session by aggregating gift
-    events directly in SQL (json_extract over the stored payload), so large
-    sessions no longer load every row into Python.
-    Returns a sorted list of dicts: username, nickname, total_diamonds, total_gifts.
+    Aggregates gift events directly in SQL (json_extract over the stored
+    payload), so large histories no longer load every row into Python.
+    Returns a sorted list of dicts: username, nickname, total_diamonds,
+    total_gifts.
     """
     db = await _get_shared_db()
     db.row_factory = aiosqlite.Row
-    async with db.execute(
-        """
+    sql = """
         SELECT
             username,
             COALESCE(MAX(nickname), username) AS nickname,
@@ -371,13 +370,13 @@ async def get_session_leaderboard(session_id: str) -> list[dict]:
                 COALESCE(json_extract(payload, '$.data.diamond_count'), 0)) AS total_diamonds,
             SUM(COALESCE(json_extract(payload, '$.data.quantity'), 1)) AS total_gifts
         FROM tiktok_events
-        WHERE session_id = ? AND event_type = 'gift'
+        WHERE event_type = 'gift'
           AND username IS NOT NULL AND username != ''
-        GROUP BY username
-        ORDER BY total_diamonds DESC, total_gifts DESC, username ASC
-        """,
-        (session_id,),
-    ) as cursor:
+    """
+    if where:
+        sql += " AND " + where
+    sql += " GROUP BY username ORDER BY total_diamonds DESC, total_gifts DESC, username ASC"
+    async with db.execute(sql, params) as cursor:
         rows = await cursor.fetchall()
         return [
             {
@@ -388,6 +387,17 @@ async def get_session_leaderboard(session_id: str) -> list[dict]:
             }
             for row in rows
         ]
+
+async def get_session_leaderboard(session_id: str) -> list[dict]:
+    """Gift leaderboard for a single session only."""
+    return await _aggregate_leaderboard("session_id = ?", (session_id,))
+
+async def get_all_time_leaderboard() -> list[dict]:
+    """
+    Gift leaderboard over the full stored history: reuses gift events from
+    every session still in the database (subject to the retention purge).
+    """
+    return await _aggregate_leaderboard("", ())
 
 async def clear_events() -> int:
     """Deletes ALL stored TikTok events (across every session).

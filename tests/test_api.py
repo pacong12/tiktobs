@@ -235,3 +235,34 @@ def test_delete_sound_rejects_traversal(client):
     assert resp.status_code in (400, 404, 405)
     # And the plain-basename case: "../" is stripped by the handler itself.
     assert client.delete("/api/sounds/.env").status_code == 404
+
+# ---------- Gift leaderboard scope ----------
+
+async def test_leaderboard_scope_all_reuses_history(client):
+    import uuid
+    from datetime import datetime, timezone
+
+    from app import database
+
+    # Seed a gift in a session that is NOT the active one.
+    session_id = await database.create_session("leaderboard_api_test")
+    await database.insert_event(
+        session_id=session_id,
+        event_id=uuid.uuid4().hex,
+        event_type="gift",
+        username="zoe",
+        nickname="Zoe",
+        payload={"data": {"gift_name": "Rose", "quantity": 2, "diamond_count": 7}},
+        created_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+    # Default (session) scope: no active session -> empty board.
+    assert client.get("/api/leaderboard").json() == []
+
+    # scope=all reuses the stored history regardless of the active session.
+    resp = client.get("/api/leaderboard", params={"scope": "all"})
+    assert resp.status_code == 200
+    board = resp.json()
+    zoe = next(row for row in board if row["username"] == "zoe")
+    assert zoe["total_diamonds"] == 14
+    assert zoe["total_gifts"] == 2

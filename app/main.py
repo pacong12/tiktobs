@@ -327,13 +327,20 @@ async def clear_events_api():
     return {"status": "ok", "deleted": deleted}
 
 @app.get("/api/leaderboard")
-async def get_leaderboard_api():
-    """Returns the aggregated gift leaderboard for the active session."""
+async def get_leaderboard_api(scope: str = "session"):
+    """
+    Returns the aggregated gift leaderboard.
+
+    scope=session (default): only gifts from the active session.
+    scope=all: reuses the full stored history, i.e. gifts from every
+    session still in the database (subject to the retention purge).
+    """
+    if scope == "all":
+        return await database.get_all_time_leaderboard()
     session_id = processor.session_id
     if not session_id:
         return []
-    leaderboard = await database.get_session_leaderboard(session_id)
-    return leaderboard
+    return await database.get_session_leaderboard(session_id)
 
 @app.get("/api/rankings")
 async def get_rankings_api(anchor_id: str):

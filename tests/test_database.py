@@ -98,6 +98,44 @@ async def test_leaderboard_sql_aggregation():
     assert nully["nickname"] == "nully"  # NULL nickname falls back to username
     assert (nully["total_diamonds"], nully["total_gifts"]) == (6, 2)
 
+async def test_all_time_leaderboard_reuses_history_across_sessions():
+    """The all-time board aggregates gift events from every stored session,
+    while the session board stays scoped to one session."""
+    session_a = await database.create_session("history_a")
+    session_b = await database.create_session("history_b")
+
+    async def gift(session_id: str, user: str, qty: int, diamonds: int):
+        await database.insert_event(
+            session_id=session_id,
+            event_id=uuid.uuid4().hex,
+            event_type="gift",
+            username=user,
+            nickname=user.capitalize(),
+            payload={"data": {"gift_name": "X", "quantity": qty, "diamond_count": diamonds}},
+            created_at=datetime.now(timezone.utc).isoformat(),
+        )
+
+    # Session A: histalice 10 diamonds.
+    await gift(session_a, "histalice", 1, 10)
+    # Session B (later stream): histalice 40 more, histcarol 100.
+    await gift(session_b, "histalice", 2, 20)
+    await gift(session_b, "histcarol", 1, 100)
+
+    session_board = await database.get_session_leaderboard(session_b)
+    assert [(r["username"], r["total_diamonds"]) for r in session_board] == [
+        ("histcarol", 100),
+        ("histalice", 40),
+    ]
+
+    history_board = await database.get_all_time_leaderboard()
+    totals = {r["username"]: r["total_diamonds"] for r in history_board}
+    # histalice's gifts from BOTH sessions are combined.
+    assert totals["histalice"] == 50
+    assert totals["histcarol"] == 100
+    # History board is sorted by combined totals.
+    usernames = [r["username"] for r in history_board]
+    assert usernames.index("histcarol") < usernames.index("histalice")
+
 
 async def test_write_recovers_from_dead_connection():
     """A broken underlying sqlite connection must self-heal on the next write."""
