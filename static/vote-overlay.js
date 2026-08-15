@@ -113,9 +113,9 @@ function renderPoll(poll) {
                 <div class="candidate-number">${c.id}</div>
                 <span class="candidate-name">${escapeHTML(c.name)}</span>
             </div>
-            ${badgesHtml}
             <div class="candidate-badge"><span class="votes-value">${c.votes.toLocaleString()}</span> votes</div>
             <div class="candidate-overlay">
+                ${badgesHtml}
                 <div class="candidate-bottom">
                     <div class="progress-track">
                         <div class="progress-fill" style="width: ${c.percentage}%"></div>

@@ -525,18 +525,15 @@ body {
 
 /* ============================================================
    CANDIDATE SESSION BADGES — accumulated wins + assigned gift
-   One horizontal row, anchored top-left just below the number
-   chip and kept inside the card edge on every layout tier.
+   Rendered inside the bottom overlay (above the progress bar),
+   on top of the dark scrim: never covers the face and can never
+   collide with the head (number+name) or the votes chip.
    ============================================================ */
 .candidate-badges {
-    position: absolute;
-    top: 28px;
-    right: 6px;
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 7px;
-    z-index: 6;
     pointer-events: none;
 }
 
@@ -596,8 +593,6 @@ body {
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badges,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badges {
-    top: 34px;
-    right: 10px;
     gap: 9px;
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .card-badge.badge-win,
@@ -613,8 +608,6 @@ body {
 
 /* Small rest-tier squares: compact badges, tucked tighter */
 .candidate-grid.grid-rest .candidate-badges {
-    top: 14px;
-    right: 4px;
     gap: 5px;
 }
 .candidate-grid.grid-rest .card-badge.badge-win {
