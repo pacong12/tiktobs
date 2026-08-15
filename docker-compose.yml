@@ -1,0 +1,30 @@
+# TikTObs via Docker Compose.
+#
+#   docker compose up -d          # start
+#   docker compose logs -f        # follow logs
+#   docker compose down           # stop (data persists in the volume)
+#
+# To use an API key or the optional auth token, create a .env file next to
+# this compose file (it is gitignored) — Compose passes it to the container:
+#
+#   TIKTOK_SIGN_API_KEY=your-eulerstream-key
+#   TIKTOBS_API_TOKEN=choose-a-long-random-string
+
+services:
+  tiktobs:
+    build: .
+    image: tiktobs:latest
+    container_name: tiktobs
+    ports:
+      - "8000:8000"
+    volumes:
+      - tiktobs-data:/app/data
+    # Uncomment to forward variables from a local .env file:
+    # env_file: .env
+    environment:
+      # Defaults shown; override here or in .env.
+      TIKTOBS_RETENTION_DAYS: "7"
+    restart: unless-stopped
+
+volumes:
+  tiktobs-data:

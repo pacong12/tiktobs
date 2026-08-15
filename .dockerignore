@@ -1,0 +1,31 @@
+# VCS / CI
+.git
+.github
+
+# Python artifacts
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+
+# Local runtime data (keep host data outside the image; mount a volume)
+data
+*.db
+*.log
+
+# Windows packaging artifacts
+build
+dist
+*.spec
+*.bat
+*.ico
+convert_icon.py
+build_exe.py
+
+# Local secrets — pass them via `docker run --env-file` instead
+.env
+
+# Tests and dev tooling
+tests
+requirements-dev.txt
+pytest.ini

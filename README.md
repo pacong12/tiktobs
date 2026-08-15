@@ -73,6 +73,31 @@ TIKTOBS_API_TOKEN="choose-a-long-random-string"
 
 ---
 
+## Running with Docker
+
+Alternatively, run the app in a container (useful on a server or NAS):
+
+```bash
+docker compose up -d        # build + start (data persists in a volume)
+docker compose logs -f      # follow logs
+docker compose down         # stop
+```
+
+Or without compose:
+
+```bash
+docker build -t tiktobs .
+docker run -d --name tiktobs -p 8000:8000 -v tiktobs-data:/app/data tiktobs
+```
+
+- The dashboard and all overlays are then served from `http://localhost:8000`.
+- Persistent state (database, ticker/sound config, logs) lives in the
+  `tiktobs-data` volume.
+- Pass configuration (`TIKTOK_SIGN_API_KEY`, `TIKTOBS_API_TOKEN`, ...) via
+  `env_file: .env` in `docker-compose.yml` or `docker run -e VAR=value`.
+
+---
+
 ## OBS Browser Source Overlays
 
 Each overlay is a standalone page with a transparent background, ready to be
