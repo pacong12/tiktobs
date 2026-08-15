@@ -94,29 +94,29 @@ function renderPoll(poll) {
             ? `<img src="${escapeHTML(c.image_url)}" class="candidate-bg" alt="">`
             : `<div class="candidate-bg default-avatar" style="background: ${getGradientForName(c.name)};">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
 
-        // Edge badges pinned onto the border: accumulated poll wins
-        // (persisted, restart-safe) + the gift assigned to this candidate.
+        // Win badge pins onto the top-LEFT border; the gift badge sits in the
+        // top-RIGHT column directly below the number chip (thin gradient bg).
         const wins = c.wins || 0;
         const giftLabel = (c.gift_name || '').trim();
-        const badgeParts = [];
-        if (wins > 0) {
-            badgeParts.push(`<span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span>`);
-        }
+        const winHtml = wins > 0
+            ? `<div class="edge-badges"><span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span></div>`
+            : '';
+        let giftHtml = '';
         if (giftLabel) {
             // Icon only (no text); hover shows the gift name. Falls back to
             // the emoji alone when the gift has no known icon.
             const icon = giftIconHtml(giftLabel, 'gift-icon');
             const labelHtml = icon || getGiftEmoji(giftLabel);
-            badgeParts.push(`<span class="card-badge badge-gift" title="${escapeHTML(giftLabel)}">${labelHtml}</span>`);
+            giftHtml = `<span class="card-badge badge-gift" title="${escapeHTML(giftLabel)}">${labelHtml}</span>`;
         }
-        const badgesHtml = badgeParts.length
-            ? `<div class="edge-badges">${badgeParts.join('')}</div>`
-            : '';
 
         card.innerHTML = `
             <div class="candidate-media">${bgHtml}</div>
-            ${badgesHtml}
-            <div class="candidate-number">${String(c.id).padStart(2, '0')}</div>
+            ${winHtml}
+            <div class="top-right-col">
+                <div class="candidate-number">${String(c.id).padStart(2, '0')}</div>
+                ${giftHtml}
+            </div>
             <div class="candidate-info">
                 <div class="candidate-info-row">
                     <span class="candidate-votes">${c.votes.toLocaleString()}</span>

@@ -220,7 +220,8 @@ body {
     bottom: 10px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
     gap: 6px;
     z-index: 6;
     pointer-events: none;
@@ -234,13 +235,22 @@ body {
     max-width: 100%;
 }
 
-/* Sequence number: solid chip in the border color, pinned to the TOP-RIGHT
-   corner of the card */
-.candidate-number {
+/* TOP-RIGHT column: number chip pinned flush into the corner, gift badge
+   directly below it */
+.top-right-col {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 6;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    z-index: 7;
+    pointer-events: none;
+}
+
+/* Sequence number: bordered box, flush in the corner via .top-right-col */
+.candidate-number {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -249,7 +259,7 @@ body {
     padding: 0 7px;
     background: rgba(8, 8, 15, 0.85);
     border: 1.5px solid var(--card-color);
-    border-radius: 7px;
+    border-radius: 0 14px 7px 7px;
     color: var(--card-color);
     font-size: 16px;
     font-weight: 800;
@@ -257,7 +267,6 @@ body {
     letter-spacing: 0.5px;
     text-shadow: 0 0 8px var(--card-glow);
     box-shadow: 0 0 10px var(--card-glow-soft);
-    pointer-events: none;
 }
 
 /* Votes + percentage row */
@@ -356,10 +365,11 @@ body {
     text-shadow: 0 0 10px var(--card-glow);
 }
 
-/* Gift badge: official icon in a small color-matched frame */
+/* Gift badge: official icon in a small frame with a THIN color gradient */
 .card-badge.badge-gift {
     padding: 4px;
     border-radius: 9px;
+    background: linear-gradient(150deg, var(--card-fill-a) 0%, rgba(8, 8, 15, 0.82) 55%, rgba(8, 8, 15, 0.6) 100%);
 }
 
 /* Official TikTok gift icon */
@@ -394,12 +404,10 @@ body {
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-number,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-number {
-    top: 12px;
-    right: 12px;
     min-width: 42px;
     height: 40px;
     font-size: 20px;
-    border-radius: 8px;
+    border-radius: 0 15px 8px 8px;
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .candidate-votes,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-votes {
@@ -431,6 +439,9 @@ body {
     height: 40px;
 }
 
+.candidate-grid.grid-bento .top-right-col { gap: 5px; }
+.candidate-grid.grid-rest .top-right-col { gap: 4px; }
+
 /* Bento 1x1 cells: compact stack */
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-info {
     bottom: 8px;
@@ -439,12 +450,10 @@ body {
     gap: 4px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-number {
-    top: 8px;
-    right: 8px;
     min-width: 26px;
     height: 24px;
     font-size: 12px;
-    border-radius: 6px;
+    border-radius: 0 12px 6px 6px;
     padding: 0 5px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-votes {
@@ -484,12 +493,10 @@ body {
     gap: 3px;
 }
 .candidate-grid.grid-rest .candidate-number {
-    top: 6px;
-    right: 6px;
     min-width: 22px;
     height: 20px;
     font-size: 10px;
-    border-radius: 5px;
+    border-radius: 0 10px 5px 5px;
     padding: 0 4px;
 }
 .candidate-grid.grid-rest .candidate-votes {
