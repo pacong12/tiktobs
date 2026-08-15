@@ -34,7 +34,7 @@ body {
     padding: 0 18px 0 12px;
     background: linear-gradient(180deg, #ff3030 0%, #c40000 100%);
     color: #ffffff;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -83,7 +83,7 @@ body {
 }
 
 .ticker-content {
-    font-size: 26px;
+    font-size: 18px;
     font-weight: 600;
     letter-spacing: 0.5px;
     padding-right: 80px; /* trailing gap before the next copy starts */
