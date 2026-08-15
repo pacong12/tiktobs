@@ -6,8 +6,6 @@ let comboToastTimer = null;
 // DOM Elements
 const pollContainer = document.getElementById('poll-container');
 const inactiveContainer = document.getElementById('inactive-container');
-const pollTitle = document.getElementById('poll-title');
-const totalVotesSpan = document.getElementById('total-votes');
 const candidatesList = document.getElementById('candidates-list');
 
 // Init overlay
@@ -45,8 +43,6 @@ function renderPoll(poll) {
     inactiveContainer.classList.add('hidden');
     pollContainer.classList.remove('hidden');
 
-    pollTitle.textContent = poll.title;
-    totalVotesSpan.textContent = poll.total_votes.toLocaleString();
 
 
 

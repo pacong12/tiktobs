@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OBS Vote Overlay</title>
-    <link rel="stylesheet" href="vote-overlay-style.css?v=39">
+    <link rel="stylesheet" href="vote-overlay-style.css?v=41">
     <!-- Google Fonts: Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,14 +12,6 @@
 </head>
 <body>
     <div class="overlay-container hidden" id="poll-container">
-        <!-- POLL HEADER (title + total votes merged) -->
-        <div class="poll-header glass-card">
-            <h1 id="poll-title">Loading poll...</h1>
-            <div class="title-accent"></div>
-            <div class="total-votes-pill">🗳️ <span id="total-votes">0</span> votes</div>
-            <p class="poll-instruction">Vote in chat by typing option number (e.g. 1, 2) or option name</p>
-        </div>
-
         <!-- CANDIDATES LIST -->
         <div class="candidates-list" id="candidates-list">
             <!-- Populated dynamically via JS -->
