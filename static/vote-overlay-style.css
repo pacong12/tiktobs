@@ -316,7 +316,7 @@ body {
 .edge-badges {
     position: absolute;
     top: -13px;
-    right: 12px;
+    left: 12px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -441,7 +441,7 @@ body {
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .edge-badges {
     top: -10px;
-    right: 8px;
+    left: 8px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge.badge-win {
     font-size: 9px;
@@ -478,7 +478,7 @@ body {
 }
 .candidate-grid.grid-rest .edge-badges {
     top: -9px;
-    right: 6px;
+    left: 6px;
     gap: 4px;
 }
 .candidate-grid.grid-rest .card-badge.badge-win {
