@@ -348,13 +348,13 @@ body {
 }
 
 /* ============================================================
-   EDGE BADGES — win history + assigned gift, pinned onto the
-   top border edge, futuristic styling in the border color.
+   WIN BADGE — accumulated round wins, pinned INSIDE the top-left
+   corner of the card (not floating), styled in the border color.
    ============================================================ */
 .edge-badges {
     position: absolute;
-    top: -13px;
-    left: 12px;
+    top: 0;
+    left: 0;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -381,7 +381,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 1.2px;
     padding: 6px 15px;
-    transform: skewX(-14deg);
+    border-radius: 14px 0 7px 7px;
     text-shadow: 0 0 10px var(--card-glow);
 }
 
@@ -443,11 +443,6 @@ body {
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name {
     font-size: 19px;
 }
-.candidate-grid.grid-bento .candidate-card.rank-1 .edge-badges,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .edge-badges {
-    top: -16px;
-    left: 14px;
-}
 .candidate-grid.grid-bento .candidate-card.rank-1 .card-badge.badge-win,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge.badge-win {
     font-size: 16px;
@@ -487,11 +482,6 @@ body {
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name {
     font-size: 12px;
 }
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .edge-badges {
-    top: -12px;
-    left: 8px;
-    gap: 4px;
-}
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge.badge-win {
     font-size: 10px;
     padding: 3px 7px;
@@ -529,11 +519,6 @@ body {
 }
 .candidate-grid.grid-rest .candidate-name {
     font-size: 10px;
-}
-.candidate-grid.grid-rest .edge-badges {
-    top: -11px;
-    left: 6px;
-    gap: 3px;
 }
 .candidate-grid.grid-rest .card-badge.badge-win {
     font-size: 8px;
