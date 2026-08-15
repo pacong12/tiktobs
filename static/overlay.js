@@ -3,13 +3,8 @@ let socket = null;
 let leaderboard = []; // [{username, nickname, total_diamonds, total_gifts}]
 const maxEntries = 5; // Display top 5
 
-// Scope: 'session' = active session only, 'all' = full stored history.
-let scope = localStorage.getItem('tiktobs_leaderboard_scope') === 'all' ? 'all' : 'session';
-
 // DOM elements
 const leaderboardList = document.getElementById('leaderboard-list');
-const scopeSessionBtn = document.getElementById('scope-session-btn');
-const scopeAllBtn = document.getElementById('scope-all-btn');
 
 // Init overlay
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,36 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initOverlay() {
-    setupScopeToggle();
     await fetchLeaderboard();
     connectWebSocket();
 }
 
-function setupScopeToggle() {
-    updateScopeButtons();
-    scopeSessionBtn.addEventListener('click', () => setScope('session'));
-    scopeAllBtn.addEventListener('click', () => setScope('all'));
-}
-
-function updateScopeButtons() {
-    scopeSessionBtn.classList.toggle('active', scope === 'session');
-    scopeAllBtn.classList.toggle('active', scope === 'all');
-}
-
-async function setScope(newScope) {
-    if (scope === newScope) return;
-    scope = newScope;
-    localStorage.setItem('tiktobs_leaderboard_scope', scope);
-    updateScopeButtons();
-    await fetchLeaderboard();
-}
-
-// Fetch leaderboard for the selected scope
+// Fetch the LIVE session leaderboard (session scope only)
 async function fetchLeaderboard() {
     try {
         const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
-        const suffix = scope === 'all' ? '?scope=all' : '';
-        const response = await fetch(`${baseUrl}/api/leaderboard${suffix}`);
+        const response = await fetch(`${baseUrl}/api/leaderboard`);
         leaderboard = await response.json();
         renderLeaderboard();
     } catch (error) {
@@ -57,7 +31,7 @@ async function fetchLeaderboard() {
 // Render list dynamically
 function renderLeaderboard() {
     leaderboardList.innerHTML = '';
-    
+
     // Sort top entries: by diamonds descending, then total gifts descending, then by username.
     leaderboard.sort((a, b) => {
         if (b.total_diamonds !== a.total_diamonds) {
@@ -80,7 +54,7 @@ function renderLeaderboard() {
         const rank = index + 1;
         const li = document.createElement('li');
         li.className = `leaderboard-item rank-${rank}`;
-        
+
         const nick = entry.nickname || entry.username;
         const user = entry.username;
         const score = entry.total_diamonds;
@@ -103,8 +77,8 @@ function renderLeaderboard() {
 }
 
 function connectWebSocket() {
-    const wsUrl = window.location.protocol === 'file:' 
-        ? 'ws://127.0.0.1:8000/ws' 
+    const wsUrl = window.location.protocol === 'file:'
+        ? 'ws://127.0.0.1:8000/ws'
         : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 
     socket = new WebSocket(wsUrl);
@@ -134,33 +108,27 @@ function connectWebSocket() {
 
 // Handle WebSocket messages
 function handleWSMessage(msg) {
-    // If the active session is reset or disconnected, clear the local board
-    // only in session scope; the history board keeps its stored totals.
+    // Session-only board: reset when the live session ends or the stream is cleared.
     if (msg.type === 'status' && (msg.status === 'disconnected' || msg.status === 'failed')) {
-        if (scope === 'session') {
-            leaderboard = [];
-            renderLeaderboard();
-        }
+        leaderboard = [];
+        renderLeaderboard();
         return;
     }
 
-    // A cleared event stream resets the session board too.
     if (msg.type === 'stream_cleared') {
-        if (scope === 'session') {
-            leaderboard = [];
-            renderLeaderboard();
-        }
+        leaderboard = [];
+        renderLeaderboard();
         return;
     }
-    
+
     // Process new gift events
     if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
         const event = msg.event;
         const eventData = event.data;
         const username = event.username;
-        
+
         if (!username) return;
-        
+
         const nickname = event.nickname || username;
         const quantity = parseInt(eventData.quantity || 1);
         const diamondCount = parseInt(eventData.diamond_count || 0);
@@ -192,7 +160,7 @@ function handleWSMessage(msg) {
 // Utility: HTML Escaper
 function escapeHTML(str) {
     if (!str) return '';
-    return str.replace(/[&<>'"]/g, 
+    return str.replace(/[&<>'"]/g,
         tag => ({
             '&': '&amp;',
             '<': '&lt;',

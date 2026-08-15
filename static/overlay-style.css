@@ -15,6 +15,7 @@ body {
 /* GORGEOUS ANIMATED GLOWING CONTAINER */
 .leaderboard-container {
     width: 320px;
+    max-width: calc(100vw - 30px);
     background: linear-gradient(135deg, rgba(17, 10, 32, 0.85), rgba(35, 12, 57, 0.85));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -73,39 +74,33 @@ body {
     100% { background-position: 150% 50%; }
 }
 
-/* Scope toggle: Sesi Ini (active session) vs Riwayat (stored history) */
-.scope-toggle {
-    display: flex;
-    gap: 6px;
-    justify-content: center;
-    margin-bottom: 12px;
-}
-
-.scope-btn {
-    flex: 1;
-    padding: 5px 0;
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
+/* LIVE session pill in the header */
+.live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.25s ease;
+    color: #ffffff;
+    background: linear-gradient(135deg, #ff1744, #d50000);
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(255, 23, 68, 0.5);
 }
 
-.scope-btn:hover {
-    color: rgba(255, 255, 255, 0.8);
+.live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ffffff;
+    animation: live-blink 1.2s infinite ease-in-out;
 }
 
-.scope-btn.active {
-    color: #0a0614;
-    background: linear-gradient(90deg, #ffd700, #ff9d00);
-    border-color: transparent;
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.35);
+@keyframes live-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
 }
 
 .leaderboard-list {
@@ -278,7 +273,11 @@ body {
 .item-right {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(0, 240, 255, 0.12);
     font-weight: 800;
     font-size: 14px;
 }
