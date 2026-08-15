@@ -82,6 +82,7 @@ body {
     --card-glow-soft: rgba(0, 229, 255, 0.26);
     position: relative;
     height: 100%;
+    box-sizing: border-box;
     padding: 0;
     overflow: visible;
     background: linear-gradient(165deg, var(--card-fill-a) 0%, var(--card-fill-b) 100%);
