@@ -1,4 +1,5 @@
 import os
+import socket
 import sys
 import threading
 import webbrowser
@@ -10,9 +11,21 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 
 from app.main import app
 
+HOST = "127.0.0.1"
+PORT = 8000
+
+def port_in_use(host: str, port: int) -> bool:
+    """Returns True if something is already bound to host:port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind((host, port))
+            return False
+        except OSError:
+            return True
+
 def open_browser():
     """Opens the dashboard in the default web browser after server start."""
-    webbrowser.open("http://127.0.0.1:8000")
+    webbrowser.open(f"http://{HOST}:{PORT}")
 
 import time
 
@@ -39,16 +52,22 @@ def startup_animation():
         sys.stdout.flush()
         
     print("--------------------------------------------------")
-    print("Server starting at http://127.0.0.1:8000 ...")
+    print(f"Server starting at http://{HOST}:{PORT} ...")
     print("Opening browser dashboard...")
     print("Press Ctrl+C to stop the server.")
     print("--------------------------------------------------\n")
 
 if __name__ == "__main__":
+    if port_in_use(HOST, PORT):
+        print(f"\nError: port {PORT} is already in use.")
+        print("Another instance of the server may already be running, or another")
+        print("application is occupying the port. Close it and try again.")
+        sys.exit(1)
+
     startup_animation()
     
     # Launch browser after 1.5s delay
     threading.Timer(1.5, open_browser).start()
     
     # Start uvicorn server programmatically
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
+    uvicorn.run(app, host=HOST, port=PORT, log_level="info")

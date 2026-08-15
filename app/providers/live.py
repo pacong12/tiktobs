@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 from datetime import datetime
 from typing import Any
 
@@ -17,6 +16,7 @@ from TikTokLive.events import (
     ShareEvent,
 )
 
+from app import config
 from app.providers.base import TikTokProvider
 
 logger = logging.getLogger("app.providers.live")
@@ -71,17 +71,7 @@ class TikTokLiveProvider(TikTokProvider):
         self._max_reconnect_attempts = 3
 
         # Load API key configuration synchronously on initialization
-        sign_api_key = os.getenv("TIKTOK_SIGN_API_KEY")
-        if not sign_api_key:
-            try:
-                if os.path.exists(".env"):
-                    with open(".env") as f:
-                        for line in f:
-                            if line.strip().startswith("TIKTOK_SIGN_API_KEY="):
-                                sign_api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
-                                break
-            except Exception:  # noqa: BLE001, S110
-                pass
+        sign_api_key = config.load_sign_api_key()
 
         if sign_api_key:
             WebDefaults.tiktok_sign_api_key = sign_api_key

@@ -30,6 +30,29 @@ Execute the integration test suite:
 .venv\Scripts\python.exe tests/verify.py
 ```
 
+Or with pytest (dev dependencies: `pip install -r requirements-dev.txt`):
+```powershell
+.venv\Scripts\python.exe -m pytest tests/
+```
+
+---
+
+## Configuration
+
+All settings are optional. They can be set as environment variables or in a
+`.env` file placed next to the app (executable or project root).
+
+| Variable | Default | Description |
+|:---|:---|:---|
+| `TIKTOK_SIGN_API_KEY` | *(none)* | EulerStream signing API key. When set, the app uses the managed cloud WebSocket provider; otherwise it falls back to the local `TikTokLive` library. Can also be managed from the Settings page in the dashboard. |
+| `TIKTOBS_RETENTION_DAYS` | `7` | Events older than this many days are purged from the database (on startup and daily). Set to `0` to keep events forever. |
+| `TIKTOBS_TEST_ENDPOINTS` | `1` | Enables the `/api/test/*` simulation endpoints used by the Poll Admin "simulate" buttons. Set to `0` to disable them (they answer 403). |
+
+> **Note:** The API key can also be changed at runtime from the dashboard
+> (Settings page). It is never displayed in full — only a masked preview is
+> shown. Restart the app after adding or removing a key so the correct
+> provider is selected.
+
 ---
 
 ## Project Structure

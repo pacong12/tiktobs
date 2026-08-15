@@ -1,10 +1,10 @@
 import asyncio
 import json
 import logging
-import os
 
 import websockets
 
+from app import config
 from app.providers.base import TikTokProvider
 
 logger = logging.getLogger("app.providers.euler")
@@ -27,18 +27,9 @@ class EulerWebSocketProvider(TikTokProvider):
         self._reconnect_attempts = 0
         self._max_reconnect_attempts = 3
 
-        # Load API key configuration
-        self.api_key = os.getenv("TIKTOK_SIGN_API_KEY")
-        if not self.api_key:
-            try:
-                if os.path.exists(".env"):
-                    with open(".env") as f:
-                        for line in f:
-                            if line.strip().startswith("TIKTOK_SIGN_API_KEY="):
-                                self.api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
-                                break
-            except Exception:  # noqa: BLE001, S110
-                pass
+        # Load API key configuration (env var, falling back to the .env file
+        # next to the app — never relative to the current working directory).
+        self.api_key = config.load_sign_api_key()
 
     async def connect(self, username: str) -> None:
         """Starts the connection loop to EulerStream cloud WebSocket."""

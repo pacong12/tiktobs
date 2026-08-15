@@ -7,15 +7,9 @@ from datetime import datetime, timezone
 
 import aiosqlite
 
-import sys
+from app import config
 
-def get_base_dir() -> str:
-    """Returns the directory containing the executable or the script."""
-    if getattr(sys, 'frozen', False):
-        return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-DB_DIR = os.path.join(get_base_dir(), "data")
+DB_DIR = os.path.join(config.get_base_dir(), "data")
 DB_PATH = os.path.join(DB_DIR, "tiktok_live.db")
 
 logger = logging.getLogger("app.database")

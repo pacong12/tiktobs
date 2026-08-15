@@ -4,13 +4,14 @@ import os
 import sys
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
+from logging.handlers import RotatingFileHandler
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app import database
+from app import config, database
 from app.bus import event_bus
 from app.models import TikTokEvent
 from app.poll import poll_manager
@@ -20,42 +21,31 @@ from app.providers.live import TikTokLiveProvider
 
 def get_base_dir() -> str:
     """Returns the directory containing the executable or the script."""
-    if getattr(sys, 'frozen', False):
-        return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return config.get_base_dir()
 
 BASE_DIR = get_base_dir()
 DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 LOG_FILE = os.path.join(DATA_DIR, "app.log")
-ENV_FILE = os.path.join(BASE_DIR, ".env")
+ENV_FILE = config.ENV_FILE
 SOUNDS_DIR = os.path.join(DATA_DIR, "sounds")
 os.makedirs(SOUNDS_DIR, exist_ok=True)
 SOUND_CONFIG_FILE = os.path.join(DATA_DIR, "sound_config.json")
 
 # Configure Logging
+# The file handler rotates so app.log cannot grow without bound.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
+        RotatingFileHandler(LOG_FILE, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8")
     ]
 )
 logger = logging.getLogger("app.main")
 
 # Initialize global components (Managed Cloud WebSockets if API key exists, local fallback otherwise)
-sign_api_key = os.getenv("TIKTOK_SIGN_API_KEY")
-if not sign_api_key:
-    try:
-        if os.path.exists(ENV_FILE):
-            with open(ENV_FILE) as f:
-                for line in f:
-                    if line.strip().startswith("TIKTOK_SIGN_API_KEY="):
-                        sign_api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
-                        break
-    except Exception:  # noqa: BLE001, S110
-        pass
+sign_api_key = config.load_sign_api_key()
 
 if sign_api_key:
     live_provider = EulerWebSocketProvider()
