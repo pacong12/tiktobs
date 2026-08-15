@@ -40,8 +40,13 @@ async def simulate_comment_vote():
     if not candidates:
         raise HTTPException(status_code=400, detail="Active poll has no candidates")
 
-    c = random.choice(candidates)
-    vote_text = random.choice([c["id"], c["name"]])
+    # Vote with the candidate's unique 1-based sequence number rather than
+    # their name: duplicate candidate names are ambiguous and get rejected by
+    # the poll, which made this simulate button flaky. A sequence number always
+    # matches exactly one candidate.
+    idx = random.randrange(len(candidates))
+    c = candidates[idx]
+    vote_text = str(idx + 1)
 
     success = await poll_manager.record_vote(user, vote_text)
     if success:
@@ -51,7 +56,7 @@ async def simulate_comment_vote():
             "poll": poll_status
         })
         return {"status": "success", "username": user, "vote": vote_text, "candidate": c["name"]}
-    return {"status": "skipped", "message": "User already voted or match failed"}
+    return {"status": "skipped", "message": "Vote match failed"}
 
 
 @router.post("/gift-vote")
