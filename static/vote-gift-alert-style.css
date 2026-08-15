@@ -61,6 +61,17 @@ body {
 
 .gift-emoji {
     font-size: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Official TikTok gift icon inside the alert */
+.gift-emoji img.gift-icon-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    display: block;
     filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
     animation: bounce-rotate 1.2s infinite ease-in-out;
 }

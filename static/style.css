@@ -1657,3 +1657,13 @@ body {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
 }
+
+
+/* Official TikTok gift icon used inline in text labels (poll admin) */
+.gift-icon-inline {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    vertical-align: middle;
+    display: inline-block;
+}

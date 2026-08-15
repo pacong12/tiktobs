@@ -144,6 +144,22 @@ function playDefaultChime() {
 }
 
 // Map common gifts to emojis
+// Normalized key for the GIFT_ICONS map (same rules as the backend).
+function giftIconKey(name) {
+    return ((name || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
+}
+
+// Official TikTok gift icon <img>, or '' when the gift has no known icon
+// (callers fall back to the emoji mapping). On load error the img replaces
+// itself with the emoji fallback so the alert is never empty.
+function giftIconHtml(giftName, cls) {
+    const icons = window.GIFT_ICONS || {};
+    const url = icons[giftIconKey(giftName)];
+    if (!url) return '';
+    const fallback = getGiftEmoji(giftName);
+    return `<img class="${cls}" src="${url}" alt="" loading="lazy" data-fallback="${fallback}" onerror="this.outerHTML=this.dataset.fallback">`;
+}
+
 function getGiftEmoji(giftName) {
     if (!giftName) return '🎁';
     const name = giftName.toLowerCase();
@@ -219,7 +235,8 @@ function processQueue() {
     giftNameSpan.textContent = alert.giftName;
     boostCountDiv.textContent = `+${alert.votesAdded} VOTES`;
     candidateNameSpan.textContent = `${alert.candidateName} 👑`;
-    giftEmojiSpan.textContent = getGiftEmoji(alert.giftName);
+    giftEmojiSpan.innerHTML = giftIconHtml(alert.giftName, 'gift-icon-img')
+        || `<span class="gift-emoji-fallback">${getGiftEmoji(alert.giftName)}</span>`;
     
     // Play sound removed (moved to instant WS receipt trigger)
     

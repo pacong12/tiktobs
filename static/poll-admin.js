@@ -452,7 +452,7 @@ function renderRounds(rounds) {
                 <div class="round-row${isWinner ? ' rr-winner' : ''}">
                     <span class="rr-name">
                         ${isWinner ? '🏆 ' : ''}${escapeHTML(c.name)}
-                        ${c.gift_name ? `<span class="rr-boost">(🎁 ${escapeHTML(c.gift_name)})</span>` : ''}
+                        ${c.gift_name ? `<span class="rr-boost">(${giftIconInline(c.gift_name)} ${escapeHTML(c.gift_name)})</span>` : ''}
                     </span>
                     <span class="rr-track"><span class="rr-fill" style="width:${c.percentage}%;"></span></span>
                     <span class="rr-votes">${c.votes} (${c.percentage}%)</span>
@@ -563,7 +563,7 @@ function updatePollUI(poll) {
         const row = document.createElement('div');
         row.className = 'poll-result-row';
         if (maxVotes > 0 && c.votes === maxVotes) row.classList.add('is-leading');
-        const giftTriggerText = c.gift_name ? ` <span class="result-boost">(Boost: 🎁 ${escapeHTML(c.gift_name)})</span>` : '';
+        const giftTriggerText = c.gift_name ? ` <span class="result-boost">(Boost: ${giftIconInline(c.gift_name)} ${escapeHTML(c.gift_name)})</span>` : '';
         row.innerHTML = `
             <div class="result-top">
                 <span class="result-name">${c.id}. ${escapeHTML(c.name)}${giftTriggerText}</span>
@@ -777,6 +777,17 @@ function setupSoundEvents() {
 }
 
 // Helper: Escape HTML
+// Official TikTok gift icon (inline, for text labels) with 🎁 fallback.
+function giftIconKey(name) {
+    return ((name || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
+}
+function giftIconInline(giftName) {
+    const icons = window.GIFT_ICONS || {};
+    const url = icons[giftIconKey(giftName)];
+    if (!url) return '🎁';
+    return `<img class="gift-icon-inline" src="${url}" alt="" loading="lazy" onerror="this.outerHTML='🎁'">`;
+}
+
 function escapeHTML(str) {
     if (!str) return '';
     return str.replace(/[&<>'"]/g, 
