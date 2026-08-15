@@ -223,10 +223,10 @@ body {
     right: 0;
     bottom: 0;
     height: 33.33%;
-    /* candidate tint, plus a thin dark layer fading in at the bottom so the
-       vote/percent/name sit on a slightly blackened base for readability */
+    /* candidate tint under a black layer that fills the whole 1/3 panel
+       (lighter at the top, denser toward the bottom edge) */
     background:
-        linear-gradient(180deg, transparent 0%, transparent 55%, rgba(0, 0, 0, 0.30) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.40) 55%, rgba(0, 0, 0, 0.58) 100%),
         linear-gradient(180deg, transparent 0%, var(--card-fill-a) 60%, var(--card-fill-gift) 100%);
     border-radius: 0 0 14px 14px;
     z-index: 5;
