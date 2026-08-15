@@ -1,4 +1,4 @@
-"""Poll / voting endpoints plus the custom gift catalog."""
+"""Poll / voting endpoints."""
 
 import csv
 import io
@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Response
 
 from app import database, state
 from app.poll import poll_manager
-from app.schemas import CustomGiftRequest, StartPollRequest
+from app.schemas import StartPollRequest
 
 router = APIRouter(prefix="/api", tags=["poll"])
 
@@ -152,35 +152,3 @@ async def delete_poll_round_api(round_id: int):
     await database.delete_poll_round(round_id)
     return {"status": "ok", "deleted": round_id}
 
-
-# ---------------------------------------------------------------------------
-# Custom Gift Catalog (user-added gifts for the Gift Boost dropdown)
-# ---------------------------------------------------------------------------
-
-@router.get("/gifts")
-async def list_custom_gifts_api():
-    """Returns user-added gifts (merged with the built-in catalog on the client)."""
-    gifts = await database.get_custom_gifts()
-    return {"gifts": gifts}
-
-
-@router.post("/gifts")
-async def add_custom_gift_api(req: CustomGiftRequest):
-    """Adds (or updates) a user-defined gift."""
-    name = (req.name or "").strip()
-    if not name:
-        raise HTTPException(status_code=400, detail="Gift name cannot be empty")
-    if len(name) > 60:
-        raise HTTPException(status_code=400, detail="Gift name too long (max 60 chars)")
-    diamonds = max(0, int(req.diamonds or 0))
-    await database.add_custom_gift(name, diamonds)
-    return {"status": "success", "gift": {"name": name, "diamonds": diamonds}}
-
-
-@router.delete("/gifts/{name}")
-async def delete_custom_gift_api(name: str):
-    """Removes a user-defined gift."""
-    deleted = await database.delete_custom_gift(name.strip())
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Custom gift not found")
-    return {"status": "success", "deleted": name}

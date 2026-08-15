@@ -40,8 +40,3 @@ class TickerConfigRequest(BaseModel):
     direction: str | None = None      # "left" or "right"
     separator: str | None = None      # text shown between messages
     messages: list[str] | None = None  # one entry per scrolling line
-
-
-class CustomGiftRequest(BaseModel):
-    name: str
-    diamonds: int | None = None

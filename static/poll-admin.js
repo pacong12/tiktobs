@@ -1,7 +1,6 @@
 // State variables
 let socket = null;
 let pollTimerInterval = null;
-let customGifts = []; // user-defined gifts loaded from /api/gifts
 
 // TikTok popular gift catalog (name + diamond value) for the Gift Boost dropdown.
 // Values marked below were verified against TikTok's live gift catalog (749 gifts)
@@ -56,15 +55,11 @@ function buildGiftControl(preset) {
     noneOpt.textContent = 'Gift Boost (tidak ada)';
     select.appendChild(noneOpt);
 
-    // Built-in popular gifts + user-added custom gifts.
-    const allGifts = [
-        ...GIFT_CATALOG.map(g => ({ name: g.name, d: g.d })),
-        ...customGifts.map(g => ({ name: g.name, d: g.diamonds, custom: true })),
-    ];
-    allGifts.forEach(g => {
+    // Built-in popular gifts (diamond values verified against TikTok's catalog).
+    GIFT_CATALOG.forEach(g => {
         const opt = document.createElement('option');
         opt.value = g.name;
-        opt.textContent = `${g.custom ? '⭐ ' : ''}${g.name} — ${g.d} 💎`;
+        opt.textContent = `${g.name} — ${g.d} 💎`;
         select.appendChild(opt);
     });
 
@@ -113,91 +108,6 @@ function readGiftValue(row) {
     return select.value.trim() || null;
 }
 
-// Custom gift catalog management (persisted server-side, merged into dropdowns)
-async function loadCustomGifts() {
-    try {
-        const res = await fetch('/api/gifts');
-        if (res.ok) {
-            const data = await res.json();
-            customGifts = data.gifts || [];
-            renderCustomGiftList();
-            refreshGiftSelects();
-        }
-    } catch (e) {
-        console.warn('Could not load custom gifts:', e);
-    }
-}
-
-function renderCustomGiftList() {
-    const list = document.getElementById('custom-gift-list');
-    if (!list) return;
-    if (!customGifts.length) {
-        list.innerHTML = '<div class="custom-gift-empty">Belum ada gift kustom. Tambahkan di atas agar muncul di semua dropdown Gift Boost.</div>';
-        return;
-    }
-    list.innerHTML = customGifts.map(g =>
-        `<span class="custom-gift-chip">⭐ ${escapeHTML(g.name)} — ${g.diamonds} 💎`
-        + `<button class="custom-gift-del" data-name="${escapeHTML(g.name)}" title="Hapus" type="button">✕</button></span>`
-    ).join('');
-    list.querySelectorAll('.custom-gift-del').forEach(btn => {
-        btn.addEventListener('click', () => deleteCustomGift(btn.dataset.name));
-    });
-}
-
-async function addCustomGift() {
-    const nameInput = document.getElementById('custom-gift-name');
-    const diamondsInput = document.getElementById('custom-gift-diamonds');
-    const name = (nameInput.value || '').trim();
-    if (!name) { alert('Masukkan nama gift terlebih dahulu.'); return; }
-    const diamonds = parseInt(diamondsInput.value) || 0;
-    try {
-        const res = await fetch('/api/gifts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, diamonds })
-        });
-        const data = await res.json();
-        if (res.ok) {
-            nameInput.value = '';
-            diamondsInput.value = '';
-            await loadCustomGifts();
-        } else {
-            alert(`Gagal menambah gift: ${data.detail || 'error'}`);
-        }
-    } catch (e) {
-        console.error('addCustomGift error:', e);
-        alert('Gagal menambah gift kustom.');
-    }
-}
-
-async function deleteCustomGift(name) {
-    try {
-        const res = await fetch('/api/gifts/' + encodeURIComponent(name), { method: 'DELETE' });
-        if (res.ok) { await loadCustomGifts(); }
-        else { alert('Gagal menghapus gift.'); }
-    } catch (e) {
-        console.error('deleteCustomGift error:', e);
-    }
-}
-
-// Rebuild all existing Gift Boost dropdowns so new/removed custom gifts show up.
-function refreshGiftSelects() {
-    document.querySelectorAll('.gift-control').forEach(wrap => {
-        // Preserve the current selection across the rebuild.
-        const select = wrap.querySelector('.candidate-gift-select');
-        let preset = null;
-        if (select) {
-            if (select.value === '__custom__') {
-                const manual = wrap.querySelector('.candidate-gift-manual');
-                preset = manual ? manual.value.trim() || null : null;
-            } else {
-                preset = select.value.trim() || null;
-            }
-        }
-        wrap.replaceWith(buildGiftControl(preset));
-    });
-}
-
 // DOM Elements
 const pollSetupSection = document.getElementById('poll-setup-section');
 const pollActiveConfigHint = document.getElementById('poll-active-config-hint');
@@ -232,17 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initPollAdmin() {
-    // Load user-defined gifts first so the dropdowns include them.
-    try {
-        const res = await fetch('/api/gifts');
-        if (res.ok) customGifts = (await res.json()).gifts || [];
-    } catch (e) { /* offline fallback: built-in catalog only */ }
-
     // Populate the two initial candidate rows' Gift Boost dropdowns.
     document.querySelectorAll('.candidate-gift-cell').forEach(cell => {
         cell.replaceWith(buildGiftControl());
     });
-    renderCustomGiftList();
     setupEventListeners();
     setupSoundEvents();
     await loadCurrentSound();
@@ -281,12 +184,6 @@ function setupEventListeners() {
             }
             btn.closest('.candidate-input-row').remove();
         });
-    }
-
-    // Custom gift management
-    const addCustomGiftBtn = document.getElementById('add-custom-gift-btn');
-    if (addCustomGiftBtn) {
-        addCustomGiftBtn.addEventListener('click', addCustomGift);
     }
 
     // Live "menit" hint for the duration input

@@ -154,13 +154,9 @@ async def init_db():
         );
     """)
 
-    # User-defined gifts added to the Gift Boost dropdown catalog.
-    await db.execute("""
-        CREATE TABLE IF NOT EXISTS custom_gifts (
-            name TEXT PRIMARY KEY,
-            diamonds INTEGER NOT NULL DEFAULT 0
-        );
-    """)
+    # Legacy cleanup: the user-defined gift catalog was removed; the built-in
+    # catalog (static/poll-admin.js) + manual entry cover all cases now.
+    await db.execute("DROP TABLE IF EXISTS custom_gifts;")
     await db.commit()
 
 
@@ -250,30 +246,6 @@ async def get_active_poll() -> dict | None:
 async def clear_active_poll() -> None:
     """Removes the persisted active poll row."""
     await _execute_write("DELETE FROM active_poll;")
-
-# ---------------------------------------------------------------------------
-# Custom gift catalog (user-added gifts for the Gift Boost dropdown)
-# ---------------------------------------------------------------------------
-
-async def get_custom_gifts() -> list[dict]:
-    """Returns user-added gifts ordered by name."""
-    db = await _get_shared_db()
-    async with db.execute("SELECT name, diamonds FROM custom_gifts ORDER BY name;") as cursor:
-        rows = await cursor.fetchall()
-    return [{"name": r[0], "diamonds": r[1]} for r in rows]
-
-async def add_custom_gift(name: str, diamonds: int) -> None:
-    """Adds (or updates) a user-defined gift."""
-    await _execute_write(
-        "INSERT INTO custom_gifts (name, diamonds) VALUES (?, ?) "
-        "ON CONFLICT(name) DO UPDATE SET diamonds = excluded.diamonds;",
-        (name, diamonds),
-    )
-
-async def delete_custom_gift(name: str) -> bool:
-    """Removes a user-defined gift. Returns True if a row was deleted."""
-    cursor = await _execute_write("DELETE FROM custom_gifts WHERE name = ?;", (name,))
-    return cursor.rowcount > 0
 
 async def create_session(username: str) -> str:
     """Creates a new LIVE session and stores it in the database. Returns the session ID."""

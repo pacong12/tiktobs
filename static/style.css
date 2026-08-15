@@ -1483,48 +1483,6 @@ body {
     color: var(--color-text-muted);
 }
 
-/* Custom gift manager */
-.custom-gift-row {
-    display: grid;
-    grid-template-columns: 1fr 90px;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.custom-gift-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-}
-
-.custom-gift-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    font-size: 11px;
-    background: rgba(255, 215, 0, 0.08);
-    border: 1px solid rgba(255, 215, 0, 0.25);
-    border-radius: 14px;
-    color: var(--color-text);
-}
-
-.custom-gift-del {
-    background: none;
-    border: none;
-    color: var(--color-danger);
-    cursor: pointer;
-    font-size: 11px;
-    padding: 0 2px;
-    opacity: 0.8;
-}
-.custom-gift-del:hover { opacity: 1; }
-
-.custom-gift-empty {
-    font-size: 11px;
-    color: var(--color-text-muted);
-}
 /* Server connection badge (dashboard <-> backend) */
 .server-link {
     display: inline-flex;

@@ -1,4 +1,4 @@
-"""End-to-end tests for the poll rounds, custom gifts, sound config, and CSV export."""
+"""End-to-end tests for the poll rounds, sound config, and CSV export."""
 
 import pytest
 
@@ -138,34 +138,6 @@ def test_ticker_update_validation_and_persistence(client, tmp_path, monkeypatch)
     assert cfg["enabled"] is False
     assert cfg["messages"] == ["Promo A", "Promo B"]
 
-# ---------- Custom gifts ----------
-
-def test_custom_gift_crud(client):
-    add = client.post("/api/gifts", json={"name": "Naga Api", "diamonds": 500})
-    assert add.status_code == 200
-    assert add.json()["gift"]["name"] == "Naga Api"
-
-    listed = client.get("/api/gifts").json()["gifts"]
-    assert any(g["name"] == "Naga Api" and g["diamonds"] == 500 for g in listed)
-
-    # Upsert with a different diamond count
-    client.post("/api/gifts", json={"name": "Naga Api", "diamonds": 999})
-    listed = client.get("/api/gifts").json()["gifts"]
-    dragons = [g for g in listed if g["name"] == "Naga Api"]
-    assert len(dragons) == 1
-    assert dragons[0]["diamonds"] == 999
-
-    delete = client.delete("/api/gifts/Naga%20Api")
-    assert delete.status_code == 200
-    assert all(g["name"] != "Naga Api" for g in client.get("/api/gifts").json()["gifts"])
-
-    missing = client.delete("/api/gifts/TidakAda")
-    assert missing.status_code == 404
-
-
-def test_custom_gift_rejects_empty_or_long_name(client):
-    assert client.post("/api/gifts", json={"name": "  "}).status_code == 400
-    assert client.post("/api/gifts", json={"name": "x" * 100}).status_code == 400
 
 
 # ---------- CSV export ----------
