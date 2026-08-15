@@ -7,45 +7,6 @@ const inactiveContainer = document.getElementById('inactive-container');
 const pollTitle = document.getElementById('poll-title');
 const totalVotesSpan = document.getElementById('total-votes');
 const candidatesList = document.getElementById('candidates-list');
-const pollCountdown = document.getElementById('poll-countdown');
-const pollCountdownTime = document.getElementById('poll-countdown-time');
-
-// Countdown state
-let expiresAtMs = null;
-let countdownInterval = null;
-
-function formatCountdown(totalSeconds) {
-    const s = Math.max(0, totalSeconds);
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-}
-
-function updateCountdownDisplay() {
-    if (expiresAtMs === null) return;
-    const remaining = Math.floor((expiresAtMs - Date.now()) / 1000);
-    pollCountdownTime.textContent = formatCountdown(remaining);
-    if (remaining <= 10) {
-        pollCountdown.classList.add('urgent');
-    } else {
-        pollCountdown.classList.remove('urgent');
-    }
-}
-
-function startCountdown(expiresAtIso) {
-    if (!expiresAtIso) {
-        expiresAtMs = null;
-        pollCountdown.classList.add('hidden');
-        if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-        return;
-    }
-    expiresAtMs = new Date(expiresAtIso).getTime();
-    pollCountdown.classList.remove('hidden');
-    updateCountdownDisplay();
-    if (!countdownInterval) {
-        countdownInterval = setInterval(updateCountdownDisplay, 1000);
-    }
-}
 
 // Init overlay
 document.addEventListener('DOMContentLoaded', () => {
@@ -74,7 +35,6 @@ function renderPoll(poll) {
     if (!poll || !poll.is_active) {
         pollContainer.classList.add('hidden');
         inactiveContainer.classList.remove('hidden');
-        startCountdown(null);
         return;
     }
 
@@ -83,7 +43,6 @@ function renderPoll(poll) {
     pollContainer.classList.remove('hidden');
 
     pollTitle.textContent = poll.title;
-    startCountdown(poll.expires_at);
     totalVotesSpan.textContent = poll.total_votes.toLocaleString();
 
 
