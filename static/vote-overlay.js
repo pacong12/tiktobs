@@ -97,6 +97,25 @@ function renderPoll(poll) {
     // Rank candidates: most votes first. Sort a copy descending.
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
+    // Adaptive grid layout based on candidate count:
+    //   2      -> 2 columns side by side (duel view)
+    //   3      -> 3 columns in one row
+    //   4      -> 2 x 2
+    //   5-6    -> 3 columns, medium cards
+    //   7-9    -> 3 columns, medium cards
+    //   10+    -> 4 columns, compact cards
+    const count = ranked.length;
+    let cols;
+    if (count <= 2)      cols = 2;
+    else if (count === 3) cols = 3;
+    else if (count === 4) cols = 2;
+    else if (count <= 9)  cols = 3;
+    else                  cols = 4;
+
+    const sizeClass = count <= 4 ? 'size-lg' : (count <= 9 ? 'size-md' : 'size-sm');
+    candidatesList.className = `candidates-list ${sizeClass}`;
+    candidatesList.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    candidatesList.innerHTML = '';
     // Build a card where the candidate photo fills the whole card; the vote
     // badge floats in the top-right corner and the progress bar + percentage
     // float along the bottom (all layered above the photo).
@@ -129,8 +148,6 @@ function renderPoll(poll) {
         return card;
     };
 
-    candidatesList.className = 'candidates-list';
-    candidatesList.innerHTML = '';
     ranked.forEach(c => candidatesList.appendChild(buildCard(c)));
 }
 

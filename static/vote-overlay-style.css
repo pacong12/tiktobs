@@ -75,18 +75,31 @@ body {
     line-height: 1.4;
 }
 
-/* Candidates List */
+/* Candidates List — adaptive grid; column count and card size are set from
+   JS based on the number of candidates (see renderPoll in vote-overlay.js) */
 .candidates-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    display: grid;
+    gap: var(--grid-gap, 14px);
 }
+
+.candidates-list.size-lg { --card-h: 150px; --grid-gap: 16px; }
+.candidates-list.size-md { --card-h: 118px; --grid-gap: 13px; }
+.candidates-list.size-sm { --card-h: 98px;  --grid-gap: 10px; }
+
+/* Compact internals for small cards (many candidates) */
+.candidates-list.size-sm .candidate-name { font-size: 13px; }
+.candidates-list.size-sm .candidate-percentage { font-size: 12px; min-width: 36px; }
+.candidates-list.size-sm .candidate-badge { padding: 3px 9px; font-size: 9px; top: -8px; right: -6px; }
+.candidates-list.size-sm .candidate-badge .votes-value { font-size: 11px; }
+.candidates-list.size-sm .progress-track { height: 9px; }
+.candidates-list.size-sm .candidate-overlay { padding: 8px 10px; gap: 4px; }
+.candidates-list.size-sm .candidate-number { min-width: 22px; height: 22px; font-size: 11px; top: -6px; left: -6px; }
 
 /* CANDIDATE CARD — the photo fills the entire card; the name, vote badge and
    progress bar float on top of it */
 .candidate-card {
     position: relative;
-    height: 96px;
+    height: var(--card-h, 120px);
     padding: 0;
     overflow: visible;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
