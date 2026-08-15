@@ -115,6 +115,21 @@ the full URL):
 The running text messages, speed, and direction are managed on the Settings
 page ("Running Text" card) and apply to open overlays instantly.
 
+### Vote Overlay Badges (wins + gifts)
+
+Each candidate card on the vote overlay can carry two floating badges:
+
+- **Win badge** (🏆 ×N) — how many poll rounds that candidate has won so far
+  in the current session. A win is recorded every time a round ends with a
+  single clear winner (at least one vote cast, no tie). Wins are stored in the
+  database keyed by the live session (or `local` when no live connection), so
+  they accumulate across rounds and survive app restarts within the session.
+- **Gift badge** — the gift assigned to the candidate (emoji + name), so
+  viewers instantly see which gift boosts which candidate.
+
+Both badges update live via WebSocket and scale down automatically on the
+smaller bento-grid cards.
+
 ---
 
 ## TikTok Gift Schema (streak / combo handling)

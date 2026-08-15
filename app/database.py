@@ -154,6 +154,22 @@ async def init_db():
         );
     """)
 
+    # Per-session poll wins. One row every time a poll round ends with a
+    # single clear winner, so badges survive app restarts within a session.
+    # session_id is the live-session id, or 'local' when no live connection.
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS poll_wins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            candidate_name TEXT NOT NULL,
+            candidate_key TEXT NOT NULL,
+            votes INTEGER NOT NULL,
+            round_name TEXT,
+            won_at TEXT NOT NULL
+        );
+    """)
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_poll_wins_session ON poll_wins(session_id, candidate_key);")
+
     # Legacy cleanup: the user-defined gift catalog was removed; the built-in
     # catalog (static/poll-admin.js) + manual entry cover all cases now.
     await db.execute("DROP TABLE IF EXISTS custom_gifts;")
@@ -218,6 +234,45 @@ async def delete_poll_round(round_id: int) -> None:
 async def clear_poll_rounds() -> None:
     """Deletes all archived rounds."""
     await _execute_write("DELETE FROM poll_rounds")
+
+# ---------------------------------------------------------------------------
+# Per-session poll wins (badge data, restart-safe)
+# ---------------------------------------------------------------------------
+
+async def record_poll_win(
+    session_id: str,
+    candidate_name: str,
+    candidate_key: str,
+    votes: int,
+    round_name: str | None = None,
+) -> None:
+    """Records one poll-round win for a candidate within a session."""
+    await _execute_write(
+        """
+        INSERT INTO poll_wins
+            (session_id, candidate_name, candidate_key, votes, round_name, won_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (session_id, candidate_name, candidate_key, votes, round_name,
+         datetime.now(timezone.utc).isoformat()),
+    )
+
+async def clear_poll_wins(session_id: str | None = None) -> None:
+    """Deletes recorded wins — all sessions when session_id is None."""
+    if session_id is None:
+        await _execute_write("DELETE FROM poll_wins;")
+    else:
+        await _execute_write("DELETE FROM poll_wins WHERE session_id = ?;", (session_id,))
+
+async def get_session_wins(session_id: str) -> dict[str, int]:
+    """Returns win counts keyed by candidate_key for one session."""
+    db = await _get_shared_db()
+    async with db.execute(
+        "SELECT candidate_key, COUNT(*) FROM poll_wins WHERE session_id = ? GROUP BY candidate_key;",
+        (session_id,),
+    ) as cursor:
+        rows = await cursor.fetchall()
+    return {row[0]: row[1] for row in rows}
 
 # ---------------------------------------------------------------------------
 # Active poll persistence (restart-safe voting state)

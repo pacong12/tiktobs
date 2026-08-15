@@ -85,12 +85,28 @@ function renderPoll(poll) {
             ? `<img src="${escapeHTML(c.image_url)}" class="candidate-bg" alt="">`
             : `<div class="candidate-bg default-avatar" style="background: ${getGradientForName(c.name)};">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
 
+        // Session badges: accumulated poll wins (persisted, restart-safe)
+        // and the gift assigned to this candidate.
+        const wins = c.wins || 0;
+        const giftLabel = (c.gift_name || '').trim();
+        const badgeParts = [];
+        if (wins > 0) {
+            badgeParts.push(`<span class="card-badge badge-win" title="Round wins this session">&#127942; &times;${wins}</span>`);
+        }
+        if (giftLabel) {
+            badgeParts.push(`<span class="card-badge badge-gift">${getGiftEmoji(giftLabel)} ${escapeHTML(giftLabel)}</span>`);
+        }
+        const badgesHtml = badgeParts.length
+            ? `<div class="candidate-badges">${badgeParts.join('')}</div>`
+            : '';
+
         card.innerHTML = `
             <div class="candidate-media">
                 ${bgHtml}
                 <div class="candidate-scrim"></div>
             </div>
             <div class="candidate-number">${c.id}</div>
+            ${badgesHtml}
             <div class="candidate-badge"><span class="votes-value">${c.votes.toLocaleString()}</span> votes</div>
             <div class="candidate-overlay">
                 <span class="candidate-name">${escapeHTML(c.name)}</span>

@@ -7,6 +7,28 @@ from app.state import manager
 
 logger = logging.getLogger("app.poll")
 
+# ---------------------------------------------------------------------------
+# Session key + candidate key helpers for the per-session win registry.
+# ---------------------------------------------------------------------------
+
+def _session_key() -> str:
+    """Returns the current live-session id, or 'local' when no live
+    connection is active (polls run standalone, e.g. during testing)."""
+    try:
+        from app import state
+        if state.processor is not None and getattr(state.processor, "session_id", None):
+            return str(state.processor.session_id)
+    except Exception:  # noqa: BLE001
+        pass
+    return "local"
+
+def _candidate_key(name: str) -> str:
+    """Normalizes a candidate name for win matching (lowercase, collapsed
+    whitespace)."""
+    if not name:
+        return ""
+    return " ".join(name.strip().lower().split())
+
 # Strips emoji/punctuation/symbols from gift names so live names like
 # "Rose \U0001f339" still match the configured "Rose".
 _GIFT_NOISE_RE = re.compile(r"[^\w\s]", re.UNICODE)
@@ -41,6 +63,9 @@ class PollManager:
         self.duration_seconds = None  # int | None
         self.timer_task = None  # asyncio.Task | None
         self.lock = asyncio.Lock()
+        # Per-session win counts: session_key -> {candidate_key -> wins}.
+        # Lazily loaded from the DB the first time a session is used.
+        self.wins_cache: dict[str, dict[str, int]] = {}
 
     async def start_poll(self, title: str, candidates: list[dict], duration_seconds: int | None = None, round_name: str = "") -> None:
         """Starts a new poll and resets all existing votes and voters.
@@ -113,6 +138,18 @@ class PollManager:
 
             if was_active and archive:
                 total_votes = sum(c["votes"] for c in self.candidates)
+
+                # Determine the round winner BEFORE archiving: a win only
+                # counts when votes were cast and ONE candidate leads clearly
+                # (a tie awards nobody). Wins are recorded per session so the
+                # overlay badges accumulate across rounds and survive restarts.
+                winner_name = None
+                if total_votes > 0:
+                    leader_votes = max(c["votes"] for c in self.candidates)
+                    leaders = [c for c in self.candidates if c["votes"] == leader_votes]
+                    if len(leaders) == 1:
+                        winner_name = leaders[0]["name"]
+                        await self._record_win(leaders[0])
                 result_candidates = []
                 for c in self.candidates:
                     pct = round((c["votes"] / total_votes) * 100, 1) if total_votes > 0 else 0.0
@@ -141,6 +178,7 @@ class PollManager:
                         "round_name": self.round_name or self.title,
                         "title": self.title,
                         "total_votes": total_votes,
+                        "winner": winner_name,
                         "candidates": result_candidates,
                         "duration_seconds": self.duration_seconds,
                         "started_at": self.started_at.isoformat() if self.started_at else None,
@@ -296,6 +334,36 @@ class PollManager:
             logger.debug(f"Gift '{gift_name}' ignored: no candidate is assigned this gift.")
             return False, None, 0
 
+    async def _load_wins(self, session_key: str) -> None:
+        """Loads win counts for a session from the DB into the cache."""
+        try:
+            from app import database
+            self.wins_cache[session_key] = await database.get_session_wins(session_key)
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Failed to load session wins for '{session_key}': {e}")
+            self.wins_cache.setdefault(session_key, {})
+
+    async def _record_win(self, candidate: dict) -> None:
+        """Persists one win for the round winner (DB + cache)."""
+        session_key = _session_key()
+        key = _candidate_key(candidate["name"])
+        if not key:
+            return
+        try:
+            from app import database
+            await database.record_poll_win(
+                session_id=session_key,
+                candidate_name=candidate["name"],
+                candidate_key=key,
+                votes=candidate["votes"],
+                round_name=self.round_name or self.title,
+            )
+            cache = self.wins_cache.setdefault(session_key, {})
+            cache[key] = cache.get(key, 0) + 1
+            logger.info(f"Win recorded: '{candidate['name']}' now has {cache[key]} win(s) in session '{session_key}'.")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Failed to record poll win: {e}")
+
     async def _persist_state(self) -> None:
         """Saves the current poll state to the DB so it survives app restarts."""
         try:
@@ -365,6 +433,12 @@ class PollManager:
     async def get_status(self) -> dict:
         """Returns the current poll status and calculated percentages."""
         async with self.lock:
+            # Per-session win counts (lazy-loaded from DB, cached afterwards).
+            session_key = _session_key()
+            if session_key not in self.wins_cache:
+                await self._load_wins(session_key)
+            wins_map = self.wins_cache.get(session_key, {})
+
             total_votes = sum(c["votes"] for c in self.candidates)
             status_candidates = []
             for c in self.candidates:
@@ -376,7 +450,8 @@ class PollManager:
                     "image_url": c["image_url"],
                     "gift_name": c.get("gift_name", ""),
                     "votes": votes,
-                    "percentage": pct
+                    "percentage": pct,
+                    "wins": wins_map.get(_candidate_key(c["name"]), 0)
                 })
 
             time_left = None
