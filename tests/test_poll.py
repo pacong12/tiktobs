@@ -169,5 +169,88 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         success, name, votes = await self.poll_manager.record_gift_vote("Ice Cream", 1)
         self.assertFalse(success)
 
+    async def test_vote_by_sequence_number_with_leading_zeros(self):
+        candidates = [
+            {"name": "Alice", "image_url": ""},
+            {"name": "Bob", "image_url": ""},
+            {"name": "Charlie", "image_url": ""},
+        ]
+        await self.poll_manager.start_poll(self.title, candidates)
+
+        # "01" -> candidate #1 (Alice)
+        self.assertTrue(await self.poll_manager.record_vote("u1", "01"))
+        # "#02" -> candidate #2 (Bob)
+        self.assertTrue(await self.poll_manager.record_vote("u2", "#02"))
+        # " 003 " -> candidate #3 (Charlie)
+        self.assertTrue(await self.poll_manager.record_vote("u3", " 003 "))
+        # Out-of-range number -> no match
+        self.assertFalse(await self.poll_manager.record_vote("u4", "99"))
+        # Not a pure number -> no match
+        self.assertFalse(await self.poll_manager.record_vote("u5", "1a"))
+
+        status = await self.poll_manager.get_status()
+        self.assertEqual(status["candidates"][0]["votes"], 1)
+        self.assertEqual(status["candidates"][1]["votes"], 1)
+        self.assertEqual(status["candidates"][2]["votes"], 1)
+        self.assertEqual(status["total_votes"], 3)
+
+    async def test_one_user_one_vote_across_formats(self):
+        await self.poll_manager.start_poll(self.title, self.candidates)
+
+        # First comment vote succeeds (by number).
+        self.assertTrue(await self.poll_manager.record_vote("user1", "01"))
+        # Same user trying again by name -> rejected.
+        self.assertFalse(await self.poll_manager.record_vote("user1", "bob"))
+        # Same user trying again by number -> rejected.
+        self.assertFalse(await self.poll_manager.record_vote("user1", "2"))
+        # Username casing/whitespace variants are the same voter.
+        self.assertFalse(await self.poll_manager.record_vote(" User1 ", "2"))
+        self.assertFalse(await self.poll_manager.record_vote("USER1", "alice"))
+
+        status = await self.poll_manager.get_status()
+        self.assertEqual(status["total_votes"], 1)
+        self.assertEqual(status["candidates"][0]["votes"], 1)
+
+    async def test_gift_matching_is_strict_and_normalized(self):
+        candidates = [
+            {"name": "Alice", "image_url": "", "gift_name": "Rose"},
+            {"name": "Bob", "image_url": "", "gift_name": "Finger Heart"},
+        ]
+        await self.poll_manager.start_poll(self.title, candidates)
+
+        # Case + surrounding whitespace still match.
+        success, name, _ = await self.poll_manager.record_gift_vote("  ROSE ", 1)
+        self.assertTrue(success)
+        self.assertEqual(name, "Alice")
+
+        # Emoji decoration on the live gift name still matches.
+        success, name, _ = await self.poll_manager.record_gift_vote("Rose \U0001f339", 2)
+        self.assertTrue(success)
+        self.assertEqual(name, "Alice")
+
+        # Collapsed whitespace matches multi-word gifts.
+        success, name, _ = await self.poll_manager.record_gift_vote("finger  heart", 3)
+        self.assertTrue(success)
+        self.assertEqual(name, "Bob")
+
+        # Any other gift counts for NOBODY (no leak to Alice or Bob).
+        success, name, votes = await self.poll_manager.record_gift_vote("Doughnut", 30)
+        self.assertFalse(success)
+        self.assertIsNone(name)
+        self.assertEqual(votes, 0)
+        success, name, votes = await self.poll_manager.record_gift_vote("Galaxy", 1000)
+        self.assertFalse(success)
+
+    async def test_duplicate_gift_assignment_rejected(self):
+        candidates = [
+            {"name": "Alice", "image_url": "", "gift_name": "Rose"},
+            {"name": "Bob", "image_url": "", "gift_name": "rose \U0001f339"},
+        ]
+        with self.assertRaises(ValueError):
+            await self.poll_manager.start_poll(self.title, candidates)
+        # The failed start must not leave a poll running.
+        status = await self.poll_manager.get_status()
+        self.assertFalse(status["is_active"])
+
 if __name__ == "__main__":
     unittest.main()

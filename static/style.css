@@ -1044,6 +1044,28 @@ body {
 .config-hint p:first-child { font-size: 14px; }
 .config-hint p + p { font-size: 11px; margin-top: 6px; }
 
+/* Voting rules hint box (poll setup) */
+.voting-rules-hint {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border: 1px solid rgba(0,240,255,0.18);
+    border-left: 3px solid rgba(0,240,255,0.55);
+    background: rgba(0,240,255,0.05);
+    border-radius: 8px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+}
+.voting-rules-hint strong { color: var(--color-text); font-size: 12px; }
+.voting-rules-hint ul { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.voting-rules-hint code {
+    font-family: 'Fira Code', monospace;
+    background: rgba(255,255,255,0.08);
+    padding: 0 4px;
+    border-radius: 4px;
+    color: #00f0ff;
+}
+
 /* Sound settings row */
 .sound-upload-row {
     display: flex;

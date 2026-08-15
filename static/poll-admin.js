@@ -386,6 +386,10 @@ async function handleStartPoll() {
             body: JSON.stringify({ title, round_name: roundName || null, candidates, duration_seconds: durationSeconds, include_history: includeHistory })
         });
         const data = await response.json();
+        if (!response.ok) {
+            alert(`Gagal memulai voting: ${data.detail || 'error'}`);
+            return;
+        }
         updatePollUI(data);
         if (includeHistory && data.history_applied) {
             const h = data.history_applied;

@@ -24,7 +24,11 @@ async def start_poll_api(req: StartPollRequest):
     if req.duration_seconds is not None and req.duration_seconds < 5:
         raise HTTPException(status_code=400, detail="Poll duration must be at least 5 seconds")
     candidates = [c.model_dump() for c in req.candidates]
-    await poll_manager.start_poll(req.title, candidates, req.duration_seconds, req.round_name or "")
+    try:
+        await poll_manager.start_poll(req.title, candidates, req.duration_seconds, req.round_name or "")
+    except ValueError as e:
+        # e.g. two candidates configured with the same gift (would cause gift leaks)
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Optionally reuse the stored history of the current session: replay
     # comments and gifts that arrived BEFORE the poll started.

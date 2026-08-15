@@ -1,10 +1,25 @@
 import asyncio
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 
 from app.state import manager
 
 logger = logging.getLogger("app.poll")
+
+# Strips emoji/punctuation/symbols from gift names so live names like
+# "Rose \U0001f339" still match the configured "Rose".
+_GIFT_NOISE_RE = re.compile(r"[^\w\s]", re.UNICODE)
+_WHITESPACE_RE = re.compile(r"\s+")
+
+def normalize_gift_name(name: str) -> str:
+    """Normalizes a gift name for comparison: lowercase, no emoji/punctuation,
+    collapsed whitespace. Returns '' for names that are only noise."""
+    if not name:
+        return ""
+    s = name.strip().lower()
+    s = _GIFT_NOISE_RE.sub(" ", s)
+    return _WHITESPACE_RE.sub(" ", s).strip()
 
 class PollManager:
     """
@@ -26,8 +41,38 @@ class PollManager:
         self.lock = asyncio.Lock()
 
     async def start_poll(self, title: str, candidates: list[dict], duration_seconds: int | None = None, round_name: str = "") -> None:
-        """Starts a new poll and resets all existing votes and voters."""
+        """Starts a new poll and resets all existing votes and voters.
+
+        Raises ValueError when two candidates are configured with the same
+        gift name \u2014 that would make every such gift count only for the first
+        candidate (a 'gift leak'), so it is rejected up front.
+        """
         async with self.lock:
+            # Build + validate BEFORE touching current state so a validation
+            # error leaves the previous poll untouched.
+            new_candidates = []
+            gift_owners: dict[str, str] = {}
+            for idx, c in enumerate(candidates, start=1):
+                name_val = (c.get("name") or "").strip()
+                img_val = (c.get("image_url") or "").strip()
+                gift_val = (c.get("gift_name") or "").strip()
+                gift_key = normalize_gift_name(gift_val)
+                if gift_key:
+                    if gift_key in gift_owners:
+                        raise ValueError(
+                            f"Gift '{gift_val}' dipakai oleh dua kandidat "
+                            f"('{gift_owners[gift_key]}' dan '{name_val}'). "
+                            f"Satu gift hanya boleh ditetapkan ke satu kandidat."
+                        )
+                    gift_owners[gift_key] = name_val
+                new_candidates.append({
+                    "id": str(idx),
+                    "name": name_val,
+                    "image_url": img_val,
+                    "gift_name": gift_val,
+                    "votes": 0
+                })
+
             # Cancel existing timer task if running
             if self.timer_task:
                 self.timer_task.cancel()
@@ -35,18 +80,7 @@ class PollManager:
 
             self.title = title
             self.round_name = (round_name or "").strip() or title
-            self.candidates = []
-            for idx, c in enumerate(candidates, start=1):
-                name_val = c.get("name") or ""
-                img_val = c.get("image_url") or ""
-                gift_val = c.get("gift_name") or ""
-                self.candidates.append({
-                    "id": str(idx),
-                    "name": name_val.strip(),
-                    "image_url": img_val.strip(),
-                    "gift_name": gift_val.strip(),
-                    "votes": 0
-                })
+            self.candidates = new_candidates
             self.voters.clear()
             self.is_active = True
             self.started_at = datetime.now(timezone.utc)
@@ -150,8 +184,19 @@ class PollManager:
         """
         Attempts to register a vote based on a comment.
         Returns True if a valid vote was successfully recorded, False otherwise.
+
+        Matching rules:
+          1. Sequence number: comment is only digits, leading zeros allowed,
+             optional '#' prefix ("1", "01", "#01" -> candidate #1).
+          2. Candidate ID (kept for backwards compatibility).
+          3. Name mention (substring for names > 2 chars, exact otherwise).
+
+        Strictly one comment vote per user per poll: once a username has a
+        vote recorded, all later comments from that user are ignored
+        (gift votes are separate and always allowed).
         """
-        if not self.is_active or not username:
+        username_key = (username or "").strip().lower()
+        if not self.is_active or not username_key:
             return False
 
         # Fast path check for expired poll
@@ -160,19 +205,29 @@ class PollManager:
             return False
 
         async with self.lock:
-            if username in self.voters:
-                # Already voted
+            if username_key in self.voters:
+                # Already voted: one user = one comment vote
                 return False
 
             clean_comment = comment_text.strip().lower()
-            clean_comment_no_hash = clean_comment.removeprefix("#")
+            clean_comment_no_hash = clean_comment.removeprefix("#").strip()
+
+            # Rule 1: bare sequence number, leading zeros allowed ("01" -> 1)
+            vote_number = None
+            if clean_comment_no_hash.isdigit():
+                vote_number = int(clean_comment_no_hash)
 
             # Check matches
             matched = []
-            for c in self.candidates:
+            for idx, c in enumerate(self.candidates, start=1):
                 c_id = c["id"]
                 c_name = c["name"].lower()
-                
+
+                # Check match by sequence number (handles "01", "001", "#01")
+                if vote_number is not None and vote_number == idx:
+                    matched.append(c)
+                    continue
+
                 # Check match by candidate ID (e.g. "1" or "#1")
                 if clean_comment == c_id or clean_comment_no_hash == c_id:
                     matched.append(c)
@@ -193,8 +248,8 @@ class PollManager:
 
             if matched_candidate:
                 matched_candidate["votes"] += 1
-                self.voters.add(username)
-                logger.info(f"Vote recorded: User @{username} voted for {matched_candidate['name']}.")
+                self.voters.add(username_key)
+                logger.info(f"Vote recorded: User @{username_key} voted for {matched_candidate['name']}.")
                 await self._persist_state()
                 return True
 
@@ -216,10 +271,14 @@ class PollManager:
 
         async with self.lock:
             matched_candidate = None
-            clean_gift = gift_name.strip().lower()
+            clean_gift = normalize_gift_name(gift_name)
+            if not clean_gift:
+                return False, None, 0
             for c in self.candidates:
-                c_gift = (c.get("gift_name") or "").strip().lower()
-                if c_gift and clean_gift == c_gift:
+                # Strict isolation: a gift only ever counts for the candidate
+                # whose configured gift normalizes to the exact same name.
+                # Unmatched gifts count for NOBODY (no leak between candidates).
+                if normalize_gift_name(c.get("gift_name") or "") == clean_gift:
                      matched_candidate = c
                      break
             
@@ -231,6 +290,7 @@ class PollManager:
                 await self._persist_state()
                 return True, matched_candidate["name"], votes_to_add
 
+            logger.debug(f"Gift '{gift_name}' ignored: no candidate is assigned this gift.")
             return False, None, 0
 
     async def _persist_state(self) -> None:
@@ -270,7 +330,9 @@ class PollManager:
             self.title = state.get("title") or ""
             self.round_name = state.get("round_name") or self.title
             self.candidates = state.get("candidates") or []
-            self.voters = set(state.get("voters") or [])
+            # Normalize voter keys so old persisted states (raw usernames)
+            # still match the lowercase keys used by record_vote.
+            self.voters = {(v or "").strip().lower() for v in (state.get("voters") or [])}
             self.duration_seconds = state.get("duration_seconds")
             self.started_at = None
             if state.get("started_at"):
