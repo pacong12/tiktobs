@@ -1,7 +1,7 @@
 // Auto-generated from https://github.com/WaGi-Coding/tiktok-gift-ids
 // (749 gifts, deduplicated by normalized name; icons served by TikTok CDN).
 // Keys are normalized gift names: lowercase, no emoji/punctuation.
-const GIFT_ICONS = {
+window.GIFT_ICONS = {
 "1st anniversary": "https://p16-webcast.tiktokcdn.com/img/maliva/webcast-va/resource/bad3b06c71f3f1023eeb505ece267f12.png~tplv-obj.webp",
 "2nd anniversary": "https://p16-webcast.tiktokcdn.com/img/maliva/webcast-va/resource/e0add774b1f3d9a77acbd80eba782937.png~tplv-obj.webp",
 "3rd anniversary": "https://p16-webcast.tiktokcdn.com/img/maliva/webcast-va/resource/fd0a0d3030028dd1e30f427a0d8259da.png~tplv-obj.webp",
