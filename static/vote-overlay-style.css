@@ -223,11 +223,8 @@ body {
     right: 0;
     bottom: 0;
     height: 33.33%;
-    /* candidate tint under a black layer that fills the whole 1/3 panel
-       (lighter at the top, denser toward the bottom edge) */
-    background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.30) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 0.90) 100%),
-        linear-gradient(180deg, transparent 0%, var(--card-fill-a) 60%, var(--card-fill-gift) 100%);
+    /* BORDER-color gradient: dense at the bottom edge, fading thin upward */
+    background: linear-gradient(180deg, transparent 0%, var(--card-fill-gift) 55%, var(--card-fill-panel) 100%);
     border-radius: 0 0 14px 14px;
     z-index: 5;
     pointer-events: none;

@@ -92,6 +92,7 @@ function renderPoll(poll) {
         card.style.setProperty('--card-fill-a', hexToRgba(cardColor, 0.20));
         card.style.setProperty('--card-fill-b', hexToRgba(cardColor, 0.06));
         card.style.setProperty('--card-fill-gift', hexToRgba(cardColor, 0.30));
+        card.style.setProperty('--card-fill-panel', hexToRgba(cardColor, 0.80));
 
         const bgHtml = c.image_url
             ? `<img src="${escapeHTML(c.image_url)}" class="candidate-bg" alt="">`
