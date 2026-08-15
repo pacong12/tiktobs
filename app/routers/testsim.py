@@ -1,4 +1,8 @@
-"""Simulated testing endpoints (can be disabled via TIKTOBS_TEST_ENDPOINTS=0)."""
+"""Simulated testing endpoints.
+
+Disabled by default (production-safe). Enable for local testing/simulation
+by setting TIKTOBS_TEST_ENDPOINTS=1 in the environment or .env.
+"""
 
 import asyncio
 import os
@@ -12,7 +16,7 @@ from app.poll import poll_manager
 
 router = APIRouter(prefix="/api/test", tags=["test-simulation"])
 
-TEST_ENDPOINTS_ENABLED = os.getenv("TIKTOBS_TEST_ENDPOINTS", "1").strip().lower() not in ("0", "false", "no", "off")
+TEST_ENDPOINTS_ENABLED = os.getenv("TIKTOBS_TEST_ENDPOINTS", "0").strip().lower() in ("1", "true", "yes", "on")
 
 
 def _require_test_endpoints():

@@ -18,6 +18,34 @@ def get_base_dir() -> str:
 BASE_DIR = get_base_dir()
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 
+def load_env_file() -> None:
+    """Load the .env file next to the app into os.environ.
+
+    Runs automatically at import time so that every module reading
+    ``os.getenv`` (TIKTOBS_API_TOKEN, TIKTOBS_TEST_ENDPOINTS,
+    TIKTOBS_RETENTION_DAYS, TIKTOBS_PORT, ...) picks up .env values.
+    Real environment variables always take precedence over .env entries
+    (existing keys are never overwritten).
+    """
+    try:
+        if not os.path.exists(ENV_FILE):
+            return
+        with open(ENV_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                if not key or key in os.environ:
+                    continue
+                os.environ[key] = value.strip().strip('"').strip("'")
+    except OSError:
+        pass
+
+
+load_env_file()
+
 
 def load_sign_api_key() -> str | None:
     """Reads TIKTOK_SIGN_API_KEY from the environment, falling back to .env.

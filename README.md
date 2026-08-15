@@ -47,7 +47,9 @@ All settings are optional. They can be set as environment variables or in a
 | `TIKTOK_SIGN_API_KEY` | *(none)* | EulerStream signing API key. When set, the app uses the managed cloud WebSocket provider; otherwise it falls back to the local `TikTokLive` library. Can also be managed from the Settings page in the dashboard. |
 | `TIKTOBS_API_TOKEN` | *(none)* | When set, every `/api/*` request and the `/ws` socket require this token (via the `X-API-Token` header or a `?token=` query parameter). Leave unset for the default open, local-only mode. See [Security](#security). |
 | `TIKTOBS_RETENTION_DAYS` | `7` | Events older than this many days are purged from the database (on startup and daily). Set to `0` to keep events forever. |
-| `TIKTOBS_TEST_ENDPOINTS` | `1` | Enables the `/api/test/*` simulation endpoints used by the Poll Admin "simulate" buttons. Set to `0` to disable them (they answer 403). |
+| `TIKTOBS_TEST_ENDPOINTS` | `0` | Enables the `/api/test/*` simulation endpoints used by the Poll Admin "simulate" buttons. **Disabled by default (production-safe).** Set to `1` to enable them for local testing. |
+| `TIKTOBS_HOST` | `127.0.0.1` | Bind address for `python run_app.py`. |
+| `TIKTOBS_PORT` | `8000` | Port for `python run_app.py` and Docker. |
 
 > **Note:** The API key can also be changed at runtime from the dashboard
 > (Settings page). It is never displayed in full — only a masked preview is
@@ -70,6 +72,25 @@ TIKTOBS_API_TOKEN="choose-a-long-random-string"
   request (`auth.js` wraps `fetch` and `WebSocket` on every page).
 - For OBS Browser Sources, append `?token=YOUR_TOKEN` to the overlay URL.
 - Restart the app after setting or changing the token.
+
+## Production Checklist
+
+Before going live with a real audience:
+
+1. **Copy the config template** — `cp .env.example .env` and review each value.
+2. **Disable test endpoints** — keep `TIKTOBS_TEST_ENDPOINTS=0` (the default).
+   This prevents anyone from injecting fake votes/gifts via `/api/test/*`.
+3. **Set an API token** if the app is reachable beyond localhost
+   (`TIKTOBS_API_TOKEN=<long random string>`), then append `?token=…` to every
+   OBS Browser Source URL.
+4. **Retention** — decide how long to keep events (`TIKTOBS_RETENTION_DAYS`).
+5. **Run the tests** — `.venv/bin/python -m pytest tests/ -q` (all green).
+6. **Restart cleanly** and confirm `GET /api/settings` shows only `has_key` /
+   `masked_key` (never the raw key).
+
+> The committed codebase defaults to a locked-down production posture
+> (test endpoints off, no token, retention 7 days). The local `.env` you create
+> is never committed, so a fresh clone always starts safe.
 
 ---
 

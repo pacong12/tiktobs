@@ -11,8 +11,10 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 
 from app.main import app
 
-HOST = "127.0.0.1"
-PORT = 8000
+# Host/port are configurable for deployment. .env is already loaded by the
+# app.main import above, so these pick up TIKTOBS_HOST / TIKTOBS_PORT.
+HOST = os.getenv("TIKTOBS_HOST", "127.0.0.1")
+PORT = int(os.getenv("TIKTOBS_PORT", "8000"))
 
 def port_in_use(host: str, port: int) -> bool:
     """Returns True if something is already bound to host:port.
