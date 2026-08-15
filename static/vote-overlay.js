@@ -56,14 +56,15 @@ function renderPoll(poll) {
     // Rank candidates: most votes first. Sort a copy descending.
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
-    // Layout tiers (all cards stay square):
+    // Layout tiers (cards stay square except the featured wide card):
     //   2 candidates   -> 2 large squares side by side (duel view)
-    //   3 candidates   -> 3 large squares in one row
+    //   3 candidates   -> champion gets a big wide card on top, the other
+    //                     two render as squares below it
     //   4 candidates   -> 2x2 large squares
     //   5+ candidates  -> BENTO: rank #1 gets a huge 2x2 square, ranks #2/#3
     //                     fill the right column as squares, every remaining
     //                     candidate becomes a small square below.
-    // Because `ranked` is sorted by votes, the bento positions follow the
+    // Because `ranked` is sorted by votes, the featured positions follow the
     // live ranking and re-shuffle as votes come in.
     const count = ranked.length;
 
@@ -118,9 +119,20 @@ function renderPoll(poll) {
             rest.forEach(c => restGrid.appendChild(buildCard(c)));
             candidatesList.appendChild(restGrid);
         }
+    } else if (count === 3) {
+        // Champion (most votes) gets the big wide card on top; the other
+        // two render as squares directly below it.
+        const grid = document.createElement('div');
+        grid.className = 'candidate-grid grid-top3';
+        ranked.forEach((c, i) => {
+            const card = buildCard(c);
+            if (i === 0) card.classList.add('rank-1');
+            grid.appendChild(card);
+        });
+        candidatesList.appendChild(grid);
     } else {
         const grid = document.createElement('div');
-        grid.className = 'candidate-grid ' + (count === 3 ? 'cols-3' : 'cols-2');
+        grid.className = 'candidate-grid cols-2';
         ranked.forEach(c => grid.appendChild(buildCard(c)));
         candidatesList.appendChild(grid);
     }

@@ -92,13 +92,15 @@ body {
     line-height: 1.4;
 }
 
-/* Candidates List — layout tiers (all cards stay SQUARE):
-   - 2-4 candidates : simple square grid (2 cols for 2/4, 3 cols for 3)
-   - 5+ candidates  : BENTO grid — rank #1 spans a huge 2x2 square,
-     ranks #2/#3 fill the right column as squares, the rest render as
-     small squares below.
+/* Candidates List — layout tiers:
+   - 2 or 4 candidates: square grid (2 cols; 2x2 for four)
+   - 3 candidates     : champion gets a big wide card on top (.grid-top3),
+                        the other two sit below as squares
+   - 5+ candidates    : BENTO grid — rank #1 spans a huge 2x2 square,
+                        ranks #2/#3 fill the right column as squares, the
+                        rest render as small squares below.
    Row heights match the column widths of the fixed 460px content area
-   so every cell is a square. */
+   so regular cells stay square. */
 .candidates-list {
     display: flex;
     flex-direction: column;
@@ -112,9 +114,13 @@ body {
 
 /* Square cells: (460 - gaps) / columns */
 .candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 224px; }
-.candidate-grid.cols-3     { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 145px; }
 .candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 145px; }
 .candidate-grid.grid-rest  { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 107px; gap: 10px; }
+
+/* 3 candidates: champion spans a wide card on top (460 x 224), the other
+   two render as squares below it */
+.candidate-grid.grid-top3 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 224px; }
+.candidate-grid.grid-top3 .candidate-card.rank-1 { grid-column: span 2; }
 
 /* Bento: rank #1 takes a 2x2 square (very large), #2/#3 stack on the right */
 .candidate-grid.grid-bento .candidate-card.rank-1 {
@@ -122,13 +128,19 @@ body {
     grid-row: span 2;
 }
 
-/* Bigger type on the huge bento card */
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name { font-size: 24px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-percentage { font-size: 20px; min-width: 56px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .progress-track { height: 16px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-overlay { padding: 16px 18px; gap: 8px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge { padding: 6px 14px; font-size: 12px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge .votes-value { font-size: 16px; }
+/* Bigger type on the featured rank-1 card (bento huge square / top3 wide card) */
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name { font-size: 24px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-percentage,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-percentage { font-size: 20px; min-width: 56px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .progress-track,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .progress-track { height: 16px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-overlay,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-overlay { padding: 16px 18px; gap: 8px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badge { padding: 6px 14px; font-size: 12px; }
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badge .votes-value,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badge .votes-value { font-size: 16px; }
 
 /* Slightly tighter type on the 1x1 bento cells */
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name { font-size: 14px; }
