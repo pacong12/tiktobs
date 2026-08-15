@@ -1,8 +1,9 @@
+import asyncio
 import logging
 import os
 import sys
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
@@ -64,6 +65,27 @@ else:
     logger.info("Local TikTokLive provider initialized (No API key found).")
 
 processor = EventProcessor()
+
+# Event retention: tiktok_events rows older than this many days are purged.
+# Set TIKTOBS_RETENTION_DAYS=0 (or negative) to keep events forever.
+try:
+    RETENTION_DAYS = int(os.getenv("TIKTOBS_RETENTION_DAYS", "7"))
+except ValueError:
+    RETENTION_DAYS = 7
+
+async def _retention_loop():
+    """Purges expired events on startup and then once per day."""
+    while True:
+        try:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)).isoformat()
+            deleted = await database.purge_events_before(cutoff)
+            if deleted:
+                logger.info(f"Retention purge deleted {deleted} event(s) older than {RETENTION_DAYS} day(s).")
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # noqa: BLE001
+            logger.exception("Retention purge failed")
+        await asyncio.sleep(24 * 3600)
 
 class ConnectionManager:
     def __init__(self):
@@ -142,6 +164,13 @@ async def lifespan(app: FastAPI):
     # Startup tasks
     logger.info("Initializing database and application components...")
     await database.init_db()
+
+    retention_task: asyncio.Task | None = None
+    if RETENTION_DAYS > 0:
+        retention_task = asyncio.create_task(_retention_loop())
+        logger.info(f"Event retention enabled: purging events older than {RETENTION_DAYS} day(s).")
+    else:
+        logger.info("Event retention disabled (TIKTOBS_RETENTION_DAYS <= 0).")
     
     import shutil
     static_sounds = os.path.join(get_static_dir(), "sounds")
@@ -168,6 +197,12 @@ async def lifespan(app: FastAPI):
     
     # Shutdown tasks
     logger.info("Shutting down live connections and cleaning up...")
+    if retention_task is not None:
+        retention_task.cancel()
+        try:
+            await retention_task
+        except asyncio.CancelledError:
+            pass
     event_bus.unsubscribe(ws_broadcast_subscriber)
     if await live_provider.is_connected():
         await live_provider.disconnect()

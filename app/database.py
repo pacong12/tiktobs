@@ -359,48 +359,48 @@ async def get_recent_events(limit: int = 100) -> list[dict]:
 
 async def get_session_leaderboard(session_id: str) -> list[dict]:
     """
-    Calculates the gift leaderboard for a given session by querying and aggregating gift events.
-    Returns a sorted list of dictionaries with columns: username, nickname, total_diamonds, total_gifts.
+    Calculates the gift leaderboard for a given session by aggregating gift
+    events directly in SQL (json_extract over the stored payload), so large
+    sessions no longer load every row into Python.
+    Returns a sorted list of dicts: username, nickname, total_diamonds, total_gifts.
     """
     db = await _get_shared_db()
     db.row_factory = aiosqlite.Row
     async with db.execute(
         """
-        SELECT username, nickname, payload
+        SELECT
+            username,
+            COALESCE(MAX(nickname), username) AS nickname,
+            SUM(COALESCE(json_extract(payload, '$.data.quantity'), 1) *
+                COALESCE(json_extract(payload, '$.data.diamond_count'), 0)) AS total_diamonds,
+            SUM(COALESCE(json_extract(payload, '$.data.quantity'), 1)) AS total_gifts
         FROM tiktok_events
         WHERE session_id = ? AND event_type = 'gift'
+          AND username IS NOT NULL AND username != ''
+        GROUP BY username
+        ORDER BY total_diamonds DESC, total_gifts DESC, username ASC
         """,
-        (session_id,)
+        (session_id,),
     ) as cursor:
         rows = await cursor.fetchall()
+        return [
+            {
+                "username": row["username"],
+                "nickname": row["nickname"],
+                "total_diamonds": int(row["total_diamonds"] or 0),
+                "total_gifts": int(row["total_gifts"] or 0),
+            }
+            for row in rows
+        ]
 
-        leaderboard_map = {}
-        for row in rows:
-            username = row["username"]
-            if not username:
-                continue
-            nickname = row["nickname"] or username
-            payload = json.loads(row["payload"]) if row["payload"] else {}
-            event_data = payload.get("data") or {}
-
-            quantity = int(event_data.get("quantity") or 1)
-            diamond_count = int(event_data.get("diamond_count") or 0)
-            diamonds_gained = quantity * diamond_count
-
-            if username not in leaderboard_map:
-                leaderboard_map[username] = {
-                    "username": username,
-                    "nickname": nickname,
-                    "total_diamonds": 0,
-                    "total_gifts": 0
-                }
-
-            if row["nickname"]:
-                leaderboard_map[username]["nickname"] = row["nickname"]
-
-            leaderboard_map[username]["total_diamonds"] += diamonds_gained
-            leaderboard_map[username]["total_gifts"] += quantity
-
-        leaderboard = list(leaderboard_map.values())
-        leaderboard.sort(key=lambda x: (-x["total_diamonds"], -x["total_gifts"], x["username"]))
-        return leaderboard
+async def purge_events_before(before_iso: str) -> int:
+    """Deletes all events with created_at older than the given ISO timestamp.
+    Returns the number of deleted rows."""
+    db = await _get_shared_db()
+    async with _write_lock:
+        cursor = await db.execute(
+            "DELETE FROM tiktok_events WHERE created_at < ?",
+            (before_iso,),
+        )
+        await db.commit()
+        return cursor.rowcount
