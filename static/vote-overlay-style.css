@@ -373,16 +373,41 @@ body {
     box-shadow: 0 0 14px var(--card-glow), 0 3px 8px rgba(0, 0, 0, 0.55);
 }
 
-/* Win badge: skewed HUD tag following the border color */
+/* Win badge: futuristic HUD tag pinned in the top-left corner, in the
+   border color — diagonal gradient, neon glow, and a slow light sweep */
 .card-badge.badge-win {
+    position: relative;
     color: var(--card-color);
     font-size: 13px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
-    padding: 6px 15px;
+    letter-spacing: 1.7px;
+    padding: 6px 16px 6px 12px;
     border-radius: 14px 0 7px 7px;
-    text-shadow: 0 0 10px var(--card-glow);
+    background: linear-gradient(120deg, var(--card-fill-gift) 0%, rgba(8, 8, 15, 0.92) 42%, rgba(8, 8, 15, 0.85) 100%);
+    box-shadow:
+        0 0 16px var(--card-glow),
+        inset 0 0 10px var(--card-glow-soft),
+        0 2px 6px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 0 10px var(--card-glow), 0 0 2px var(--card-color);
+    overflow: hidden;
+}
+/* Diagonal light sweep drifting across the badge for a live HUD feel */
+.card-badge.badge-win::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: 0;
+    width: 45%;
+    background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.16) 50%, transparent 100%);
+    transform: translateX(-140%) skewX(-22deg);
+    animation: win-sweep 3.8s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes win-sweep {
+    0% { transform: translateX(-140%) skewX(-22deg); }
+    60%, 100% { transform: translateX(320%) skewX(-22deg); }
 }
 
 /* Gift badge: official icon in a small frame with a THIN color gradient */
