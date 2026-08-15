@@ -97,24 +97,17 @@ function renderPoll(poll) {
     // Rank candidates: most votes first. Sort a copy descending.
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
-    // Adaptive grid layout based on candidate count:
-    //   2      -> 2 columns side by side (duel view)
-    //   3      -> 3 columns in one row
-    //   4      -> 2 x 2
-    //   5-6    -> 3 columns, medium cards
-    //   7-9    -> 3 columns, medium cards
-    //   10+    -> 4 columns, compact cards
+    // Two-tier layout based on vote ranking:
+    //   - The 3 candidates with the most votes get LARGE cards (.grid-top).
+    //     With only 2 or 3 candidates total, everyone is in this tier.
+    //   - Every remaining candidate gets a smaller card below (.grid-rest).
+    // Because `ranked` is sorted by votes, the top tier always holds the
+    // current top-1/2/3 and re-sorts live as votes come in.
     const count = ranked.length;
-    let cols;
-    if (count <= 2)      cols = 2;
-    else if (count === 3) cols = 3;
-    else if (count === 4) cols = 2;
-    else if (count <= 9)  cols = 3;
-    else                  cols = 4;
+    const topGroup = ranked.slice(0, count >= 4 ? 3 : count);
+    const restGroup = ranked.slice(topGroup.length);
 
-    const sizeClass = count <= 4 ? 'size-lg' : (count <= 9 ? 'size-md' : 'size-sm');
-    candidatesList.className = `candidates-list ${sizeClass}`;
-    candidatesList.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    candidatesList.className = 'candidates-list';
     candidatesList.innerHTML = '';
     // Build a card where the candidate photo fills the whole card; the vote
     // badge floats in the top-right corner and the progress bar + percentage
@@ -148,7 +141,17 @@ function renderPoll(poll) {
         return card;
     };
 
-    ranked.forEach(c => candidatesList.appendChild(buildCard(c)));
+    const topGrid = document.createElement('div');
+    topGrid.className = 'candidate-grid grid-top' + (topGroup.length === 2 ? ' cols-2' : '');
+    topGroup.forEach(c => topGrid.appendChild(buildCard(c)));
+    candidatesList.appendChild(topGrid);
+
+    if (restGroup.length > 0) {
+        const restGrid = document.createElement('div');
+        restGrid.className = 'candidate-grid grid-rest';
+        restGroup.forEach(c => restGrid.appendChild(buildCard(c)));
+        candidatesList.appendChild(restGrid);
+    }
 }
 
 function connectWebSocket() {

@@ -75,25 +75,33 @@ body {
     line-height: 1.4;
 }
 
-/* Candidates List — adaptive grid; column count and card size are set from
-   JS based on the number of candidates (see renderPoll in vote-overlay.js) */
+/* Candidates List — two tiers: the 3 candidates with the most votes get
+   large cards (.grid-top); any remaining candidates render smaller below
+   (.grid-rest). With only 2 or 3 candidates everyone is in the top tier. */
 .candidates-list {
-    display: grid;
-    gap: var(--grid-gap, 14px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
-.candidates-list.size-lg { --card-h: 150px; --grid-gap: 16px; }
-.candidates-list.size-md { --card-h: 118px; --grid-gap: 13px; }
-.candidates-list.size-sm { --card-h: 98px;  --grid-gap: 10px; }
+.candidate-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--grid-gap, 14px);
+}
+.candidate-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
 
-/* Compact internals for small cards (many candidates) */
-.candidates-list.size-sm .candidate-name { font-size: 13px; }
-.candidates-list.size-sm .candidate-percentage { font-size: 12px; min-width: 36px; }
-.candidates-list.size-sm .candidate-badge { padding: 3px 9px; font-size: 9px; top: -8px; right: -6px; }
-.candidates-list.size-sm .candidate-badge .votes-value { font-size: 11px; }
-.candidates-list.size-sm .progress-track { height: 9px; }
-.candidates-list.size-sm .candidate-overlay { padding: 8px 10px; gap: 4px; }
-.candidates-list.size-sm .candidate-number { min-width: 22px; height: 22px; font-size: 11px; top: -6px; left: -6px; }
+.candidate-grid.grid-top  { --card-h: 150px; --grid-gap: 16px; }
+.candidate-grid.grid-rest { --card-h: 92px;  --grid-gap: 10px; }
+
+/* Compact internals for rest-tier (small) cards */
+.candidate-grid.grid-rest .candidate-name { font-size: 13px; }
+.candidate-grid.grid-rest .candidate-percentage { font-size: 12px; min-width: 36px; }
+.candidate-grid.grid-rest .candidate-badge { padding: 3px 9px; font-size: 9px; top: -8px; right: -6px; }
+.candidate-grid.grid-rest .candidate-badge .votes-value { font-size: 11px; }
+.candidate-grid.grid-rest .progress-track { height: 9px; }
+.candidate-grid.grid-rest .candidate-overlay { padding: 8px 10px; gap: 4px; }
+.candidate-grid.grid-rest .candidate-number { min-width: 22px; height: 22px; font-size: 11px; top: -6px; left: -6px; }
 
 /* CANDIDATE CARD — the photo fills the entire card; the name, vote badge and
    progress bar float on top of it */
