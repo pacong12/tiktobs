@@ -330,33 +330,33 @@ body {
     justify-content: center;
     line-height: 1;
     white-space: nowrap;
-    background: rgba(8, 8, 15, 0.88);
-    border: 1px solid var(--card-color);
-    box-shadow: 0 0 10px var(--card-glow-soft);
+    background: rgba(8, 8, 15, 0.92);
+    border: 1.5px solid var(--card-color);
+    box-shadow: 0 0 14px var(--card-glow), 0 3px 8px rgba(0, 0, 0, 0.55);
 }
 
 /* Win badge: skewed HUD tag following the border color */
 .card-badge.badge-win {
     color: var(--card-color);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    padding: 4px 12px;
+    padding: 6px 15px;
     transform: skewX(-14deg);
-    text-shadow: 0 0 8px var(--card-glow);
+    text-shadow: 0 0 10px var(--card-glow);
 }
 
 /* Gift badge: official icon in a small color-matched frame */
 .card-badge.badge-gift {
-    padding: 3px;
-    border-radius: 8px;
+    padding: 4px;
+    border-radius: 9px;
 }
 
 /* Official TikTok gift icon */
 .card-badge .gift-icon {
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
     object-fit: contain;
     display: block;
     flex-shrink: 0;
@@ -404,15 +404,20 @@ body {
 .candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-name {
     font-size: 19px;
 }
+.candidate-grid.grid-bento .candidate-card.rank-1 .edge-badges,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .edge-badges {
+    top: -16px;
+    left: 14px;
+}
 .candidate-grid.grid-bento .candidate-card.rank-1 .card-badge.badge-win,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge.badge-win {
-    font-size: 13px;
-    padding: 5px 14px;
+    font-size: 16px;
+    padding: 7px 18px;
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 .card-badge .gift-icon,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge .gift-icon {
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
 }
 
 /* Bento 1x1 cells: compact stack */
@@ -440,16 +445,16 @@ body {
     font-size: 12px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .edge-badges {
-    top: -10px;
+    top: -13px;
     left: 8px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge.badge-win {
-    font-size: 9px;
-    padding: 3px 9px;
+    font-size: 11px;
+    padding: 4px 11px;
 }
 .candidate-grid.grid-bento .candidate-card:not(.rank-1) .card-badge .gift-icon {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
 }
 
 /* Small rest-tier squares: tightest stack */
@@ -477,18 +482,18 @@ body {
     font-size: 10px;
 }
 .candidate-grid.grid-rest .edge-badges {
-    top: -9px;
+    top: -12px;
     left: 6px;
-    gap: 4px;
+    gap: 5px;
 }
 .candidate-grid.grid-rest .card-badge.badge-win {
-    font-size: 8px;
-    padding: 2px 7px;
-    letter-spacing: 0.8px;
+    font-size: 10px;
+    padding: 3px 9px;
+    letter-spacing: 0.9px;
 }
 .candidate-grid.grid-rest .card-badge .gift-icon {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
 }
 
 /* Inactive State waiting indicator */
