@@ -55,6 +55,25 @@ All settings are optional. They can be set as environment variables or in a
 
 ---
 
+## OBS Browser Source Overlays
+
+Each overlay is a standalone page with a transparent background, ready to be
+added to OBS as a Browser Source (use the Copy buttons on the dashboard for
+the full URL):
+
+| Overlay | URL | Purpose |
+|:---|:---|:---|
+| Gift Leaderboard | `/overlay.html` | Top gifters of the active session |
+| Gift Alert | `/gift-alert.html` | Animated alert + sound on incoming gifts |
+| Recent Gifts Ticker | `/recent-gifts.html` | Feed of the latest gifts |
+| Vote / Poll | `/vote-overlay.html` | Live poll progress |
+| Running Text | `/ticker.html` | Scrolling text for ads, announcements, etc. |
+
+The running text messages, speed, and direction are managed on the Settings
+page ("Running Text" card) and apply to open overlays instantly.
+
+---
+
 ## Project Structure
 
 - `app/`: Python backend source code.

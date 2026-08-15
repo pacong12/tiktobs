@@ -88,6 +88,56 @@ async def test_clear_events_deletes_stored_events(client):
     assert again.status_code == 200
     assert again.json()["deleted"] == 0
 
+# ---------- Running text (ticker) ----------
+
+def test_ticker_defaults(client, tmp_path, monkeypatch):
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "TICKER_CONFIG_FILE", str(tmp_path / "ticker.json"))
+
+    resp = client.get("/api/ticker")
+    assert resp.status_code == 200
+    cfg = resp.json()
+    assert cfg["enabled"] is True
+    assert cfg["speed"] == 60
+    assert cfg["direction"] == "left"
+    assert cfg["messages"] == []
+
+def test_ticker_update_validation_and_persistence(client, tmp_path, monkeypatch):
+    from app import main as app_main
+
+    config_file = tmp_path / "ticker.json"
+    monkeypatch.setattr(app_main, "TICKER_CONFIG_FILE", str(config_file))
+
+    # Update with messy input: blanks stripped, values clamped/saved.
+    resp = client.post("/api/ticker", json={
+        "messages": ["  Promo A  ", "", "Promo B"],
+        "speed": 120,
+        "direction": "right",
+    })
+    assert resp.status_code == 200
+    cfg = resp.json()["config"]
+    assert cfg["messages"] == ["Promo A", "Promo B"]
+    assert cfg["speed"] == 120
+    assert cfg["direction"] == "right"
+    assert config_file.exists()  # persisted to disk
+
+    # A fresh GET sees the same values (loaded from disk).
+    again = client.get("/api/ticker").json()
+    assert again["messages"] == ["Promo A", "Promo B"]
+    assert again["speed"] == 120
+
+    # Invalid direction and out-of-range speed are rejected.
+    assert client.post("/api/ticker", json={"direction": "up"}).status_code == 400
+    assert client.post("/api/ticker", json={"speed": 5}).status_code == 400
+    assert client.post("/api/ticker", json={"speed": 9999}).status_code == 400
+
+    # Partial updates leave the other fields untouched.
+    resp = client.post("/api/ticker", json={"enabled": False})
+    cfg = resp.json()["config"]
+    assert cfg["enabled"] is False
+    assert cfg["messages"] == ["Promo A", "Promo B"]
+
 # ---------- Custom gifts ----------
 
 def test_custom_gift_crud(client):

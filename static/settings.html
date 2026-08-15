@@ -58,6 +58,51 @@
                         <p id="restart-note" class="hidden" style="margin-top: 14px; font-size: 12px; color: #ffd166;">⚠️ Restart the app for the provider switch to take effect.</p>
                     </form>
                 </div>
+
+                <div class="glass-card">
+                    <h2 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">📢 Running Text (Ticker Overlay)</h2>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 25px;">
+                        Scrolling text for ads, announcements, and other notices. Add the overlay to OBS via
+                        <a href="/ticker.html" target="_blank" style="color: #00f0ff; text-decoration: underline;">/ticker.html</a>.
+                        Changes apply to open overlays instantly.
+                    </p>
+
+                    <form id="ticker-form">
+                        <div class="input-group" style="margin-bottom: 18px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="ticker-enabled" checked style="width: auto;">
+                                <span>Enabled</span>
+                            </label>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 18px;">
+                            <label for="ticker-messages">Messages (one per line)</label>
+                            <textarea id="ticker-messages" rows="5" placeholder="🔥 Promo: Follow &amp; share this stream!&#10;💎 Gift a Rose to vote in the poll&#10;📱 Find us on Instagram @yourhandle" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 12px 14px; color: #fff; font-size: 13px; resize: vertical; font-family: inherit;"></textarea>
+                            <span style="font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; display: block;">
+                                Empty lines are ignored. All messages scroll in one continuous loop.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;">
+                            <div class="input-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                                <label for="ticker-speed">Speed (px/s)</label>
+                                <input type="number" id="ticker-speed" min="10" max="300" step="5" value="60" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px;">
+                            </div>
+                            <div class="input-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                                <label for="ticker-direction">Direction</label>
+                                <select id="ticker-direction" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px;">
+                                    <option value="left" style="background: #1a1a2e;">← Right to left</option>
+                                    <option value="right" style="background: #1a1a2e;">→ Left to right</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <button type="submit" id="save-ticker-btn" class="btn primary" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">💾 Save Ticker</button>
+                            <span id="ticker-status-msg" style="font-size: 13px; font-weight: 600; color: #00ff87;" class="hidden">✓ Saved!</span>
+                        </div>
+                    </form>
+                </div>
             </section>
         </main>
     </div>
@@ -172,6 +217,71 @@
             } catch (err) {
                 console.error('Clear error:', err);
                 alert('Terjadi kesalahan saat menghapus key.');
+            }
+        });
+        // ---------- Running Text (ticker) management ----------
+        const tickerForm = document.getElementById('ticker-form');
+        const tickerEnabled = document.getElementById('ticker-enabled');
+        const tickerMessages = document.getElementById('ticker-messages');
+        const tickerSpeed = document.getElementById('ticker-speed');
+        const tickerDirection = document.getElementById('ticker-direction');
+        const saveTickerBtn = document.getElementById('save-ticker-btn');
+        const tickerStatusMsg = document.getElementById('ticker-status-msg');
+
+        function showTickerStatus(text, color = '#00ff87') {
+            tickerStatusMsg.textContent = text;
+            tickerStatusMsg.style.color = color;
+            tickerStatusMsg.classList.remove('hidden');
+            setTimeout(() => tickerStatusMsg.classList.add('hidden'), 4000);
+        }
+
+        async function loadTickerConfig() {
+            try {
+                const res = await fetch('/api/ticker');
+                if (!res.ok) return;
+                const cfg = await res.json();
+                tickerEnabled.checked = !!cfg.enabled;
+                tickerMessages.value = (cfg.messages || []).join('\n');
+                tickerSpeed.value = cfg.speed ?? 60;
+                tickerDirection.value = cfg.direction === 'right' ? 'right' : 'left';
+            } catch (err) {
+                console.error('Failed to load ticker config:', err);
+            }
+        }
+        loadTickerConfig();
+
+        tickerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            saveTickerBtn.disabled = true;
+            saveTickerBtn.textContent = 'Saving...';
+
+            const body = {
+                enabled: tickerEnabled.checked,
+                messages: tickerMessages.value.split('\n'),
+                speed: parseInt(tickerSpeed.value, 10) || 60,
+                direction: tickerDirection.value
+            };
+
+            try {
+                const res = await fetch('/api/ticker', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    tickerMessages.value = (data.config.messages || []).join('\n');
+                    showTickerStatus('✓ Saved! Open overlays update instantly.');
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    showTickerStatus(err.detail || 'Failed to save ticker.', '#ff4a5a');
+                }
+            } catch (err) {
+                console.error('Ticker save error:', err);
+                showTickerStatus('Failed to save ticker.', '#ff4a5a');
+            } finally {
+                saveTickerBtn.disabled = false;
+                saveTickerBtn.textContent = '💾 Save Ticker';
             }
         });
     </script>

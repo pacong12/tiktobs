@@ -31,6 +31,7 @@ ENV_FILE = config.ENV_FILE
 SOUNDS_DIR = os.path.join(DATA_DIR, "sounds")
 os.makedirs(SOUNDS_DIR, exist_ok=True)
 SOUND_CONFIG_FILE = os.path.join(DATA_DIR, "sound_config.json")
+TICKER_CONFIG_FILE = os.path.join(DATA_DIR, "ticker_config.json")
 
 # Configure Logging
 # The file handler rotates so app.log cannot grow without bound.
@@ -239,6 +240,13 @@ class SoundConfigRequest(BaseModel):
     vote_sound: str | None = None
     gift_volume: float | None = None
     vote_volume: float | None = None
+
+class TickerConfigRequest(BaseModel):
+    enabled: bool | None = None
+    speed: int | None = None          # pixels per second (10-300)
+    direction: str | None = None      # "left" or "right"
+    separator: str | None = None      # text shown between messages
+    messages: list[str] | None = None # one entry per scrolling line
 
 # API Routes
 @app.post("/api/connect")
@@ -602,6 +610,70 @@ async def upload_sound_api(file: UploadFile = File(...)):
         
     logger.info(f"Custom sound file uploaded successfully: {safe_name}")
     return {"status": "success", "filename": safe_name, "url": f"/sounds/{safe_name}"}
+
+# Running Text / Ticker Overlay Endpoints
+DEFAULT_TICKER_CONFIG = {
+    "enabled": True,
+    "speed": 60,             # scroll speed in pixels per second
+    "direction": "left",     # "left" or "right"
+    "separator": "  \u2022  ",   # text shown between messages
+    "messages": [],          # one entry per scrolling line (ads, notices, ...)
+}
+
+def _load_ticker_config():
+    """Reads ticker_config.json, falling back to defaults for any missing key."""
+    import json
+    cfg = dict(DEFAULT_TICKER_CONFIG)
+    if os.path.exists(TICKER_CONFIG_FILE):
+        try:
+            with open(TICKER_CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                cfg.update({k: data[k] for k in DEFAULT_TICKER_CONFIG if k in data})
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Could not read ticker config, using defaults: {e}")
+    return cfg
+
+def _save_ticker_config(cfg):
+    import json
+    with open(TICKER_CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2, ensure_ascii=False)
+
+@app.get("/api/ticker")
+async def get_ticker_api():
+    """Returns the running-text (ticker) configuration used by /ticker.html."""
+    return _load_ticker_config()
+
+@app.post("/api/ticker")
+async def update_ticker_api(req: TickerConfigRequest):
+    """Updates the ticker configuration, persists it, and notifies open overlays."""
+    cfg = _load_ticker_config()
+
+    if req.enabled is not None:
+        cfg["enabled"] = req.enabled
+    if req.speed is not None:
+        if not 10 <= req.speed <= 300:
+            raise HTTPException(status_code=400, detail="Speed must be between 10 and 300 px/s")
+        cfg["speed"] = req.speed
+    if req.direction is not None:
+        if req.direction not in ("left", "right"):
+            raise HTTPException(status_code=400, detail="Direction must be 'left' or 'right'")
+        cfg["direction"] = req.direction
+    if req.separator is not None:
+        cfg["separator"] = req.separator[:20]
+    if req.messages is not None:
+        cleaned = []
+        for msg in req.messages[:50]:  # cap the number of messages
+            text = str(msg).strip()
+            if text:
+                cleaned.append(text[:500])  # cap each message's length
+        cfg["messages"] = cleaned
+
+    _save_ticker_config(cfg)
+    # Notify open ticker overlays so they update live.
+    await manager.broadcast({"type": "ticker_update", "config": cfg})
+    logger.info(f"Ticker config updated: enabled={cfg['enabled']}, messages={len(cfg['messages'])}")
+    return {"status": "success", "config": cfg}
 
 # Application Settings Endpoints (.env configuration)
 def _mask_key(key: str) -> str:

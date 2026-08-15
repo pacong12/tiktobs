@@ -376,6 +376,7 @@ body {
 .overlay-link-item[data-accent="pink"] { --ol-accent: #ff007f; }
 .overlay-link-item[data-accent="green"] { --ol-accent: #00ff87; }
 .overlay-link-item[data-accent="gold"] { --ol-accent: #ffd700; }
+.overlay-link-item[data-accent="violet"] { --ol-accent: #a78bfa; }
 
 .overlay-link-label {
     font-size: 12.5px;
@@ -1130,6 +1131,7 @@ body {
 .overlay-chip[data-accent="pink"]  { --chip-accent: #ff007f; }
 .overlay-chip[data-accent="gold"]  { --chip-accent: #ffd700; }
 .overlay-chip[data-accent="green"] { --chip-accent: #00ff87; }
+.overlay-chip[data-accent="violet"] { --chip-accent: #a78bfa; }
 
 /* Empty / preview state */
 .poll-preview {
