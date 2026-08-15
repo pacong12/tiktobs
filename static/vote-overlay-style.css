@@ -507,15 +507,17 @@ body {
 
 /* ============================================================
    CANDIDATE SESSION BADGES — accumulated wins + assigned gift
+   One horizontal row, anchored top-left just below the number
+   chip and kept inside the card edge on every layout tier.
    ============================================================ */
 .candidate-badges {
     position: absolute;
-    top: 26px;
-    left: -4px;
+    top: 24px;
+    left: 6px;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
+    flex-direction: row;
+    align-items: center;
+    gap: 7px;
     z-index: 6;
     pointer-events: none;
 }
@@ -523,63 +525,43 @@ body {
 .card-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
+    justify-content: center;
     border-radius: 20px;
     font-family: 'Outfit', sans-serif;
-    font-size: 12px;
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 1;
     white-space: nowrap;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
-/* Win badge: gold trophy, glows like the leading card */
+/* Win badge: compact gold pill (text only) */
 .card-badge.badge-win {
     background: linear-gradient(135deg, #ffd700, #ff9d00);
     color: #241a02;
     border: 1px solid rgba(255, 240, 180, 0.9);
-    box-shadow: 0 0 12px rgba(255, 200, 60, 0.55), 0 2px 10px rgba(0, 0, 0, 0.45);
+    padding: 4px 10px;
+    font-size: 12px;
+    box-shadow: 0 0 12px rgba(255, 200, 60, 0.5), 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
-/* Gift badge: dark glass pill */
+/* Gift badge: bare official icon, no chrome */
 .card-badge.badge-gift {
-    /* Icon-only, no background/border: bare gift icon floating on the card */
     background: transparent;
     border: none;
-    backdrop-filter: none;
     padding: 0;
-    gap: 0;
     box-shadow: none;
 }
 
-/* Featured cards (3-candidate champion / bento rank-1) get bigger badges */
-.candidate-grid.grid-bento .candidate-card.rank-1 .card-badge,
-.candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge {
-    font-size: 14px;
-    padding: 4px 12px;
-}
-
-/* Small bento cards get compact badges */
-.candidate-grid.grid-rest .candidate-badges {
-    top: 18px;
-    left: -2px;
-    gap: 4px;
-}
-.candidate-grid.grid-rest .card-badge {
-    font-size: 10px;
-    padding: 2px 8px;
-}
-
-/* --- Official TikTok gift icons (replace emoji in gift badges/toast) --- */
+/* Official TikTok gift icon */
 .card-badge .gift-icon {
     width: 30px;
     height: 30px;
     object-fit: contain;
+    display: block;
     flex-shrink: 0;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
+/* Combo toast keeps its own icon sizing */
 .combo-toast .gift-icon-toast {
     width: 26px;
     height: 26px;
@@ -587,14 +569,34 @@ body {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
 }
 
-/* Featured cards get a slightly bigger icon */
+/* Featured rank-1 (bento / top-3 champion): bigger badges */
+.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-badges,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .candidate-badges {
+    top: 30px;
+    left: 10px;
+    gap: 9px;
+}
+.candidate-grid.grid-bento .candidate-card.rank-1 .card-badge.badge-win,
+.candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge.badge-win {
+    font-size: 15px;
+    padding: 5px 13px;
+}
 .candidate-grid.grid-bento .candidate-card.rank-1 .card-badge .gift-icon,
 .candidate-grid.grid-top3 .candidate-card.rank-1 .card-badge .gift-icon {
     width: 38px;
     height: 38px;
 }
 
-/* Small bento cards get a compact icon */
+/* Small rest-tier squares: compact badges, tucked tighter */
+.candidate-grid.grid-rest .candidate-badges {
+    top: 17px;
+    left: 4px;
+    gap: 5px;
+}
+.candidate-grid.grid-rest .card-badge.badge-win {
+    font-size: 10px;
+    padding: 2px 7px;
+}
 .candidate-grid.grid-rest .card-badge .gift-icon {
     width: 20px;
     height: 20px;
