@@ -27,9 +27,16 @@ jobs:
       - name: Build EXE
         run: python build_exe.py
 
+      - name: Extract version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(python -c "import app.version; print(app.version.__version__)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TikTokOBS-windows
-          path: dist/TikTokOBS.exe
+          name: TikTokOBS-v${{ steps.get_version.outputs.version }}-windows
+          path: dist/TikTokOBS-*.exe
           if-no-files-found: error
