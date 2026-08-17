@@ -10,6 +10,7 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     os.chdir(sys._MEIPASS)
 
 from app.main import app
+from app.version import __version__
 
 # Host/port are configurable for deployment. .env is already loaded by the
 # app.main import above, so these pick up TIKTOBS_HOST / TIKTOBS_PORT.
@@ -39,7 +40,7 @@ import time
 
 def startup_animation():
     print("\n" + "="*50)
-    print("      TikTok OBS Live Integration Server          ")
+    print(f"   TikTok OBS Live Integration Server v{__version__}   ")
     print("==================================================")
     
     tasks = [
