@@ -287,6 +287,162 @@ class TestPipeline(unittest.IsolatedAsyncioTestCase):
         finally:
             processor_module.poll_manager = orig_pm
 
+    async def test_unmatched_gift_during_active_poll_broadcasts_ignored_notice(self):
+        """A gift no candidate owns: votes stay at zero for everyone, but the
+        processor broadcasts poll_gift_ignored so the sender gets feedback
+        instead of silently losing the gift."""
+        from app import processor as processor_module
+        from app.poll import PollManager
+
+        local_pm = PollManager()
+        orig_pm = processor_module.poll_manager
+        processor_module.poll_manager = local_pm
+
+        class StubManager:
+            def __init__(self):
+                self.messages = []
+
+            async def broadcast(self, message):
+                self.messages.append(message)
+
+        stub_manager = StubManager()
+        orig_manager = processor_module.manager
+        processor_module.manager = stub_manager
+        try:
+            session_id = await database.create_session("gift_ignore_creator")
+            self.processor.set_session_id(session_id)
+
+            await local_pm.start_poll(
+                "Ignore test",
+                [{"name": "Merah", "gift_name": "Rose"}],
+            )
+
+            def gift_payload(msg_id: str, name: str, gift_id: int) -> dict:
+                return {
+                    "msg_id": msg_id,
+                    "user": {
+                        "unique_id": "generous_viewer",
+                        "nickname": "Generous",
+                        "avatar_thumb": {"url_list": ["https://cdn/avatar.jpg"]},
+                    },
+                    "gift_id": gift_id,
+                    "gift_name": name,
+                    "quantity": 1,
+                    "diamond_count": 99,
+                    "gift_type": 2,
+                    "repeat_end": 1,
+                }
+
+            # 1. Unmatched gift: still persisted/published, but zero votes...
+            await self.processor.process_raw_event("gift", gift_payload("gift_unmatched_1", "Ice Cream", 700))
+            status = await local_pm.get_status()
+            merah = next(c for c in status["candidates"] if c["name"] == "Merah")
+            self.assertEqual(merah["votes"], 0)
+            self.assertEqual(len(self.published_events), 1)
+
+            # ...and a poll_gift_ignored notice goes out with the details.
+            ignored_msgs = [m for m in stub_manager.messages if m["type"] == "poll_gift_ignored"]
+            self.assertEqual(len(ignored_msgs), 1)
+            msg = ignored_msgs[0]
+            self.assertEqual(msg["username"], "generous_viewer")
+            self.assertEqual(msg["gift_name"], "Ice Cream")
+            self.assertEqual(msg["diamond_count"], 99)
+            self.assertEqual(msg["reason"], "no_vote_comment")
+            self.assertEqual(msg["avatar_url"], "https://cdn/avatar.jpg")
+            # No false celebration: no vote broadcast for the unmatched gift.
+            self.assertFalse(any(m["type"] == "poll_gift_vote" for m in stub_manager.messages))
+
+            # 2. A matched gift still counts normally and adds no ignored notice.
+            await self.processor.process_raw_event("gift", gift_payload("gift_matched_1", "Rose", 5))
+            status = await local_pm.get_status()
+            merah = next(c for c in status["candidates"] if c["name"] == "Merah")
+            self.assertEqual(merah["votes"], 99)
+            ignored_msgs = [m for m in stub_manager.messages if m["type"] == "poll_gift_ignored"]
+            self.assertEqual(len(ignored_msgs), 1)
+            self.assertTrue(any(m["type"] == "poll_gift_vote" for m in stub_manager.messages))
+
+            # 3. With NO active poll, an unmatched gift is just a normal gift:
+            # no ignored notice (nothing to warn about).
+            await local_pm.stop_poll()
+            stub_manager.messages.clear()
+            await self.processor.process_raw_event("gift", gift_payload("gift_no_poll", "Galaxy", 900))
+            self.assertFalse(any(m["type"] == "poll_gift_ignored" for m in stub_manager.messages))
+
+            await database.close_session(session_id)
+        finally:
+            processor_module.poll_manager = orig_pm
+            processor_module.manager = orig_manager
+
+    async def test_unmatched_gift_falls_back_to_senders_last_comment(self):
+        """End-to-end through the processor: a gift that matches no candidate
+        is credited to the candidate of the sender's last vote comment."""
+        from app import processor as processor_module
+        from app.poll import PollManager
+
+        local_pm = PollManager()
+        orig_pm = processor_module.poll_manager
+        processor_module.poll_manager = local_pm
+
+        class StubManager:
+            def __init__(self):
+                self.messages = []
+
+            async def broadcast(self, message):
+                self.messages.append(message)
+
+        stub_manager = StubManager()
+        orig_manager = processor_module.manager
+        processor_module.manager = stub_manager
+        try:
+            session_id = await database.create_session("fallback_creator")
+            self.processor.set_session_id(session_id)
+
+            await local_pm.start_poll(
+                "Fallback test",
+                [
+                    {"name": "Merah", "gift_name": "Rose"},
+                    {"name": "Biru", "gift_name": "Galaxy"},
+                ],
+            )
+
+            # Sultan comments "02" -> vote for Biru + intent.
+            await self.processor.process_raw_event("comment", {
+                "msg_id": "fb_comment_1",
+                "user": {"unique_id": "sultan", "nickname": "Sultan"},
+                "comment": "02",
+            })
+
+            # Sultan sends Rocket (nobody's gift) -> credited to Biru via "02".
+            await self.processor.process_raw_event("gift", {
+                "msg_id": "fb_gift_1",
+                "user": {"unique_id": "sultan", "nickname": "Sultan"},
+                "gift_name": "Rocket",
+                "quantity": 1,
+                "diamond_count": 500,
+                "gift_type": 2,
+                "repeat_end": 1,
+            })
+
+            status = await local_pm.get_status()
+            biru = next(c for c in status["candidates"] if c["name"] == "Biru")
+            merah = next(c for c in status["candidates"] if c["name"] == "Merah")
+            self.assertEqual(biru["votes"], 1 + 500)  # comment + rocket
+            self.assertEqual(merah["votes"], 0)
+
+            vote_msgs = [m for m in stub_manager.messages if m["type"] == "poll_gift_vote"]
+            self.assertEqual(len(vote_msgs), 1)
+            self.assertEqual(vote_msgs[0]["candidate_name"], "Biru")
+            self.assertEqual(vote_msgs[0]["votes_added"], 500)
+            self.assertEqual(vote_msgs[0]["via_comment"], "02")
+            # And no ignored notice was sent for the credited gift.
+            self.assertFalse(any(m["type"] == "poll_gift_ignored" for m in stub_manager.messages))
+
+            await local_pm.stop_poll()
+            await database.close_session(session_id)
+        finally:
+            processor_module.poll_manager = orig_pm
+            processor_module.manager = orig_manager
+
     async def test_gift_normalization_captures_streak_fields(self):
         event = self.processor._normalize("gift", {
             "msg_id": "gift_schema_1",
@@ -311,6 +467,32 @@ class TestPipeline(unittest.IsolatedAsyncioTestCase):
         })
         self.assertEqual(mid.data["repeat_end"], 0)
         self.assertEqual(mid.data["gift_type"], 1)
+
+
+
+class TestExtractAvatarUrl(unittest.TestCase):
+    """Unit tests for the sender-avatar extraction helper used to feed
+    profile pictures into poll_gift_vote / poll_gift_ignored broadcasts."""
+
+    def test_direct_url_field(self):
+        from app.processor import _extract_avatar_url
+        self.assertEqual(_extract_avatar_url({"avatar_url": "https://a.jpg"}), "https://a.jpg")
+        self.assertEqual(_extract_avatar_url({"avatarUrl": "  https://b.jpg  "}), "https://b.jpg")
+
+    def test_proto_image_model(self):
+        from app.processor import _extract_avatar_url
+        user = {
+            "avatar_thumb": {"url_list": ["", "https://thumb.jpg"]},
+            "avatar_large": {"urlList": ["https://large.jpg"]},
+        }
+        self.assertEqual(_extract_avatar_url(user), "https://thumb.jpg")
+
+    def test_no_avatar(self):
+        from app.processor import _extract_avatar_url
+        self.assertEqual(_extract_avatar_url({}), "")
+        self.assertEqual(_extract_avatar_url({"avatar_thumb": {"url_list": []}}), "")
+        self.assertEqual(_extract_avatar_url(None), "")
+
 
 if __name__ == "__main__":
     unittest.main()

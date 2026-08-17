@@ -58,6 +58,13 @@ class PollManager:
         self.round_name = ""
         self.candidates = []  # List of {"id": "1", "name": "Name", "image_url": "...", "votes": 0}
         self.voters = set()   # Set of usernames who voted at least once (stat only, never blocks)
+        # Per-user vote intent for the current round: username_key ->
+        # {"candidate_id": str, "comment": str, "at": iso}. Written whenever a
+        # comment registers a vote; used by the gift fallback so a gift that
+        # matches no candidate is credited to the candidate the sender last
+        # voted for by comment. Reset on every start_poll, so only comments
+        # made during the ACTIVE round ever count.
+        self.vote_intent: dict[str, dict] = {}
         self.expires_at = None  # datetime | None
         self.started_at = None  # datetime | None
         self.duration_seconds = None  # int | None
@@ -111,6 +118,9 @@ class PollManager:
             self.round_name = (round_name or "").strip() or title
             self.candidates = new_candidates
             self.voters.clear()
+            # New round = fresh intent: comments from previous rounds must not
+            # steer gift fallback votes in this one.
+            self.vote_intent.clear()
             self.is_active = True
             self.started_at = datetime.now(timezone.utc)
             self.duration_seconds = duration_seconds if (duration_seconds and duration_seconds > 0) else None
@@ -288,13 +298,22 @@ class PollManager:
             if matched_candidate:
                 matched_candidate["votes"] += 1
                 self.voters.add(username_key)  # unique-voter stat only
+                # Vote intent for the gift fallback: if this user later sends
+                # a gift that matches no candidate's gift, it is credited to
+                # this candidate. Only unambiguous matches (exactly one
+                # candidate) are stored; the latest vote comment wins.
+                self.vote_intent[username_key] = {
+                    "candidate_id": matched_candidate["id"],
+                    "comment": comment_text.strip(),
+                    "at": datetime.now(timezone.utc).isoformat(),
+                }
                 logger.info(f"Vote recorded: User @{username_key} voted for {matched_candidate['name']}.")
                 await self._persist_state()
                 return True
 
             return False
 
-    async def record_gift_vote(self, gift_name: str, diamond_count: int) -> tuple[bool, str | None, int]:
+    async def record_gift_vote(self, gift_name: str, diamond_count: int, username: str | None = None) -> tuple[bool, str | None, int, str | None]:
         """
         Records votes from a gift event.
         Gift voting bypasses the username check and adds multiple votes based on diamond value.
@@ -303,21 +322,34 @@ class PollManager:
         computed by the processor (repeat_count x unit price; per TikTok's
         streak schema only the final event of a combo is counted). 1 diamond
         = 1 vote (minimum 1 vote).
-        Returns (success, candidate_name, votes_added).
+
+        Comment fallback: when the gift matches NO candidate's gift and
+        `username` is provided, the gift is credited (same 1 diamond = 1 vote
+        conversion) to the candidate the sender last voted for by comment in
+        the CURRENT round (see `vote_intent`). Senders without a vote comment
+        this round count for nobody.
+
+        Returns (success, candidate_name, votes_added, via_comment).
+        `via_comment` is the text of the sender's last vote comment when the
+        gift was credited through the fallback, otherwise None.
+
+        Gifts that match no candidate and have no fallback intent count for
+        nobody (strict isolation, no leak); the caller surfaces them via a
+        poll_gift_ignored broadcast when a poll is active.
         """
         if not self.is_active or not gift_name:
-            return False, None, 0
+            return False, None, 0, None
 
         # Fast path check for expired poll
         if self.expires_at and datetime.now(timezone.utc) > self.expires_at:
             await self.stop_poll()
-            return False, None, 0
+            return False, None, 0, None
 
         async with self.lock:
             matched_candidate = None
             clean_gift = normalize_gift_name(gift_name)
             if not clean_gift:
-                return False, None, 0
+                return False, None, 0, None
             for c in self.candidates:
                 # Strict isolation: a gift only ever counts for the candidate
                 # whose configured gift normalizes to the exact same name.
@@ -325,17 +357,45 @@ class PollManager:
                 if normalize_gift_name(c.get("gift_name") or "") == clean_gift:
                      matched_candidate = c
                      break
-            
+
+            via_comment = None
+            if matched_candidate is None and username:
+                # Comment fallback: credit the gift to the candidate this
+                # sender last voted for by comment during the active round.
+                username_key = (username or "").strip().lower()
+                intent = self.vote_intent.get(username_key)
+                if intent:
+                    candidate_id = intent.get("candidate_id")
+                    matched_candidate = next(
+                        (c for c in self.candidates if c["id"] == candidate_id), None
+                    )
+                    if matched_candidate is not None:
+                        via_comment = intent.get("comment") or ""
+
             if matched_candidate:
                 # 1 diamond = 1 vote (minimum 1 vote)
                 votes_to_add = max(1, diamond_count)
                 matched_candidate["votes"] += votes_to_add
-                logger.info(f"Gift vote recorded: {votes_to_add} votes added to {matched_candidate['name']} via gift '{gift_name}'.")
+                if via_comment is not None:
+                    logger.info(
+                        f"Gift vote via comment fallback: {votes_to_add} votes added to "
+                        f"{matched_candidate['name']} via gift '{gift_name}' "
+                        f"(sender @{(username or '').strip().lower()} last commented '{via_comment}')."
+                    )
+                else:
+                    logger.info(f"Gift vote recorded: {votes_to_add} votes added to {matched_candidate['name']} via gift '{gift_name}'.")
                 await self._persist_state()
-                return True, matched_candidate["name"], votes_to_add
+                return True, matched_candidate["name"], votes_to_add, via_comment
 
-            logger.debug(f"Gift '{gift_name}' ignored: no candidate is assigned this gift.")
-            return False, None, 0
+            # INFO (not debug): a real viewer just spent coins on a gift that
+            # counts for nobody — operators need to see it in the server log
+            # and the processor turns this into a poll_gift_ignored broadcast
+            # so the overlays can warn the sender.
+            logger.info(
+                f"Gift '{gift_name}' not counted: no candidate owns this gift "
+                f"and the sender has no vote comment this round."
+            )
+            return False, None, 0, None
 
     async def _load_wins(self, session_key: str) -> None:
         """Loads win counts for a session from the DB into the cache."""
@@ -377,6 +437,7 @@ class PollManager:
                 "round_name": self.round_name,
                 "candidates": self.candidates,
                 "voters": sorted(self.voters),
+                "vote_intent": self.vote_intent,
                 "started_at": self.started_at.isoformat() if self.started_at else None,
                 "expires_at": self.expires_at.isoformat() if self.expires_at else None,
                 "duration_seconds": self.duration_seconds,
@@ -407,6 +468,13 @@ class PollManager:
             # Normalize voter keys so old persisted states (raw usernames)
             # still match the lowercase keys used by record_vote.
             self.voters = {(v or "").strip().lower() for v in (state.get("voters") or [])}
+            # Vote intent survives restarts too, so a gift sent right after a
+            # restart can still fall back to the sender's last vote comment.
+            self.vote_intent = {
+                (k or "").strip().lower(): v
+                for k, v in (state.get("vote_intent") or {}).items()
+                if isinstance(v, dict)
+            }
             self.duration_seconds = state.get("duration_seconds")
             self.started_at = None
             if state.get("started_at"):

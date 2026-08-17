@@ -48,8 +48,10 @@ async def _apply_session_history_to_poll(session_id: str) -> dict:
     """
     Replays the stored events of a session through the active poll, so votes
     that arrived before the poll started are counted too. The exact same
-    matching rules as live events apply: one comment vote per user, gift
-    votes matched by gift name with 1 diamond = 1 vote.
+    matching rules as live events apply: comment votes by number/name, gift
+    votes matched by gift name with 1 diamond = 1 vote, and the comment
+    fallback for gifts that match no candidate (replay is chronological, so
+    vote intents build up in the order the events happened).
     """
     applied = {"comments": 0, "gifts": 0, "votes": 0}
     events = await database.get_session_events(session_id)
@@ -69,8 +71,8 @@ async def _apply_session_history_to_poll(session_id: str) -> dict:
             # carries the full quantity.
             if data.get("gift_type") == 1 and data.get("repeat_end") == 0:
                 continue
-            success, _candidate_name, votes_added = await poll_manager.record_gift_vote(
-                gift_name, max(1, quantity) * max(1, diamond_count)
+            success, _candidate_name, votes_added, _via_comment = await poll_manager.record_gift_vote(
+                gift_name, max(1, quantity) * max(1, diamond_count), username=event["username"]
             )
             if success:
                 applied["gifts"] += 1

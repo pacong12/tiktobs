@@ -53,7 +53,7 @@ async def test_gift_vote_maps_to_candidate():
         {"name": "A"},
         {"name": "B", "gift_name": "Rose"},
     ], round_name="R3")
-    ok, name, added = await pm.record_gift_vote("Rose", 10)
+    ok, name, added, _via = await pm.record_gift_vote("Rose", 10)
     assert ok is True
     assert name == "B"
     assert added == 10
@@ -82,6 +82,28 @@ async def test_restore_recovers_votes_and_voters():
     status = await pm2.get_status()
     assert status["total_votes"] == 2
     assert status["unique_voters"] == 1
+
+    await pm2.stop_poll()
+
+async def test_vote_intent_survives_restore():
+    """Gift fallback intent persists across app restarts: a gift sent right
+    after a restart is still credited via the sender's last vote comment."""
+    pm1 = await _fresh()
+    await pm1.start_poll("Intent", [
+        {"name": "A", "gift_name": "Rose"},
+        {"name": "B", "gift_name": "Galaxy"},
+    ], duration_seconds=600, round_name="RI")
+    assert await pm1.record_vote("sultan", "2") is True
+
+    # Simulate restart.
+    pm2 = await _fresh()
+    await pm2.restore()
+
+    ok, name, added, via = await pm2.record_gift_vote("Rocket", 7, username="sultan")
+    assert ok is True
+    assert name == "B"
+    assert added == 7
+    assert via == "2"
 
     await pm2.stop_poll()
 
