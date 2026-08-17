@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 
-from app import database, state
+from app import database, state, version
 from app.schemas import ConnectRequest
 
 router = APIRouter(prefix="/api", tags=["connection"])
@@ -64,6 +64,7 @@ async def get_connection_status():
 
     return {
         "status": status_str,
+        "version": version.__version__,
         "username": state.live_provider.username,
         "session_id": state.processor.session_id,
         "anchor_id": getattr(state.live_provider, "anchor_id", None)

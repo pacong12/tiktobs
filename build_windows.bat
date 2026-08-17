@@ -50,6 +50,7 @@ if errorlevel 1 ( echo [ERROR] Build gagal. & pause & exit /b 1 )
 
 echo.
 echo ==================================================
-echo  SELESAI! File ada di: dist\TikTokOBS.exe
+echo  SELESAI! File versi terbaru ada di folder dist\
+echo  (contoh: dist\TikTokOBS-1.0.0.exe)
 echo ==================================================
 pause
