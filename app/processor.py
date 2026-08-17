@@ -6,10 +6,38 @@ from datetime import datetime, timezone
 from app import database
 from app.bus import event_bus
 from app.models import TikTokEvent
-from app.poll import poll_manager
+from app.poll import poll_manager, normalize_gift_name
 from app.state import manager
 
 logger = logging.getLogger("app.processor")
+
+
+def _extract_avatar_url(user_info: dict) -> str:
+    """Best-effort extraction of the sender's profile picture URL from a
+    TikTok user payload. Handles both a direct url field and the proto
+    ImageModel shapes (`avatar_thumb` / `avatar_medium` / ... each carrying
+    a `url_list`)."""
+    if not isinstance(user_info, dict):
+        return ""
+    direct = user_info.get("avatar_url") or user_info.get("avatarUrl")
+    if isinstance(direct, str) and direct.strip():
+        return direct.strip()
+    for key in (
+        "avatar_thumb", "avatarThumb",
+        "avatar_medium", "avatarMedium",
+        "avatar_large", "avatarLarge",
+        "avatar_jpg", "avatarJpg",
+    ):
+        img = user_info.get(key)
+        if not isinstance(img, dict):
+            continue
+        urls = img.get("url_list") or img.get("urlList") or []
+        if isinstance(urls, list):
+            for url in urls:
+                if isinstance(url, str) and url.strip():
+                    return url.strip()
+    return ""
+
 
 class EventProcessor:
     def __init__(self):
@@ -88,7 +116,9 @@ class EventProcessor:
 
                     if not is_mid_streak:
                         total_diamonds = max(1, quantity) * max(1, diamond_count)
-                        success, candidate_name, votes_added = await poll_manager.record_gift_vote(gift_name, total_diamonds)
+                        success, candidate_name, votes_added, via_comment = await poll_manager.record_gift_vote(
+                            gift_name, total_diamonds, username=event.username
+                        )
                         if success:
                             poll_status = await poll_manager.get_status()
                             await manager.broadcast({
@@ -103,7 +133,37 @@ class EventProcessor:
                                 "diamond_count": total_diamonds,
                                 "quantity": quantity,
                                 "candidate_name": candidate_name,
-                                "votes_added": votes_added
+                                "votes_added": votes_added,
+                                # Sender's profile picture (when TikTok
+                                # provides one) for overlays.
+                                "avatar_url": event.data.get("avatar_url", ""),
+                                # Set only for comment-fallback votes: the gift
+                                # matched no candidate and was credited via the
+                                # sender's last vote comment.
+                                "via_comment": via_comment
+                            })
+                        elif poll_manager.is_active and normalize_gift_name(gift_name):
+                            # Gift sent while a poll is running, but no candidate
+                            # owns it AND the sender never voted by comment this
+                            # round: it counts for NOBODY. Tell the overlays/admin
+                            # so the sender learns how to make a gift count
+                            # (comment the candidate number first).
+                            logger.info(
+                                f"Gift '{gift_name}' from @{event.username} not counted: "
+                                f"no matching candidate and no vote comment this round "
+                                f"(poll '{poll_manager.round_name}' active)."
+                            )
+                            await manager.broadcast({
+                                "type": "poll_gift_ignored",
+                                "username": event.username,
+                                "nickname": event.nickname or event.username,
+                                "gift_name": gift_name,
+                                "diamond_count": total_diamonds,
+                                "quantity": quantity,
+                                # Sender's profile picture (when TikTok
+                                # provides one) for overlays.
+                                "avatar_url": event.data.get("avatar_url", ""),
+                                "reason": "no_vote_comment"
                             })
             else:
                 logger.debug(f"Duplicate event ignored: {event.event_type} - {event.id}")
@@ -124,6 +184,7 @@ class EventProcessor:
             "anonymous"
         )
         nickname = user_info.get("nickname") or user_info.get("nickName") or raw_data.get("nickname") or username
+        avatar_url = _extract_avatar_url(user_info)
 
         # Parse timestamp (fallback to current time if missing or invalid)
         timestamp = datetime.now(timezone.utc)
@@ -222,6 +283,8 @@ class EventProcessor:
             data["diamond_count"] = diamond_count
             data["repeat_end"] = repeat_end
             data["gift_type"] = gift_type
+            if avatar_url:
+                data["avatar_url"] = avatar_url
         elif event_type == "like":
             data["count"] = int(raw_data.get("like_count") or raw_data.get("count") or 1)
         elif event_type == "follow":

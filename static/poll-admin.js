@@ -595,6 +595,12 @@ function connectWebSocket() {
             } else if (msg.type === 'poll_round_archived') {
                 // A round finished (e.g. via timer) — refresh the history panel.
                 loadRounds();
+            } else if (msg.type === 'poll_gift_ignored') {
+                // Someone sent a gift no candidate owns: it counted for nobody.
+                // Surface it so the host can tell the sender (and maybe fix
+                // the candidate gift assignments).
+                const icon = typeof giftIconInline === 'function' ? giftIconInline(msg.gift_name) : '';
+                showToast(`⚠️ Gift ${icon} ${msg.gift_name} dari ${msg.nickname || msg.username} TIDAK dihitung — tidak ada kandidat dengan gift itu.`);
             }
         } catch (error) {
             console.error('Error handling WebSocket message:', error);

@@ -2,6 +2,7 @@
 let socket = null;
 let currentPoll = null;
 let comboToastTimer = null;
+let ignoredToastTimer = null;
 
 // DOM Elements
 const pollContainer = document.getElementById('poll-container');
@@ -181,6 +182,14 @@ function connectWebSocket() {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
                 renderPoll(msg.poll);
+            } else if (msg.type === 'poll_gift_vote') {
+                // Direct-matching gifts already get their spotlight from the
+                // raw `event` combo toast below; only comment-fallback votes
+                // need this extra toast (they never match a candidate's gift,
+                // so the `event` path skips them).
+                if (msg.via_comment) handleFallbackVoteToast(msg);
+            } else if (msg.type === 'poll_gift_ignored') {
+                handleIgnoredGiftToast(msg);
             } else if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
                 handleGiftEventForToast(msg.event);
             }
@@ -321,4 +330,55 @@ function handleGiftEventForToast(giftEvent) {
         () => toast.classList.remove('show'),
         isFinal ? 2500 : 9000
     );
+}
+
+// --- Comment-fallback vote toast --------------------------------------------
+// A gift that matched no candidate was credited via the sender's last vote
+// comment. Show it on the combo toast with a "via komentar" note so viewers
+// understand where the votes came from.
+
+function handleFallbackVoteToast(msg) {
+    const toast = document.getElementById('combo-toast');
+    if (!toast) return;
+
+    const toastIcon = giftIconHtml(msg.gift_name, 'gift-icon gift-icon-toast');
+    const toastGift = toastIcon
+        ? `${toastIcon} ${escapeHTML(msg.gift_name)}`
+        : `${getGiftEmoji(msg.gift_name)} ${escapeHTML(msg.gift_name)}`;
+    toast.innerHTML = `
+        <span class="combo-toast-gift">${toastGift}</span>
+        <span class="combo-toast-count">+${msg.votes_added}</span>
+        <span class="combo-toast-target">&#10148; ${escapeHTML(msg.candidate_name)}</span>
+        <span class="combo-toast-note">via komentar "${escapeHTML(msg.via_comment)}"</span>
+    `;
+    toast.classList.remove('show', 'combo-pulse', 'final');
+    void toast.offsetWidth; // restart animations
+    toast.classList.add('show', 'combo-pulse', 'final');
+
+    clearTimeout(comboToastTimer);
+    comboToastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// --- Ignored gift toast -------------------------------------------------------
+// Gift counted for NOBODY (no candidate owns it and the sender never voted by
+// comment this round). Shown on-stream so the sender gets direct feedback and
+// learns the correct flow: comment the candidate number first, then gift.
+
+function handleIgnoredGiftToast(msg) {
+    const toast = document.getElementById('ignored-toast');
+    if (!toast) return;
+
+    const icon = giftIconHtml(msg.gift_name, 'gift-icon gift-icon-toast')
+        || getGiftEmoji(msg.gift_name);
+    toast.innerHTML = `
+        <span class="ignored-toast-badge">&#9888;&#65039;</span>
+        <span>${icon} ${escapeHTML(msg.gift_name)} dari ${escapeHTML(msg.nickname || msg.username)}
+        <b>tidak dihitung</b> &mdash; komentar nomor/nama kandidat dulu, baru gift!</span>
+    `;
+    toast.classList.remove('show');
+    void toast.offsetWidth; // restart transition
+    toast.classList.add('show');
+
+    clearTimeout(ignoredToastTimer);
+    ignoredToastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
 }

@@ -190,6 +190,38 @@ panel has a **♻️ Pakai lagi** button. Clicking it refills the candidate setu
 form with that round's candidates (name, photo URL, and assigned gift), so you
 can re-run the same match-up without retyping anything.
 
+### Gifts that match no candidate (comment fallback)
+
+Gift votes use strict isolation: during an active poll, a gift only counts
+directly for the candidate whose assigned gift name matches it
+(case/emoji/whitespace insensitive). A gift assigned to **no** candidate never
+leaks to another candidate directly — but instead of dropping it, the app
+applies a **comment fallback**:
+
+- Every comment that registers a vote also records the sender's *vote intent*
+  (which candidate, which comment, when). Intent is scoped to the current
+  round (cleared when a new poll starts), and the latest vote comment wins.
+  Non-vote chatter like "wkwkwk" does not overwrite the intent.
+- When such a user sends a gift that matches no candidate's gift, the gift is
+  credited to the candidate of their last vote comment, using the same
+  1 diamond = 1 vote conversion (e.g. comment `01`, then send a Rocket → all
+  of the Rocket's diamond value goes to candidate #1).
+- Fallback votes are marked as such: the `poll_gift_vote` WebSocket message
+  carries `via_comment` with the backing comment. The Vote Gift Alert overlay
+  shows a small "via last comment" badge, the vote overlay shows a
+  `via komentar` toast, the candidate bubble credits the right candidate, and
+  Poll Admin shows a toast explaining where the votes came from.
+- Senders with **no** vote comment this round count for nobody: the server
+  broadcasts `poll_gift_ignored` (`reason: no_vote_comment`) so the Vote Gift
+  Alert overlay shows a red "+0 VOTES" card, the vote overlay shows a red
+  on-stream warning banner, Gift Bubbles shows a red bubble with the sender's
+  profile picture, Poll Admin shows a warning toast, and the event is logged
+  at INFO level. The fallback also applies to the session-history
+  replay at poll start (events replay in chronological order).
+
+> 📄 Full technical reference: [`docs/05-gift-voting-fallback.md`](docs/05-gift-voting-fallback.md)
+> · Operator guide (Bahasa Indonesia): [`docs/06-panduan-gift-vote-fallback.md`](docs/06-panduan-gift-vote-fallback.md)
+
 ---
 
 ## TikTok Gift Schema (streak / combo handling)

@@ -80,7 +80,7 @@ async def simulate_gift_vote():
     gift_name = c["gift_name"]
     diamond_count = random.choice([5, 10, 50, 99, 299])
 
-    success, candidate_name, votes_added = await poll_manager.record_gift_vote(gift_name, diamond_count)
+    success, candidate_name, votes_added, via_comment = await poll_manager.record_gift_vote(gift_name, diamond_count)
     if success:
         poll_status = await poll_manager.get_status()
         await state.manager.broadcast({
@@ -124,26 +124,45 @@ async def simulate_gift_normal():
     gift_name, diamond_count, emoji = random.choice(available_gifts)
     quantity = random.choice([1, 1, 2, 5])
 
-    event_data = {
-        "type": "event",
-        "event": {
-            "id": f"mock-{random.randint(100000, 999999)}",
-            "event_type": "gift",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "username": user,
-            "nickname": f"{user} 💎",
-            "data": {
-                "gift_id": random.randint(1000, 9999),
-                "gift_name": gift_name,
-                "quantity": quantity,
-                "diamond_count": diamond_count,
-                "gift_type": 2,
-                "repeat_end": 1
+    # If a live session is active, route the gift through the real event
+    # processor (persist + poll counting). During an active poll this is what
+    # exercises the poll_gift_ignored path for gifts no candidate owns.
+    # Otherwise broadcast directly so the overlay display can still be tested
+    # offline.
+    use_processor = bool(state.processor and state.processor.session_id)
+
+    if use_processor:
+        raw_event = {
+            "msg_id": f"mock-{random.randint(100000, 999999)}",
+            "user": {"unique_id": user, "nickname": f"{user} 💎"},
+            "gift_name": gift_name,
+            "quantity": quantity,
+            "diamond_count": diamond_count,
+            "gift_type": 2,
+            "repeat_end": 1,
+        }
+        await state.processor.process_raw_event("gift", raw_event)
+    else:
+        event_data = {
+            "type": "event",
+            "event": {
+                "id": f"mock-{random.randint(100000, 999999)}",
+                "event_type": "gift",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "username": user,
+                "nickname": f"{user} 💎",
+                "data": {
+                    "gift_id": random.randint(1000, 9999),
+                    "gift_name": gift_name,
+                    "quantity": quantity,
+                    "diamond_count": diamond_count,
+                    "gift_type": 2,
+                    "repeat_end": 1
+                }
             }
         }
-    }
-    await state.manager.broadcast(event_data)
-    return {"status": "success", "username": user, "gift": gift_name, "quantity": quantity, "diamonds": diamond_count}
+        await state.manager.broadcast(event_data)
+    return {"status": "success", "username": user, "gift": gift_name, "quantity": quantity, "diamonds": diamond_count, "via_processor": use_processor}
 
 
 @router.post("/gift-combo")

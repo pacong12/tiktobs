@@ -146,19 +146,19 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(status["candidates"][1]["gift_name"], "Finger Heart")
 
         # 1. Send gift 'Rose' with 1 diamond (Alice gets 1 vote)
-        success, name, votes = await self.poll_manager.record_gift_vote("Rose", 1)
+        success, name, votes, _via = await self.poll_manager.record_gift_vote("Rose", 1)
         self.assertTrue(success)
         self.assertEqual(name, "Alice")
         self.assertEqual(votes, 1)
 
         # 2. Send gift 'Rose' with 15 diamonds (Alice gets 15 more votes)
-        success, name, votes = await self.poll_manager.record_gift_vote("Rose", 15)
+        success, name, votes, _via = await self.poll_manager.record_gift_vote("Rose", 15)
         self.assertTrue(success)
         self.assertEqual(name, "Alice")
         self.assertEqual(votes, 15)
 
         # 3. Send gift 'Finger Heart' with 5 diamonds (Bob gets 5 votes)
-        success, name, votes = await self.poll_manager.record_gift_vote("Finger Heart", 5)
+        success, name, votes, _via = await self.poll_manager.record_gift_vote("Finger Heart", 5)
         self.assertTrue(success)
         self.assertEqual(name, "Bob")
         self.assertEqual(votes, 5)
@@ -169,8 +169,8 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(status_after["candidates"][1]["votes"], 5)   # 5
         self.assertEqual(status_after["total_votes"], 21)             # 16 + 5 = 21
 
-        # 5. Unrelated gift should do nothing
-        success, name, votes = await self.poll_manager.record_gift_vote("Ice Cream", 1)
+        # 5. Unrelated gift from a sender with no vote comment does nothing
+        success, name, votes, _via = await self.poll_manager.record_gift_vote("Ice Cream", 1, username="random_viewer")
         self.assertFalse(success)
 
     async def test_vote_by_sequence_number_with_leading_zeros(self):
@@ -223,26 +223,27 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         await self.poll_manager.start_poll(self.title, candidates)
 
         # Case + surrounding whitespace still match.
-        success, name, _ = await self.poll_manager.record_gift_vote("  ROSE ", 1)
+        success, name, _, _via = await self.poll_manager.record_gift_vote("  ROSE ", 1)
         self.assertTrue(success)
         self.assertEqual(name, "Alice")
 
         # Emoji decoration on the live gift name still matches.
-        success, name, _ = await self.poll_manager.record_gift_vote("Rose \U0001f339", 2)
+        success, name, _, _via = await self.poll_manager.record_gift_vote("Rose \U0001f339", 2)
         self.assertTrue(success)
         self.assertEqual(name, "Alice")
 
         # Collapsed whitespace matches multi-word gifts.
-        success, name, _ = await self.poll_manager.record_gift_vote("finger  heart", 3)
+        success, name, _, _via = await self.poll_manager.record_gift_vote("finger  heart", 3)
         self.assertTrue(success)
         self.assertEqual(name, "Bob")
 
-        # Any other gift counts for NOBODY (no leak to Alice or Bob).
-        success, name, votes = await self.poll_manager.record_gift_vote("Doughnut", 30)
+        # Any other gift from a sender with NO vote comment counts for
+        # NOBODY (no leak to Alice or Bob).
+        success, name, votes, _via = await self.poll_manager.record_gift_vote("Doughnut", 30, username="no_comment_user")
         self.assertFalse(success)
         self.assertIsNone(name)
         self.assertEqual(votes, 0)
-        success, name, votes = await self.poll_manager.record_gift_vote("Galaxy", 1000)
+        success, name, votes, _via = await self.poll_manager.record_gift_vote("Galaxy", 1000, username="no_comment_user")
         self.assertFalse(success)
 
     async def test_duplicate_gift_assignment_rejected(self):
@@ -267,6 +268,109 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         status = await self.poll_manager.get_status()
         self.assertEqual(status["candidates"][0]["color"], "#00e5ff")
         self.assertEqual(status["candidates"][1]["color"], "")
+
+    async def test_gift_fallback_to_last_vote_comment(self):
+        """A gift that matches no candidate's gift is credited to the
+        candidate the sender last voted for by comment this round."""
+        candidates = [
+            {"name": "Alice", "image_url": "", "gift_name": "Rose"},
+            {"name": "Bob", "image_url": "", "gift_name": "Galaxy"},
+        ]
+        await self.poll_manager.start_poll(self.title, candidates)
+
+        # Sultan comments "02" -> +1 vote for Bob AND intent towards Bob.
+        self.assertTrue(await self.poll_manager.record_vote("sultan", "02"))
+
+        # Unmatched gift is credited to Bob via the comment (1 diamond = 1 vote).
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 5000, username="sultan")
+        self.assertTrue(success)
+        self.assertEqual(name, "Bob")
+        self.assertEqual(votes, 5000)
+        self.assertEqual(via, "02")
+
+        # A directly-matching gift never needs the fallback.
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rose", 3, username="sultan")
+        self.assertTrue(success)
+        self.assertEqual(name, "Alice")
+        self.assertEqual(votes, 3)
+        self.assertIsNone(via)
+
+        # A sender who never commented gets nothing for an unmatched gift.
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 100, username="newbie")
+        self.assertFalse(success)
+        self.assertIsNone(name)
+        self.assertEqual(votes, 0)
+        self.assertIsNone(via)
+
+        status = await self.poll_manager.get_status()
+        self.assertEqual(status["candidates"][0]["votes"], 3)          # Alice: Rose only
+        self.assertEqual(status["candidates"][1]["votes"], 1 + 5000)   # Bob: comment + Rocket
+
+    async def test_gift_fallback_follows_latest_vote_comment(self):
+        """The intent tracks the sender's LATEST vote comment."""
+        candidates = [
+            {"name": "Alice", "image_url": "", "gift_name": "Rose"},
+            {"name": "Bob", "image_url": "", "gift_name": "Galaxy"},
+        ]
+        await self.poll_manager.start_poll(self.title, candidates)
+        self.assertTrue(await self.poll_manager.record_vote("sultan", "01"))
+        self.assertTrue(await self.poll_manager.record_vote("sultan", "02"))
+
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 10, username="sultan")
+        self.assertTrue(success)
+        self.assertEqual(name, "Bob")
+        self.assertEqual(via, "02")
+
+        # Non-matching comments ("wkwkwk") do NOT overwrite the intent...
+        self.assertFalse(await self.poll_manager.record_vote("sultan", "wkwkwk"))
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 5, username="sultan")
+        self.assertTrue(success)
+        self.assertEqual(name, "Bob")
+        self.assertEqual(via, "02")
+
+        # ...but a vote comment by candidate name does.
+        self.assertTrue(await self.poll_manager.record_vote("sultan", "alice"))
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 5, username="SULTAN")
+        self.assertTrue(success)
+        self.assertEqual(name, "Alice")
+        self.assertEqual(via, "alice")
+
+    async def test_gift_fallback_intent_resets_between_rounds(self):
+        """Comments from a previous round never steer the next round."""
+        candidates = [
+            {"name": "Alice", "image_url": "", "gift_name": "Rose"},
+            {"name": "Bob", "image_url": "", "gift_name": "Galaxy"},
+        ]
+        await self.poll_manager.start_poll("round 1", candidates)
+        self.assertTrue(await self.poll_manager.record_vote("sultan", "01"))
+        await self.poll_manager.stop_poll(archive=False)
+
+        await self.poll_manager.start_poll("round 2", candidates)
+        # Intent from round 1 is gone: unmatched gift counts for nobody.
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 50, username="sultan")
+        self.assertFalse(success)
+        self.assertIsNone(name)
+        self.assertEqual(votes, 0)
+
+        # A fresh comment in the new round re-enables the fallback.
+        self.assertTrue(await self.poll_manager.record_vote("sultan", "02"))
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 50, username="sultan")
+        self.assertTrue(success)
+        self.assertEqual(name, "Bob")
+        self.assertEqual(votes, 50)
+
+    async def test_gift_fallback_requires_username(self):
+        """Without a sender (e.g. legacy calls) the fallback cannot apply."""
+        candidates = [
+            {"name": "Alice", "image_url": "", "gift_name": "Rose"},
+            {"name": "Bob", "image_url": "", "gift_name": "Galaxy"},
+        ]
+        await self.poll_manager.start_poll(self.title, candidates)
+        self.assertTrue(await self.poll_manager.record_vote("sultan", "01"))
+        success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 50)
+        self.assertFalse(success)
+        self.assertIsNone(name)
+        self.assertEqual(votes, 0)
 
 
 if __name__ == "__main__":
