@@ -8,8 +8,18 @@ const alertCard = document.getElementById('alert-card');
 const senderNameSpan = document.getElementById('sender-name');
 const giftNameSpan = document.getElementById('gift-name');
 const boostCountDiv = document.getElementById('boost-count');
-const candidateNameSpan = document.getElementById('candidate-name');
+const boostTargetDiv = document.getElementById('boost-target');
 const giftEmojiSpan = document.getElementById('gift-emoji');
+const viaCommentNoteDiv = document.getElementById('via-comment-note');
+
+// Static markup of the "credited to ..." line, restored for normal vote
+// alerts after an ignored-gift alert replaced it.
+const BOOST_TARGET_VOTE_HTML = boostTargetDiv.innerHTML;
+
+function escapeHTML(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g,
+        ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
 
 let audioCtx = null;
 let customSoundBuffer = null;
@@ -204,9 +214,22 @@ function connectWebSocket() {
                     sender: msg.nickname || msg.username,
                     giftName: msg.gift_name,
                     candidateName: msg.candidate_name,
-                    votesAdded: msg.votes_added
+                    votesAdded: msg.votes_added,
+                    viaComment: msg.via_comment || null
                 });
                 
+                processQueue();
+            } else if (msg.type === 'poll_gift_ignored') {
+                // Gift sent during an active poll that no candidate owns:
+                // nothing was counted, but the sender must get visible
+                // feedback instead of believing the gift became a vote.
+                // No celebration sound — this is a warning, not a boost.
+                alertQueue.push({
+                    ignored: true,
+                    sender: msg.nickname || msg.username,
+                    giftName: msg.gift_name
+                });
+
                 processQueue();
             }
         } catch (error) {
@@ -233,10 +256,30 @@ function processQueue() {
     // Set UI details
     senderNameSpan.textContent = alert.sender;
     giftNameSpan.textContent = alert.giftName;
-    boostCountDiv.textContent = `+${alert.votesAdded} VOTES`;
-    candidateNameSpan.textContent = `${alert.candidateName} 👑`;
     giftEmojiSpan.innerHTML = giftIconHtml(alert.giftName, 'gift-icon-img')
         || `<span class="gift-emoji-fallback">${getGiftEmoji(alert.giftName)}</span>`;
+
+    if (alert.ignored) {
+        // Gift that no candidate owns and no vote comment backs up: warn
+        // and tell the sender how to make the next gift count.
+        alertCard.classList.add('ignored');
+        boostCountDiv.textContent = '+0 VOTES';
+        boostTargetDiv.innerHTML = '<span class="ignored-note">not counted &mdash; comment the candidate number first, then send your gift</span>';
+        viaCommentNoteDiv.classList.add('hidden');
+    } else {
+        alertCard.classList.remove('ignored');
+        boostCountDiv.textContent = `+${alert.votesAdded} VOTES`;
+        boostTargetDiv.innerHTML = BOOST_TARGET_VOTE_HTML;
+        boostTargetDiv.querySelector('#candidate-name').textContent = `${alert.candidateName} 👑`;
+        // Comment-fallback votes are marked so viewers see WHY this gift
+        // landed on that candidate.
+        if (alert.viaComment) {
+            viaCommentNoteDiv.textContent = `via last comment: “${alert.viaComment}”`;
+            viaCommentNoteDiv.classList.remove('hidden');
+        } else {
+            viaCommentNoteDiv.classList.add('hidden');
+        }
+    }
     
     // Play sound removed (moved to instant WS receipt trigger)
     

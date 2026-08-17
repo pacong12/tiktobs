@@ -68,6 +68,10 @@ function connectWebSocket() {
             } else if (msg.type === 'poll_gift_vote') {
                 // Candidate gift vote (real boost or the Poll Admin simulate button).
                 handlePollGiftVote(msg);
+            } else if (msg.type === 'poll_gift_ignored') {
+                // Gift matched no candidate and the sender has no vote comment:
+                // keep it visible to viewers, but clearly marked as not counted.
+                handleIgnoredGift(msg);
             } else if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
                 handleGiftEvent(msg.event);
             }
@@ -108,26 +112,63 @@ function handleGiftEvent(giftEvent) {
     if (candidate) {
         spawnCandidateBubble(candidate, data);
         recentCandidateBubbles.set(normalizeGiftName(data.gift_name), Date.now());
+    } else if (currentPoll && currentPoll.is_active) {
+        // During a poll, unmatched gifts are surfaced by poll_gift_vote
+        // (credited via the comment fallback) or poll_gift_ignored (red
+        // bubble) — a generic gold bubble here would duplicate or mislead.
+        return;
     } else {
-        // No candidate owns this gift — still celebrate it with a generic bubble.
+        // No active poll — celebrate any gift with a generic bubble.
         spawnGenericBubble(data, giftEvent);
     }
 }
 
 function handlePollGiftVote(msg) {
-    const giftKey = normalizeGiftName(msg.gift_name);
-    const last = recentCandidateBubbles.get(giftKey) || 0;
+    let candidate = findCandidateByGift(msg.gift_name);
+    let dedupKey = normalizeGiftName(msg.gift_name);
+
+    // Comment-fallback vote: no candidate owns this gift, it was credited via
+    // the sender's last vote comment. Resolve the bubble target from the
+    // credited candidate carried in the broadcast.
+    if (!candidate && msg.via_comment && currentPoll && currentPoll.candidates) {
+        candidate = currentPoll.candidates.find(c => c.name === msg.candidate_name) || null;
+        dedupKey = `candidate:${(msg.candidate_name || '').trim().toLowerCase()}`;
+    }
+    if (!candidate) return;
+
+    const last = recentCandidateBubbles.get(dedupKey) || 0;
     // A real gift already bubbled via the `event` path a moment ago -> skip.
     if (Date.now() - last < DEDUP_MS) return;
-
-    const candidate = findCandidateByGift(msg.gift_name);
-    if (!candidate) return;
 
     spawnCandidateBubble(candidate, {
         gift_name: msg.gift_name,
         quantity: msg.quantity || 1
     });
-    recentCandidateBubbles.set(giftKey, Date.now());
+    recentCandidateBubbles.set(dedupKey, Date.now());
+}
+
+// A gift that was counted for NOBODY: spawn the same generic bubble but with
+// a red "ignored" treatment and a ❌ badge so the overlay stays honest
+// without hiding the gift.
+function handleIgnoredGift(msg) {
+    const bubble = prepareBubble();
+    bubble.classList.add('ignored');
+
+    const iconLarge = giftIconHtml(msg.gift_name, 'bub-gift-big')
+        || `<span class="bub-emoji-big">${getGiftEmoji(msg.gift_name)}</span>`;
+    const iconSmall = giftIconHtml(msg.gift_name, 'bub-gift-icon') || getGiftEmoji(msg.gift_name);
+    const sender = msg.nickname || msg.username || msg.gift_name || '';
+    const qty = msg.quantity || 1;
+    const avatar = msg.avatar_url || '';
+
+    bubble.innerHTML = `
+        <div class="bub-card">
+            <div class="bub-media bub-media-generic">${avatar ? `<img class="bub-avatar" src="${escapeHTML(avatar)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'bub-emoji-big',textContent:'🎁'}))">` : iconLarge}</div>
+            <div class="bub-gift">${iconSmall}<span class="bub-qty">&times;${qty}</span></div>
+            <div class="bub-badge">&#10060;</div>
+        </div>
+        <div class="bub-name">${escapeHTML(sender)}</div>
+    `;
 }
 
 // --- Bubble spawning --------------------------------------------------------
