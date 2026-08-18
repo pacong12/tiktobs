@@ -270,7 +270,7 @@ class PollManager:
             matched = []
             for idx, c in enumerate(self.candidates, start=1):
                 c_id = c["id"]
-                c_name = c["name"].lower()
+                c_name = c["name"].strip().lower()
 
                 # Check match by sequence number (handles "01", "001", "#01")
                 if vote_number is not None and vote_number == idx:
@@ -282,12 +282,12 @@ class PollManager:
                     matched.append(c)
                     continue
                 
-                # Check match by name mention (if name is longer than 2 characters)
+                # Check match by name mention case-insensitively (handles uppercase/lowercase/mixed case)
                 if len(c_name) > 2 and c_name in clean_comment:
                     matched.append(c)
                     continue
                 
-                # Check match by exact name (if name is short, e.g. 2 chars or less)
+                # Check match by exact name case-insensitively (if name is short, e.g. 2 chars or less)
                 if len(c_name) <= 2 and clean_comment == c_name:
                     matched.append(c)
                     continue

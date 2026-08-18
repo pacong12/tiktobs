@@ -2,13 +2,8 @@
 let socket = null;
 let pollTimerInterval = null;
 
-// TikTok popular gift catalog (name + diamond value) for the Gift Boost dropdown.
-// Values marked below were verified against TikTok's live gift catalog (749 gifts)
-// from https://github.com/WaGi-Coding/tiktok-gift-ids.
-// CAUTION: TikTok reuses gift names with different prices (e.g. "Love you" exists
-// as both a 1-coin and a 199-coin gift), and some gifts vary by region — that is
-// why a "Ketik manual" option is always included.
-const GIFT_CATALOG = [
+// Full catalog populated from window.GIFT_ICONS (705+ gifts) + popular presets.
+let GIFT_CATALOG = [
     { name: 'Rose', d: 1 },
     { name: 'TikTok', d: 1 },
     { name: 'Ice Cream Cone', d: 1 },
@@ -41,6 +36,26 @@ const GIFT_CATALOG = [
     { name: 'TikTok Universe', d: 44999 },
 ];
 
+// Dynamically expand catalog with all known icons & prices from window.GIFT_PRICES / window.GIFT_ICONS
+function expandGiftCatalogFromIcons() {
+    const icons = window.GIFT_ICONS || {};
+    const prices = window.GIFT_PRICES || {};
+    const existing = new Set(GIFT_CATALOG.map(g => g.name.toLowerCase()));
+    
+    Object.keys(icons).forEach(rawKey => {
+        const formattedName = rawKey.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        if (!existing.has(rawKey)) {
+            existing.add(rawKey);
+            const diamondValue = prices[rawKey] !== undefined ? prices[rawKey] : '?';
+            GIFT_CATALOG.push({ name: formattedName, d: diamondValue });
+        }
+    });
+}
+
+if (typeof window !== 'undefined') {
+    expandGiftCatalogFromIcons();
+}
+
 // Builds the Gift Boost control: a <select> dropdown + a hidden manual-entry input
 // that appears only when "Ketik manual…" is chosen. `preset` pre-selects a value.
 function buildGiftControl(preset) {
@@ -55,8 +70,17 @@ function buildGiftControl(preset) {
     noneOpt.textContent = 'Gift Boost (tidak ada)';
     select.appendChild(noneOpt);
 
-    // Built-in popular gifts (diamond values verified against TikTok's catalog).
-    GIFT_CATALOG.forEach(g => {
+    // Sort catalog: popular presets first, then alphabetical for 700+ extra gifts
+    expandGiftCatalogFromIcons();
+    
+    // Sort gifts alphabetically for clean dropdown browsing
+    const popularNames = new Set(['Rose', 'TikTok', 'Ice Cream Cone', 'Heart', 'GG', 'Thumbs Up', 'Coffee', 'Cake Slice', 'Football', 'Basketball']);
+    const popularGifts = GIFT_CATALOG.filter(g => popularNames.has(g.name));
+    const otherGifts = GIFT_CATALOG.filter(g => !popularNames.has(g.name)).sort((a, b) => a.name.localeCompare(b.name));
+    
+    const sortedCatalog = [...popularGifts, ...otherGifts];
+
+    sortedCatalog.forEach(g => {
         const opt = document.createElement('option');
         opt.value = g.name;
         opt.textContent = `${g.name} — ${g.d} 💎`;
