@@ -16,13 +16,12 @@
         <!-- HEADER -->
         <header class="app-header">
             <div class="logo-area">
-                <span class="icon">🗳️</span>
                 <h1>Poll & Voting <span>Manager</span></h1>
             </div>
             <nav class="header-nav">
-                <a href="/" class="nav-link">⬅️ Live Dashboard</a>
-                <a href="/settings.html" class="nav-link">⚙️ Settings</a>
-                <a href="/docs.html" class="nav-link">📖 Docs</a>
+                <a href="/" class="nav-link">Live Dashboard</a>
+                <a href="/settings.html" class="nav-link">Settings</a>
+                <a href="/docs.html" class="nav-link">Docs</a>
             </nav>
         </header>
 
@@ -32,7 +31,7 @@
             <!-- LEFT COLUMN: POLL CONFIGURATION -->
             <section class="control-sidebar">
                 <div class="glass-card">
-                    <h2 class="card-title">🗳️ Poll Configuration</h2>
+                    <h2 class="card-title">Poll Configuration</h2>
                     <p class="card-subtext">
                         Buat sesi voting real-time. Penonton memilih dengan mengirim nomor pilihan (mis. 1, 2), nama pilihan, atau gift boost di chat.
                     </p>
@@ -40,9 +39,9 @@
                     <div class="voting-rules-hint">
                         <strong>Aturan voting:</strong>
                         <ul>
-                            <li>💬 Komentar: ketik nomor urut (boleh <code>1</code>, <code>01</code>, <code>#01</code>) atau nama kandidat. <strong>Setiap komentar dihitung</strong> — 1 user boleh voting berkali-kali.</li>
-                            <li>🎁 Gift: hanya dihitung untuk kandidat yang Gift Boost-nya <strong>persis sama</strong> dengan nama gift yang masuk. Gift lain tidak dihitung untuk siapa pun (tidak bocor ke kandidat lain). 1 diamond = 1 suara.</li>
-                            <li>🚫 Satu gift hanya boleh dipakai oleh satu kandidat (duplikat akan ditolak).</li>
+                            <li>Komentar: ketik nomor urut (boleh <code>1</code>, <code>01</code>, <code>#01</code>) atau nama kandidat. <strong>Setiap komentar dihitung</strong> — 1 user boleh voting berkali-kali.</li>
+                            <li>Gift: hanya dihitung untuk kandidat yang Gift Boost-nya <strong>persis sama</strong> dengan nama gift yang masuk. Gift lain tidak dihitung untuk siapa pun (tidak bocor ke kandidat lain). 1 diamond = 1 suara.</li>
+                            <li>Satu gift hanya boleh dipakai oleh satu kandidat (duplikat akan ditolak).</li>
                         </ul>
                     </div>
 
@@ -60,7 +59,7 @@
                         <div class="input-group" style="margin-top: 15px;">
                             <label class="label-inline">
                                 <span>Kandidat (Pilihan)</span>
-                                <button id="add-candidate-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 10px;">➕ Tambah</button>
+                                <button id="add-candidate-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 10px;">+ Tambah</button>
                             </label>
                             <div id="candidates-input-list" style="margin-top: 8px;">
                                 <div class="candidate-input-row">
@@ -91,35 +90,35 @@
                             </label>
                         </div>
 
-                        <button id="start-poll-btn" class="btn primary btn-block">🚀 Mulai Voting Live</button>
+                        <button id="start-poll-btn" class="btn primary btn-block">Mulai Voting Live</button>
                     </div>
 
                     <div id="poll-active-config-hint" class="config-hint hidden">
-                        <p>🗳️ Voting sedang berjalan.</p>
+                        <p>Voting sedang berjalan.</p>
                         <p>Untuk mengubah konfigurasi, hentikan ronde yang aktif terlebih dahulu.</p>
                     </div>
                 </div>
 
                 <!-- SOUND SETTINGS CARD -->
                 <div class="glass-card" style="margin-top: 24px;">
-                    <h2 class="card-title">🎵 Pengaturan Suara Alert</h2>
+                    <h2 class="card-title">Pengaturan Suara Alert</h2>
                     <p class="card-subtext">Upload audio MP3/WAV, lalu pilih suara &amp; atur volume untuk tiap jenis alert. Perubahan langsung diterapkan ke overlay OBS yang terbuka.</p>
 
                     <!-- Upload -->
                     <div class="sound-upload-row">
                         <input type="file" id="sound-upload-input" accept="audio/*" class="sound-file-input">
-                        <button id="upload-sound-btn" class="btn secondary" style="flex-grow:0; font-size: 12px; padding: 8px 14px;">📤 Upload</button>
+                        <button id="upload-sound-btn" class="btn secondary" style="flex-grow:0; font-size: 12px; padding: 8px 14px;">Upload</button>
                     </div>
 
                     <!-- Gift Alert sound -->
                     <div class="sound-slot">
                         <div class="sound-slot-head">
-                            <span class="sound-slot-title">🎁 Suara Gift Alert</span>
-                            <button class="btn secondary sound-test-btn" data-type="gift" style="flex-grow:0; font-size: 11px; padding: 4px 10px; border-color: rgba(0,240,255,0.4); color: #00f0ff;">🔊 Test</button>
+                            <span class="sound-slot-title">Suara Gift Alert</span>
+                            <button class="btn secondary sound-test-btn" data-type="gift" style="flex-grow:0; font-size: 11px; padding: 4px 10px; border-color: rgba(0,240,255,0.4); color: #00f0ff;">Test</button>
                         </div>
                         <div class="sound-slot-controls">
                             <select id="gift-sound-select" class="field-input sound-select"></select>
-                            <button class="sound-delete-btn" data-target="gift" title="Hapus file terpilih" type="button">🗑️</button>
+                            <button class="sound-delete-btn" data-target="gift" title="Hapus file terpilih" type="button">Hapus</button>
                         </div>
                         <div class="volume-row">
                             <span class="volume-icon">🔈</span>
@@ -131,12 +130,12 @@
                     <!-- Vote Boost Alert sound -->
                     <div class="sound-slot">
                         <div class="sound-slot-head">
-                            <span class="sound-slot-title">🗳️ Suara Vote Boost Alert</span>
-                            <button class="btn secondary sound-test-btn" data-type="vote" style="flex-grow:0; font-size: 11px; padding: 4px 10px; border-color: rgba(255,215,0,0.4); color: #ffd700;">🔊 Test</button>
+                            <span class="sound-slot-title">Suara Vote Boost Alert</span>
+                            <button class="btn secondary sound-test-btn" data-type="vote" style="flex-grow:0; font-size: 11px; padding: 4px 10px; border-color: rgba(255,215,0,0.4); color: #ffd700;">Test</button>
                         </div>
                         <div class="sound-slot-controls">
                             <select id="vote-sound-select" class="field-input sound-select"></select>
-                            <button class="sound-delete-btn" data-target="vote" title="Hapus file terpilih" type="button">🗑️</button>
+                            <button class="sound-delete-btn" data-target="vote" title="Hapus file terpilih" type="button">Hapus</button>
                         </div>
                         <div class="volume-row">
                             <span class="volume-icon">🔈</span>
@@ -153,16 +152,15 @@
                     <div class="panel-head">
                         <h2 style="margin:0;">Status &amp; Hasil Voting Live</h2>
                         <div class="overlay-btn-group">
-                            <a href="/vote-overlay.html" target="_blank" class="overlay-chip" data-accent="cyan">🗳️ Poll Overlay</a>
-                            <a href="/timer-overlay.html" target="_blank" class="overlay-chip" data-accent="pink">⏱️ Timer</a>
-                            <a href="/vote-gift-alert.html" target="_blank" class="overlay-chip" data-accent="gold">🎁 Boost Alert</a>
-                            <a href="/recent-gifts.html" target="_blank" class="overlay-chip" data-accent="green">🎉 Recent Gifts</a>
+                            <a href="/vote-overlay.html" target="_blank" class="overlay-chip" data-accent="cyan">Poll Overlay</a>
+                            <a href="/timer-overlay.html" target="_blank" class="overlay-chip" data-accent="pink">Timer</a>
+                            <a href="/vote-gift-alert.html" target="_blank" class="overlay-chip" data-accent="gold">Boost Alert</a>
+                            <a href="/recent-gifts.html" target="_blank" class="overlay-chip" data-accent="green">Recent Gifts</a>
                         </div>
                     </div>
 
                     <!-- POLL INACTIVE PREVIEW STATE -->
                     <div id="poll-setup-preview" class="poll-preview">
-                        <span class="big-emoji">🗳️</span>
                         <p class="lead">Tidak ada sesi voting aktif</p>
                         <p class="sub">Atur kandidat di kolom kiri, lalu klik "Mulai Voting Live" untuk memulai.</p>
                     </div>
@@ -176,7 +174,7 @@
                         <h3 id="poll-active-title" class="poll-active-title">-</h3>
 
                         <div id="poll-active-countdown" class="countdown-row hidden">
-                            <span>⏱️ Sisa Waktu:</span>
+                            <span>Sisa Waktu:</span>
                             <span id="poll-active-timer" class="timer">00:00</span>
                         </div>
 
@@ -184,17 +182,17 @@
                             <!-- Progress rows inserted dynamically -->
                         </div>
 
-                        <button id="stop-poll-btn" class="btn danger btn-block" style="margin-top:0;">🛑 Hentikan &amp; Simpan Ronde</button>
+                        <button id="stop-poll-btn" class="btn danger btn-block" style="margin-top:0;">Hentikan &amp; Simpan Ronde</button>
 
                         <!-- TEST SIMULATION PANEL -->
                         <div id="simulation-panel" class="sim-panel hidden">
-                            <h4>🧪 Alat Simulasi (Testing)</h4>
+                            <h4>Alat Simulasi (Testing)</h4>
                             <p class="sim-desc">Uji overlay kamu di OBS sebelum live. Klik tombol di bawah untuk memicu aksi simulasi.</p>
                             <div class="sim-grid">
-                                <button id="test-comment-vote-btn" class="btn secondary" style="font-size: 11px; padding: 8px 6px;">💬 Test Comment Vote</button>
-                                <button id="test-gift-vote-btn" class="btn secondary" style="font-size: 11px; padding: 8px 6px; border-color: rgba(255,215,0,0.25); color: #ffd700;">🎁 Test Gift Boost</button>
+                                <button id="test-comment-vote-btn" class="btn secondary" style="font-size: 11px; padding: 8px 6px;">Test Comment Vote</button>
+                                <button id="test-gift-vote-btn" class="btn secondary" style="font-size: 11px; padding: 8px 6px; border-color: rgba(255,215,0,0.25); color: #ffd700;">Test Gift Boost</button>
                             </div>
-                            <button id="test-gift-normal-btn" class="btn secondary" style="font-size: 11px; width: 100%; margin-top: 10px; border-color: rgba(0,240,255,0.25); color: #00f0ff;">💎 Test Regular Gift</button>
+                            <button id="test-gift-normal-btn" class="btn secondary" style="font-size: 11px; width: 100%; margin-top: 10px; border-color: rgba(0,240,255,0.25); color: #00f0ff;">Test Regular Gift</button>
                         </div>
                     </div>
                 </div>
@@ -202,10 +200,10 @@
                 <!-- ROUND HISTORY / ARCHIVE -->
                 <div class="glass-card" style="margin-top: 24px;">
                     <div class="history-head">
-                        <h2 class="card-title">📜 Riwayat Ronde</h2>
+                        <h2 class="card-title">Riwayat Ronde</h2>
                         <div style="display:flex; gap:8px; flex-grow:0;">
-                            <a href="/api/poll/rounds/export.csv" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; text-decoration:none;">📥 CSV</a>
-                            <button id="clear-rounds-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; border-color: rgba(255,74,90,0.3); color: #ff4a5a;">🗑️ Hapus Semua</button>
+                            <a href="/api/poll/rounds/export.csv" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; text-decoration:none;">CSV</a>
+                            <button id="clear-rounds-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; border-color: rgba(255,74,90,0.3); color: #ff4a5a;">Hapus Semua</button>
                         </div>
                     </div>
                     <div id="rounds-history-list" class="rounds-list">

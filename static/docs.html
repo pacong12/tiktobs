@@ -99,69 +99,63 @@
     <div class="app-container">
         <header class="app-header">
             <div class="logo">
-                <span class="logo-icon">📖</span>
                 <h1>Documentation <span>& User Guide</span></h1>
             </div>
             <nav style="display: flex; gap: 10px;">
-                <a href="/" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">🏠 Live Dashboard</a>
-                <a href="/poll-admin.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">🗳️ Poll Admin</a>
-                <a href="/settings.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">⚙️ Settings</a>
+                <a href="/" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">Live Dashboard</a>
+                <a href="/poll-admin.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">Poll Admin</a>
+                <a href="/settings.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">Settings</a>
             </nav>
         </header>
 
         <main class="docs-container">
             <!-- SECTION 1: QUICK START -->
             <div class="docs-card">
-                <h2><span>🚀</span> Quick Start Guide</h2>
+                <h2>Quick Start Guide</h2>
                 <ol>
                     <li><strong>Buka Aplikasi:</strong> Jalankan file <code>TikTokOBS.exe</code>. Aplikasi akan secara otomatis membuka web dashboard di browser Anda (<code>http://127.0.0.1:8000</code>).</li>
-                    <li><strong>Set API Key:</strong> Pergi ke menu <a href="/settings.html" style="color:#00f0ff;">⚙️ Settings</a> dan masukkan EulerStream Sign API Key Anda.</li>
-                    <li><strong>Hubungkan TikTok Live:</strong> Masukkan Username TikTok Anda di <a href="/" style="color:#00f0ff;">🏠 Live Dashboard</a> lalu klik <strong>Connect</strong>.</li>
-                    <li><strong>Buat Polling:</strong> Buka <a href="/poll-admin.html" style="color:#00f0ff;">🗳️ Poll Admin</a>, tentukan nama kandidat & gift boost, lalu klik <strong>🚀 Start Live Poll</strong>.</li>
+                    <li><strong>Set API Key:</strong> Pergi ke menu <a href="/settings.html" style="color:#00f0ff;">Settings</a> dan masukkan EulerStream Sign API Key Anda.</li>
+                    <li><strong>Hubungkan TikTok Live:</strong> Masukkan Username TikTok Anda di <a href="/" style="color:#00f0ff;">Live Dashboard</a> lalu klik <strong>Connect</strong>.</li>
+                    <li><strong>Buat Polling:</strong> Buka <a href="/poll-admin.html" style="color:#00f0ff;">Poll Admin</a>, tentukan nama kandidat & gift boost, lalu klik <strong>Start Live Poll</strong>.</li>
                 </ol>
             </div>
 
             <!-- SECTION 2: OBS STUDIO OVERLAY URLS -->
             <div class="docs-card">
-                <h2><span>🎬</span> OBS Studio Integration URLs</h2>
+                <h2>OBS Studio Integration URLs</h2>
                 <p>Salin URL di bawah ini lalu tambahkan sebagai <strong>Browser Source</strong> di OBS Studio Anda (Rekomendasi Lebar: 800px, Tinggi: 600px, centang <em>"Control audio via OBS"</em> jika perlu):</p>
 
-                <h3>1. 🗳️ Voting Overlay Utama (Live Neon Leader Bar)</h3>
+                <h3>1. Voting Overlay Utama (Live Neon Leader Bar)</h3>
                 <div class="url-box">
                     <span class="url-text" id="url-overlay">http://127.0.0.1:8000/vote-overlay.html</span>
-                    <button class="copy-btn" onclick="copyUrl('url-overlay')">📋 Copy URL</button>
-                </div>
+                    <button class="copy-btn" onclick="copyUrl('url-overlay')">Copy URL</button>
 
-                <h3>2. ⏱️ CountDown Timer Overlay</h3>
+                <h3>2. CountDown Timer Overlay</h3>
                 <div class="url-box">
                     <span class="url-text" id="url-timer">http://127.0.0.1:8000/timer-overlay.html</span>
-                    <button class="copy-btn" onclick="copyUrl('url-timer')">📋 Copy URL</button>
-                </div>
+                    <button class="copy-btn" onclick="copyUrl('url-timer')">Copy URL</button>
 
-                <h3>3. 👑 Vote Boost Gift Alert Banner</h3>
+                <h3>3. Vote Boost Gift Alert Banner</h3>
                 <div class="url-box">
                     <span class="url-text" id="url-vote-gift">http://127.0.0.1:8000/vote-gift-alert.html</span>
-                    <button class="copy-btn" onclick="copyUrl('url-vote-gift')">📋 Copy URL</button>
-                </div>
+                    <button class="copy-btn" onclick="copyUrl('url-vote-gift')">Copy URL</button>
 
-                <h3>4. 🎉 10 Recent Gifts Scroll Banner</h3>
+                <h3>4. 10 Recent Gifts Scroll Banner</h3>
                 <div class="url-box">
                     <span class="url-text" id="url-recent">http://127.0.0.1:8000/recent-gifts.html</span>
-                    <button class="copy-btn" onclick="copyUrl('url-recent')">📋 Copy URL</button>
-                </div>
+                    <button class="copy-btn" onclick="copyUrl('url-recent')">Copy URL</button>
 
-                <h3>5. 🎁 General Gift Alert Popup</h3>
+                <h3>5. General Gift Alert Popup</h3>
                 <div class="url-box">
                     <span class="url-text" id="url-gift-alert">http://127.0.0.1:8000/gift-alert.html</span>
-                    <button class="copy-btn" onclick="copyUrl('url-gift-alert')">📋 Copy URL</button>
-                </div>
+                    <button class="copy-btn" onclick="copyUrl('url-gift-alert')">Copy URL</button>
             </div>
 
             <!-- SECTION 3: VOTING & GIFT BOOST RULES -->
             <div class="docs-card">
-                <h2><span>💡</span> Aturan Voting & Fast-Track Gift</h2>
+                <h2>Aturan Voting & Fast-Track Gift</h2>
                 
-                <h3>💬 Comment Voting (Komentar Penonton)</h3>
+                <h3>Comment Voting (Komentar Penonton)</h3>
                 <ul>
                     <li>Penonton dapat memilih dengan mengetikkan nama kandidat di kolom komentar live (misal: <code>Alice</code> atau <code>pilih Alice ya</code>).</li>
                     <li>Sistem mendukung <strong>Substring Matching</strong> cerdas yang mengenali nama kandidat di dalam kalimat.</li>
@@ -169,7 +163,7 @@
                     <li>1 penonton hanya memiliki 1 hak suara komentar per sesi polling.</li>
                 </ul>
 
-                <h3>🎁 Gift Boost Voting (Jalur Cepat Gift)</h3>
+                <h3>Gift Boost Voting (Jalur Cepat Gift)</h3>
                 <ul>
                     <li>Anda dapat memetakan Gift tertentu ke kandidat (misal: Gift <code>Rose</code> = Candidate Alice).</li>
                     <li><strong>Setiap Gift yang dikirim memberikan Poin Tambahan</strong> sesuai dengan jumlah Diamond dari Gift tersebut (misal: 15 Diamond = +15 Votes).</li>
@@ -179,11 +173,11 @@
 
             <!-- SECTION 4: SOUND CUSTOMIZATION -->
             <div class="docs-card">
-                <h2><span>🎵</span> Kustomisasi Suara Alert</h2>
-                <p>Anda dapat mengupload efek suara custom Anda sendiri (file <code>.mp3</code> atau <code>.wav</code>) melalui menu <a href="/poll-admin.html" style="color:#00f0ff;">🗳️ Poll Admin</a> pada bagian <strong>Gift Alert Sound Settings</strong>.</p>
+                <h2>Kustomisasi Suara Alert</h2>
+                <p>Anda dapat mengupload efek suara custom Anda sendiri (file <code>.mp3</code> atau <code>.wav</code>) melalui menu <a href="/poll-admin.html" style="color:#00f0ff;">Poll Admin</a> pada bagian <strong>Gift Alert Sound Settings</strong>.</p>
                 <ul>
                     <li>Suara yang di-upload akan diolah menggunakan <strong>Web Audio API Engine</strong> (0ms latency & mendukung tumpukan suara sekaligus tanpa saling memotong).</li>
-                    <li>Gunakan tombol <strong>🔊 Test Play</strong> untuk mendengarkan pratinjau suara secara langsung.</li>
+                    <li>Gunakan tombol <strong>Test Play</strong> untuk mendengarkan pratinjau suara secara langsung.</li>
                 </ul>
             </div>
         </main>

@@ -18,19 +18,18 @@
     <div class="app-container">
         <header class="app-header">
             <div class="logo">
-                <span class="logo-icon">⚙️</span>
                 <h1>App Settings <span>(.env Configuration)</span></h1>
             </div>
             <nav style="display: flex; gap: 10px;">
-                <a href="/" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">🏠 Connection Dashboard</a>
-                <a href="/poll-admin.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">🗳️ Poll Admin</a>
+                <a href="/" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">Connection Dashboard</a>
+                <a href="/poll-admin.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">Poll Admin</a>
             </nav>
         </header>
 
         <main class="dashboard-grid" style="grid-template-columns: 1fr; max-width: 700px; margin: 0 auto;">
             <section class="content-area">
                 <div class="glass-card">
-                    <h2 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">⚙️ Environment Configuration</h2>
+                    <h2 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">Environment Configuration</h2>
                     <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 25px;">
                         Manage system settings and API credentials stored in your <code>.env</code> file. Changes will save to disk immediately.
                     </p>
@@ -38,12 +37,12 @@
                     <form id="settings-form">
                         <div class="input-group" style="margin-bottom: 20px;">
                             <label for="sign-api-key-input" style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>🔑 EulerStream Sign API Key (TIKTOK_SIGN_API_KEY)</span>
+                                <span>EulerStream Sign API Key (TIKTOK_SIGN_API_KEY)</span>
                                 <a href="https://eulerstream.com" target="_blank" style="color: #00f0ff; font-size: 11px; text-decoration: underline;">Get API Key</a>
                             </label>
                             <div style="position: relative; margin-top: 6px;">
                                 <input type="password" id="sign-api-key-input" placeholder="Masukkan EulerStream API Key Anda" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 12px 40px 12px 14px; color: #fff; font-family: monospace; font-size: 13px;">
-                                <button type="button" id="toggle-key-visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 14px;">👁️</button>
+                                <button type="button" id="toggle-key-visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 12px;">Show</button>
                             </div>
                             <span style="font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; display: block;">
                                 Required for signing requests when connecting to live streams.
@@ -51,17 +50,17 @@
                         </div>
 
                         <div style="margin-top: 30px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <button type="submit" id="save-settings-btn" class="btn primary" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">💾 Save Configuration</button>
-                            <button type="button" id="clear-key-btn" class="btn secondary hidden" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">🗑️ Clear Key</button>
-                            <span id="save-status-msg" style="font-size: 13px; font-weight: 600; color: #00ff87;" class="hidden">✓ Saved successfully!</span>
+                            <button type="submit" id="save-settings-btn" class="btn primary" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">Save Configuration</button>
+                            <button type="button" id="clear-key-btn" class="btn secondary hidden" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">Clear Key</button>
+                            <span id="save-status-msg" style="font-size: 13px; font-weight: 600; color: #00ff87;" class="hidden">Saved successfully</span>
                         </div>
-                        <p id="restart-note" class="hidden" style="margin-top: 14px; font-size: 12px; color: #ffd166;">⚠️ Restart the app for the provider switch to take effect.</p>
+                        <p id="restart-note" class="hidden" style="margin-top: 14px; font-size: 12px; color: #ffd166;">Restart the app for the provider switch to take effect.</p>
                     </form>
                 </div>
 
 
                 <div class="glass-card">
-                    <h2 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">📢 Running Text (Ticker Overlay)</h2>
+                    <h2 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">Running Text (Ticker Overlay)</h2>
                     <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 25px;">
                         Scrolling text for ads, announcements, and other notices. Add the overlay to OBS via
                         <a href="/ticker.html" target="_blank" style="color: #00f0ff; text-decoration: underline;">/ticker.html</a>.
@@ -99,8 +98,8 @@
                         </div>
 
                         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <button type="submit" id="save-ticker-btn" class="btn primary" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">💾 Save Ticker</button>
-                            <span id="ticker-status-msg" style="font-size: 13px; font-weight: 600; color: #00ff87;" class="hidden">✓ Saved!</span>
+                            <button type="submit" id="save-ticker-btn" class="btn primary" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">Save Ticker</button>
+                            <span id="ticker-status-msg" style="font-size: 13px; font-weight: 600; color: #00ff87;" class="hidden">Saved</span>
                         </div>
                     </form>
                 </div>

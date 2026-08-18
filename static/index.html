@@ -16,13 +16,12 @@
         <!-- HEADER -->
         <header class="app-header">
             <div class="logo-area">
-                <span class="icon">📊</span>
                 <h1>TikTok LIVE <span>Collector</span></h1>
             </div>
             <div class="header-actions">
-                <a href="/poll-admin.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">🗳️ Poll Admin</a>
-                <a href="/settings.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">⚙️ Settings</a>
-                <a href="/docs.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">📖 Docs</a>
+                <a href="/poll-admin.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">Poll Admin</a>
+                <a href="/settings.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">Settings</a>
+                <a href="/docs.html" class="btn secondary" style="font-size: 12px; font-weight: 600; text-decoration: none;">Docs</a>
                 <div class="status-bar">
                     <div id="status-indicator" class="status-bulb disconnected"></div>
                     <span id="status-text">Disconnected</span>
@@ -59,7 +58,7 @@
                         <div id="overlay-links-list">
                             <!-- Populated from GET /api/overlays via app.js -->
                         </div>
-                        <a href="/poll-admin.html" target="_blank" class="overlay-manager-link">🗳️ Open Poll / Voting Manager →</a>
+                        <a href="/poll-admin.html" target="_blank" class="overlay-manager-link">Open Poll / Voting Manager &rarr;</a>
                     </div>
                     
                     <div class="session-info hidden" id="session-info">
@@ -76,7 +75,7 @@
                             <span class="value" id="info-anchor-id">-</span>
                         </div>
                         <button id="view-rankings-btn" class="btn primary" style="width: 100%; margin-top: 10px; font-size: 11px; padding: 6px; letter-spacing: 0.5px; border-radius: 6px; display: none;">
-                            🏅 View Creator Leaderboards
+                            View Creator Leaderboards
                         </button>
                     </div>
                 </div>
@@ -85,47 +84,40 @@
                 <div class="counters-grid">
                     <div class="glass-card counter-card" data-type="gift">
                         <div class="counter-header">
-                            <span class="badge">🎁</span>
                             <h3>Gifts</h3>
                         </div>
                         <p class="counter-value" id="counter-gifts">0</p>
                     </div>
                     <div class="glass-card counter-card" data-type="comment">
                         <div class="counter-header">
-                            <span class="badge">💬</span>
                             <h3>Comments</h3>
                         </div>
                         <p class="counter-value" id="counter-comments">0</p>
                     </div>
                     <div class="glass-card counter-card" data-type="like">
                         <div class="counter-header">
-                            <span class="badge">❤️</span>
                             <h3>Likes</h3>
                         </div>
                         <p class="counter-value" id="counter-likes">0</p>
                     </div>
                     <div class="glass-card counter-card" data-type="follow">
                         <div class="counter-header">
-                            <span class="badge">👤</span>
                             <h3>Follows</h3>
                         </div>
                         <p class="counter-value" id="counter-follows">0</p>
                     </div>
                     <div class="glass-card counter-card" data-type="share">
                         <div class="counter-header">
-                            <span class="badge">🔄</span>
                             <h3>Shares</h3>
                         </div>
                         <p class="counter-value" id="counter-shares">0</p>
                     </div>
                     <div class="glass-card counter-card" data-type="viewer">
                         <div class="counter-header">
-                            <span class="badge">👀</span>
                             <h3>Viewers</h3>
                         </div>
                         <p class="counter-value" id="counter-viewers">0</p>
                     </div>
-                </div>
             </section>
 
             <!-- RIGHT COLUMN: STREAM & DEBUG PANELS -->
@@ -138,14 +130,14 @@
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <div class="stream-filters" id="filter-tabs">
                                 <button class="filter-tab active" data-filter="all">ALL</button>
-                                <button class="filter-tab" data-filter="gift">🎁 GIFTS</button>
-                                <button class="filter-tab" data-filter="comment">💬 COMMENTS</button>
-                                <button class="filter-tab" data-filter="like">❤️ LIKES</button>
-                                <button class="filter-tab" data-filter="follow">👤 FOLLOWS</button>
-                                <button class="filter-tab" data-filter="share">🔄 SHARES</button>
-                                <button class="filter-tab" data-filter="viewer">👀 VIEWERS</button>
+                                <button class="filter-tab" data-filter="gift">GIFTS</button>
+                                <button class="filter-tab" data-filter="comment">COMMENTS</button>
+                                <button class="filter-tab" data-filter="like">LIKES</button>
+                                <button class="filter-tab" data-filter="follow">FOLLOWS</button>
+                                <button class="filter-tab" data-filter="share">SHARES</button>
+                                <button class="filter-tab" data-filter="viewer">VIEWERS</button>
                             </div>
-                            <button id="clear-stream-btn" class="btn text-btn" title="Clear the event stream and delete stored events">🗑️ Clear</button>
+                            <button id="clear-stream-btn" class="btn text-btn" title="Clear the event stream and delete stored events">Clear</button>
                         </div>
                     </div>
                     
@@ -171,7 +163,7 @@
                 <!-- GIFT LEADERBOARD CARD -->
                 <div class="glass-card leaderboard-card">
                     <div class="card-header">
-                        <h2>🏆 Gift Leaderboard</h2>
+                        <h2>Gift Leaderboard</h2>
                         <span class="leaderboard-hint">Sesi aktif • Top 5</span>
                     </div>
                     <ol id="dashboard-leaderboard" class="dashboard-leaderboard">
