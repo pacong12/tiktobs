@@ -18,6 +18,7 @@ from app.auth import TokenAuthMiddleware
 from app.bus import event_bus
 from app.poll import poll_manager
 from app.processor import EventProcessor
+from app.version import __version__
 from app.routers import connection, events, media, overlays, poll, settings, testsim
 
 logger = state.logger
@@ -81,7 +82,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="TikTok LIVE Data Collector",
     description="MVP Phase 1: Connection & Realtime Event Collector",
-    version="1.0.0",
+    version=__version__,
     lifespan=lifespan
 )
 
