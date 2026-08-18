@@ -144,6 +144,10 @@ DEFAULT_OVERLAYS = [
      "icon": "\U0001F4E2", "description": "Scrolling text for ads/announcements", "accent": "violet"},
     {"key": "gift-bubbles", "label": "Gift Bubbles (Floating)", "url": "/gift-bubbles.html",
      "icon": "\U0001FAE7", "description": "Floating square candidate bubbles on gifts", "accent": "orange"},
+    {"key": "timer", "label": "Poll Timer Overlay", "url": "/timer-overlay.html",
+     "icon": "\u23F1\uFE0F", "description": "Countdown timer for voting rounds", "accent": "pink"},
+    {"key": "session-title", "label": "Session & Title Overlay", "url": "/session-title-overlay.html",
+     "icon": "\U0001F4CB", "description": "Header display for round name & poll title", "accent": "cyan"},
 ]
 
 async def get_overlays(only_enabled: bool = True) -> list[dict]:
@@ -258,9 +262,15 @@ async def init_db():
     for i, ov in enumerate(DEFAULT_OVERLAYS):
         await db.execute(
             """
-            INSERT OR IGNORE INTO overlays
+            INSERT INTO overlays
                 (key, label, url, icon, description, accent, sort_order, enabled)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1);
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+            ON CONFLICT(key) DO UPDATE SET
+                label = excluded.label,
+                url = excluded.url,
+                icon = excluded.icon,
+                description = excluded.description,
+                accent = excluded.accent;
             """,
             (ov["key"], ov["label"], ov["url"], ov["icon"], ov["description"], ov["accent"], i),
         )

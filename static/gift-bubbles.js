@@ -141,7 +141,7 @@ function handlePollGiftVote(msg) {
     if (Date.now() - last < DEDUP_MS) return;
 
     spawnCandidateBubble(candidate, {
-        gift_name: msg.gift_name,
+        gift_name: `${msg.gift_name} (via ${msg.via_comment})`,
         quantity: msg.quantity || 1
     });
     recentCandidateBubbles.set(dedupKey, Date.now());

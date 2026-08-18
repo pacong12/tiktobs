@@ -33,8 +33,8 @@ async function fetchPollStatus() {
 
 // Render the active poll or inactive state
 function renderPoll(poll) {
-    currentPoll = poll;
     if (!poll || !poll.is_active) {
+        currentPoll = poll;
         pollContainer.classList.add('hidden');
         inactiveContainer.classList.remove('hidden');
         return;
@@ -44,8 +44,34 @@ function renderPoll(poll) {
     inactiveContainer.classList.add('hidden');
     pollContainer.classList.remove('hidden');
 
+    // Rank candidates: most votes first. Sort a copy descending.
+    const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
+    // In-place update: If card elements already exist and ranking order hasn't changed, update ONLY numbers and percentages in DOM
+    const existingCards = candidatesList.querySelectorAll('.candidate-card');
+    const sameRankOrder = currentPoll && currentPoll.is_active &&
+        currentPoll.candidates.length === poll.candidates.length &&
+        existingCards.length === ranked.length &&
+        ranked.every((c, i) => String(c.id) === existingCards[i].dataset.candidateId);
 
+    if (sameRankOrder) {
+        let maxVotes = poll.total_votes > 0 ? Math.max(...poll.candidates.map(c => c.votes)) : 0;
+        ranked.forEach((c, i) => {
+            const card = existingCards[i];
+            const isLeading = maxVotes > 0 && c.votes === maxVotes;
+            card.classList.toggle('leading', isLeading);
+
+            const votesEl = card.querySelector('.candidate-votes');
+            const pctEl = card.querySelector('.candidate-pct');
+
+            if (votesEl) votesEl.textContent = c.votes.toLocaleString();
+            if (pctEl) pctEl.textContent = `${c.percentage}%`;
+        });
+        currentPoll = poll;
+        return;
+    }
+
+    currentPoll = poll;
 
     // Determine the leading candidate's vote count
     let maxVotes = 0;
@@ -53,32 +79,17 @@ function renderPoll(poll) {
         maxVotes = Math.max(...poll.candidates.map(c => c.votes));
     }
 
-    // Rank candidates: most votes first. Sort a copy descending.
-    const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
-
-    // Layout tiers (cards stay square except the featured wide card):
-    //   2 candidates   -> 2 large squares side by side (duel view)
-    //   3 candidates   -> champion gets a big wide card on top, the other
-    //                     two render as squares below it
-    //   4 candidates   -> 2x2 large squares
-    //   5+ candidates  -> BENTO: rank #1 gets a huge 2x2 square, ranks #2/#3
-    //                     fill the right column as squares, every remaining
-    //                     candidate becomes a small square below.
-    // Because `ranked` is sorted by votes, the featured positions follow the
-    // live ranking and re-shuffle as votes come in.
     const count = ranked.length;
 
     candidatesList.className = 'candidates-list';
     candidatesList.innerHTML = '';
-    // Futuristic transparent card: the candidate photo (usually a no-bg PNG)
-    // fills the card, framed by a neon border in the candidate's own color.
-    // Info stack (top-left): number chip -> votes + percentage -> name.
-    // Win/gift badges pin onto the top border edge.
+
     const buildCard = (c, rankIdx) => {
         const isLeading = maxVotes > 0 && c.votes === maxVotes;
         const cardColor = (c.color || '').trim() || CARD_PALETTE[rankIdx % CARD_PALETTE.length];
         const card = document.createElement('div');
         card.className = `candidate-card ${isLeading ? 'leading' : ''}`;
+        card.dataset.candidateId = String(c.id);
         card.style.setProperty('--card-color', cardColor);
         card.style.setProperty('--card-glow', hexToRgba(cardColor, 0.55));
         card.style.setProperty('--card-glow-soft', hexToRgba(cardColor, 0.26));
@@ -182,12 +193,6 @@ function connectWebSocket() {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
                 renderPoll(msg.poll);
-            } else if (msg.type === 'poll_gift_vote') {
-                // Direct-matching gifts already get their spotlight from the
-                // raw `event` combo toast below; only comment-fallback votes
-                // need this extra toast (they never match a candidate's gift,
-                // so the `event` path skips them).
-                if (msg.via_comment) handleFallbackVoteToast(msg);
             } else if (msg.type === 'poll_gift_ignored') {
                 handleIgnoredGiftToast(msg);
             } else if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {

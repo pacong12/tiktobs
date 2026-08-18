@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Session & Title Overlay</title>
+    <link rel="stylesheet" href="session-title-overlay-style.css?v=2">
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="session-title-container hidden" id="session-title-container">
+        <div class="glass-card title-card">
+            <div class="title-header">
+                <span class="title-badge" id="round-badge">SESI 1</span>
+                <span class="live-indicator"><span class="dot"></span>LIVE</span>
+            </div>
+            <div class="title-main" id="poll-title-text">JUDUL POLLING</div>
+        </div>
+    </div>
+
+    <div class="inactive-state hidden" id="inactive-container">
+        <p>📋 Waiting for session & title...</p>
+    </div>
+
+    <script src="auth.js?v=1"></script>
+    <script src="session-title-overlay.js?v=1"></script>
+</body>
+</html>

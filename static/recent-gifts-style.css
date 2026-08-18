@@ -12,9 +12,10 @@ body {
     display: none !important;
 }
 
-/* CONTAINER FOR THE FEED */
+/* CONTAINER FOR THE FEED — Mobile/Android optimized */
 .feed-container {
-    width: 320px;
+    width: 300px;
+    max-width: calc(100vw - 16px);
     background: rgba(16, 12, 34, 0.85);
     border: 1.5px solid rgba(255, 0, 127, 0.4);
     border-radius: 18px;

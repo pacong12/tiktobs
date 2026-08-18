@@ -12,10 +12,10 @@ body {
     overflow: hidden;
 }
 
-/* GORGEOUS ANIMATED GLOWING CONTAINER */
+/* GORGEOUS ANIMATED GLOWING CONTAINER — Android/Mobile compact fit */
 .leaderboard-container {
     width: 320px;
-    max-width: calc(100vw - 30px);
+    max-width: calc(100vw - 16px);
     background: linear-gradient(135deg, rgba(17, 10, 32, 0.85), rgba(35, 12, 57, 0.85));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);

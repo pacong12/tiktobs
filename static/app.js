@@ -126,6 +126,9 @@ async function checkStatus() {
         const response = await fetch('/api/status');
         const data = await response.json();
         updateConnectionUI(data.status, data.username, data.session_id, data.anchor_id);
+        
+        // Sync poll timer status on load
+        fetch('/api/poll/status').then(r => r.json()).then(poll => updatePollTimerDOM(poll)).catch(() => {});
     } catch (error) {
         console.error('Failed to get connection status:', error);
         addConsoleLog('Failed to sync connection status with server.', 'error');
@@ -297,6 +300,9 @@ function handleWSMessage(msg) {
             addConsoleLog(`Connection Failed: ${msg.error || 'Server error'}`, 'error');
         }
     } 
+    else if (msg.type === 'poll_update') {
+        updatePollTimerDOM(msg.poll);
+    }
     else if (msg.type === 'stream_cleared') {
         resetStreamPanels();
         addConsoleLog('Event stream cleared (synced from server).', 'system');
@@ -504,14 +510,62 @@ function updateCounterDOM(highlightType = null, shouldBump = false) {
     }
 }
 
-// EVENT TABLE DRAWING
+let dashboardTimerInterval = null;
+
+function updatePollTimerDOM(poll) {
+    const el = document.getElementById('counter-timer');
+    const sessionEl = document.getElementById('counter-session');
+
+    if (sessionEl) {
+        if (poll && poll.is_active) {
+            const roundName = poll.round_name || 'Active';
+            const titleText = poll.title ? ` (${poll.title})` : '';
+            sessionEl.textContent = `${roundName}${titleText}`;
+            sessionEl.title = `${roundName}${titleText}`;
+        } else {
+            sessionEl.textContent = '--';
+            sessionEl.title = 'No active poll';
+        }
+    }
+
+    if (!el) return;
+
+    clearInterval(dashboardTimerInterval);
+
+    if (!poll || !poll.is_active || !poll.expires_at) {
+        el.textContent = '--:--';
+        return;
+    }
+
+    const updateClock = () => {
+        const expiresAt = new Date(poll.expires_at).getTime();
+        const now = Date.now();
+        const diffMs = expiresAt - now;
+
+        if (diffMs <= 0) {
+            el.textContent = '00:00';
+            clearInterval(dashboardTimerInterval);
+            return;
+        }
+
+        const totalSec = Math.floor(diffMs / 1000);
+        const mins = Math.floor(totalSec / 60);
+        const secs = totalSec % 60;
+        el.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    };
+
+    updateClock();
+    dashboardTimerInterval = setInterval(updateClock, 1000);
+}
+
+// EVENT TABLE DRAWING (Render top 50 recent items to prevent UI freeze during high-traffic streams)
 function renderEventStream() {
     eventStreamBody.innerHTML = '';
 
     const filtered = eventCache.filter(evt => {
         if (activeFilter === 'all') return true;
         return evt.event_type === activeFilter;
-    });
+    }).slice(0, 50);
 
     if (filtered.length === 0) {
         const emptyRow = document.createElement('tr');

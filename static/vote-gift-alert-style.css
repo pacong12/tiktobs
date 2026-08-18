@@ -16,19 +16,20 @@ body {
     display: none !important;
 }
 
-/* FLASHY VOTING GIFT POPUP */
+/* FLASHY VOTING GIFT POPUP — Mobile/Android optimized */
 .vote-alert-card {
     background: linear-gradient(135deg, rgba(16, 12, 38, 0.95), rgba(38, 10, 56, 0.95));
     border: 2px solid #ffd700;
     border-radius: 24px;
-    padding: 26px 40px;
+    padding: 20px 24px;
     box-shadow: 0 0 35px rgba(255, 215, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    max-width: 440px;
+    width: 300px;
+    max-width: calc(100vw - 16px);
     transform: scale(0);
     opacity: 0;
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
