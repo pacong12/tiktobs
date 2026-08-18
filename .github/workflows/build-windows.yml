@@ -2,6 +2,8 @@ name: Build Windows EXE
 
 on:
   push:
+    branches: [ main, master, feature/gift-vote-fallback ]
+  pull_request:
     branches: [ main, master ]
   workflow_dispatch:   # bisa dijalankan manual dari tab Actions
 
@@ -38,5 +40,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TikTokOBS-v${{ steps.get_version.outputs.version }}-windows
-          path: dist/TikTokOBS-*.exe
+          path: |
+            dist/TikTokOBS.exe
+            dist/TikTokOBS-*.exe
           if-no-files-found: error
