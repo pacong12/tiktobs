@@ -43,6 +43,5 @@ jobs:
         with:
           name: TikTokOBS-v${{ steps.get_version.outputs.version }}-windows
           path: |
-            dist/TikTokOBS.exe
             dist/TikTokOBS-*.exe
           if-no-files-found: error

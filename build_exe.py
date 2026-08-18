@@ -143,12 +143,13 @@ def build():
     print("\nRunning PyInstaller build process...")
     subprocess.run(cmd, check=True)
 
-    # 4. Produce the versioned artifact alongside the plain one
+    # 4. Produce only the versioned artifact (rename output file)
     base_name = "TikTokOBS.exe" if os.name == "nt" else "TikTokOBS"
     ext = ".exe" if os.name == "nt" else ""
     src = os.path.join(ROOT, "dist", base_name)
     versioned = os.path.join(ROOT, "dist", f"TikTokOBS-{version}{ext}")
-    shutil.copy2(src, versioned)
+    if os.path.exists(src):
+        os.rename(src, versioned)
 
     # 5. Embed default .env into output dist/ folder if present or via env var
     env_target = os.path.join(ROOT, "dist", ".env")
@@ -163,8 +164,7 @@ def build():
 
     print("\n==================================================")
     print(" BUILD SUCCESSFUL!")
-    print(f" Versioned : dist/{os.path.basename(versioned)}")
-    print(f" Plain     : dist/{base_name}")
+    print(f" Artifact : dist/{os.path.basename(versioned)}")
     print("==================================================")
 
 
