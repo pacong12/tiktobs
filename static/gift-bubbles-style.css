@@ -10,10 +10,15 @@ body {
     overflow: hidden;
 }
 
-/* Full-screen transparent stage the bubbles float up through. */
+/* Full-screen transparent stage constrained to Android / Mobile width */
 .bubble-stage {
     position: fixed;
-    inset: 0;
+    bottom: 0;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 360px;
+    max-width: calc(100vw - 16px);
     overflow: hidden;
     pointer-events: none;
 }

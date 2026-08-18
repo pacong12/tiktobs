@@ -193,10 +193,6 @@ function connectWebSocket() {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
                 renderPoll(msg.poll);
-            } else if (msg.type === 'poll_gift_ignored') {
-                handleIgnoredGiftToast(msg);
-            } else if (msg.type === 'event' && msg.event && msg.event.event_type === 'gift') {
-                handleGiftEventForToast(msg.event);
             }
         } catch (error) {
             console.error('Error handling WebSocket message:', error);

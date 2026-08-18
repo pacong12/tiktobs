@@ -87,12 +87,9 @@ function renderTimer(poll) {
         if (secLeft <= 0) {
             clearInterval(countdownInterval);
             countdownInterval = null;
-            // Short delay before showing inactive container
-            setTimeout(() => {
-                timerContainer.classList.add('hidden');
-                inactiveContainer.classList.remove('hidden');
-                maxDuration = 0;
-            }, 1000);
+            countdownClock.textContent = 'SELESAI';
+            countdownClock.classList.remove('warning');
+            countdownBar.style.width = '0%';
         }
     };
 
