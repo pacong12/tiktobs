@@ -54,7 +54,11 @@ class EulerWebSocketProvider(TikTokProvider):
                 cleaned_username = self.username.strip()
                 cleaned_username = cleaned_username.removeprefix("@")
 
-                uri = f"wss://ws.eulerstream.com?uniqueId={cleaned_username}&apiKey={self.api_key}"
+                # If username is numeric or starts with roomId=, connect by roomId instead of uniqueId
+                if cleaned_username.isdigit():
+                    uri = f"wss://ws.eulerstream.com?roomId={cleaned_username}&apiKey={self.api_key}"
+                else:
+                    uri = f"wss://ws.eulerstream.com?uniqueId={cleaned_username}&apiKey={self.api_key}"
                 logger.info(f"Connecting to EulerStream managed WebSocket for @{cleaned_username}...")
                 await self.emit_event("sys_log", {"message": f"Connecting to @{cleaned_username} via Euler Cloud..."})
 
@@ -107,9 +111,19 @@ class EulerWebSocketProvider(TikTokProvider):
 
                 except Exception as e:
                     self._is_connected_flag = False
-                    logger.exception(f"EulerStream WebSocket connection error for @{self.username}")
+                    err_msg = str(e)
+                    logger.exception(f"EulerStream WebSocket connection error for @{cleaned_username}")
+
+                    # Stop auto-reconnecting immediately when TikTok user is offline or stream has ended (codes 4404 / 4005)
+                    if "4404" in err_msg or "4005" in err_msg or "not currently live" in err_msg or "stream ended" in err_msg:
+                        logger.info(f"Stream for @{cleaned_username} is offline/ended. Stopping reconnection loop.")
+                        await self.emit_event("sys_log", {"message": f"Stream ended or creator @{cleaned_username} is offline."})
+                        await self.emit_event("connection_failed", {"error": "Creator is offline or stream has ended."})
+                        self._should_reconnect = False
+                        break
+
                     await self.emit_event("sys_log", {
-                        "message": f"Connection error: {e!s}. (Attempt {self._reconnect_attempts}/{self._max_reconnect_attempts})"
+                        "message": f"Connection error: {err_msg}. (Attempt {self._reconnect_attempts}/{self._max_reconnect_attempts})"
                     })
 
                 # Check if we exceeded max attempts
