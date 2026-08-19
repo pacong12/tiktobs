@@ -53,7 +53,7 @@ def test_settings_post_sets_key_and_masks_response(client, clean_key_state):
     assert data["has_key"] is True
     assert data["masked_key"].endswith("y99")
     assert "brandnewkey99" not in resp.text  # raw key not echoed back
-    assert data["restart_required"] is True  # no key -> key: provider changes
+    assert data["restart_required"] is False  # live provider updates dynamically without restart
 
 
 def test_settings_post_empty_string_clears_key(client, clean_key_state, monkeypatch):
@@ -63,7 +63,7 @@ def test_settings_post_empty_string_clears_key(client, clean_key_state, monkeypa
     assert resp.status_code == 200
     data = resp.json()
     assert data["has_key"] is False
-    assert data["restart_required"] is True
+    assert data["restart_required"] is False
 
 
 def test_test_endpoints_can_be_disabled(client, monkeypatch):

@@ -286,10 +286,12 @@ function connectWebSocket() {
 function handleWSMessage(msg) {
     if (msg.type === 'log') {
         const time = new Date(msg.timestamp).toLocaleTimeString();
-        // Stylize line depending on message content
         let level = 'system';
         if (msg.message.includes('Connected!')) level = 'success';
-        if (msg.message.includes('error') || msg.message.includes('failed')) level = 'error';
+        if (msg.message.includes('error') || msg.message.includes('failed')) {
+            level = 'error';
+            showConnectionErrorBanner(msg.message);
+        }
         if (msg.message.includes('received') || msg.message.includes('liked') || msg.message.includes('followed') || msg.message.includes('shared')) level = 'event';
 
         addConsoleLog(`[${time}] ${msg.message}`, level);
@@ -297,7 +299,9 @@ function handleWSMessage(msg) {
     else if (msg.type === 'status') {
         updateConnectionUI(msg.status, msg.username, msg.session_id || null, msg.anchor_id || null);
         if (msg.status === 'failed') {
-            addConsoleLog(`Connection Failed: ${msg.error || 'Server error'}`, 'error');
+            const errStr = msg.error || 'Server error';
+            addConsoleLog(`Connection Failed: ${errStr}`, 'error');
+            showConnectionErrorBanner(errStr);
         }
     } 
     else if (msg.type === 'poll_update') {
@@ -342,7 +346,32 @@ function handleWSMessage(msg) {
     }
 }
 
-// UI LOGGING
+// UI LOGGING & ERROR BANNER
+function showConnectionErrorBanner(message) {
+    const banner = document.getElementById('connection-error-banner');
+    const textEl = document.getElementById('connection-error-text');
+    if (!banner || !textEl) return;
+
+    let friendlyMsg = message;
+    if (message.includes('4429') || message.includes('rate limit')) {
+        friendlyMsg = 'Quota EulerStream API habis (Code 4429). Otomatis beralih ke mode lokal...';
+    } else if (message.includes('4404') || message.includes('not currently live')) {
+        friendlyMsg = 'Akun streamer tidak sedang LIVE (Code 4404). Pastikan siaran di TikTok sudah aktif.';
+    } else if (message.includes('4005') || message.includes('stream ended')) {
+        friendlyMsg = 'Siaran LIVE telah berakhir (Code 4005).';
+    } else if (message.includes('1011') || message.includes('room_info')) {
+        friendlyMsg = 'EulerStream gagal membaca room info akun ini (Code 1011). Coba hapus API key di Settings untuk switch ke mode lokal.';
+    }
+
+    textEl.textContent = friendlyMsg;
+    banner.classList.remove('hidden');
+}
+
+function hideConnectionErrorBanner() {
+    const banner = document.getElementById('connection-error-banner');
+    if (banner) banner.classList.add('hidden');
+}
+
 function addConsoleLog(text, level = 'system') {
     const line = document.createElement('div');
     line.className = `console-line ${level}`;
@@ -361,6 +390,7 @@ function updateConnectionUI(status, username = null, sessionId = null, anchorId 
     const viewRankingsBtn = document.getElementById('view-rankings-btn');
     
     if (status === 'connected') {
+        hideConnectionErrorBanner();
         statusBulb.classList.add('connected');
         statusText.textContent = `Connected to @${username}`;
         connectBtn.disabled = true;
@@ -383,6 +413,7 @@ function updateConnectionUI(status, username = null, sessionId = null, anchorId 
         }
     } 
     else if (status === 'connecting') {
+        hideConnectionErrorBanner();
         statusBulb.classList.add('connecting');
         statusText.textContent = 'Connecting...';
         connectBtn.disabled = true;

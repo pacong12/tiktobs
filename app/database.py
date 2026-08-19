@@ -148,6 +148,8 @@ DEFAULT_OVERLAYS = [
      "icon": "\u23F1\uFE0F", "description": "Countdown timer for voting rounds", "accent": "pink"},
     {"key": "session-title", "label": "Session & Title Overlay", "url": "/session-title-overlay.html",
      "icon": "\U0001F4CB", "description": "Header display for round name & poll title", "accent": "cyan"},
+    {"key": "date-overlay", "label": "Date & Day Overlay", "url": "/date-overlay.html",
+     "icon": "\U0001F4C5", "description": "Live day & date display", "accent": "cyan"},
 ]
 
 async def get_overlays(only_enabled: bool = True) -> list[dict]:

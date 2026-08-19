@@ -67,6 +67,23 @@ async def update_settings_api(req: SettingsUpdateRequest):
 
     state.sign_api_key = new_key
 
+    # If currently connected or connecting, disconnect the active stream safely before switching provider
+    if await state.live_provider.is_connected() or await state.live_provider.is_connecting():
+        await state.live_provider.disconnect()
+
+    # Re-initialize live_provider dynamically according to new_key
+    if new_key:
+        from app.providers.euler import EulerWebSocketProvider
+        state.live_provider = EulerWebSocketProvider()
+        state.logger.info("Switched live provider dynamically to EulerWebSocketProvider.")
+    else:
+        from app.providers.live import TikTokLiveProvider
+        state.live_provider = TikTokLiveProvider()
+        state.logger.info("Switched live provider dynamically to TikTokLiveProvider.")
+
+    # Re-bind provider event callback
+    state.live_provider.set_event_callback(state.handle_provider_event)
+
     env_path = state.ENV_FILE
     env_data = {}
     if os.path.exists(env_path):
@@ -84,15 +101,12 @@ async def update_settings_api(req: SettingsUpdateRequest):
             f.write(f'{k}="{v}"\n')
 
     state.logger.info("Environment settings updated successfully via API.")
-    # Switching between "key configured" and "no key" changes which provider
-    # the app would use, but the provider is only picked at startup.
-    restart_required = had_key != bool(new_key)
     return {
         "status": "success",
         "has_key": bool(new_key),
         "masked_key": _mask_key(new_key),
-        "restart_required": restart_required,
-        "note": "Restart the app to switch between the cloud and local TikTok provider." if restart_required else None,
+        "restart_required": False,
+        "note": "Live provider updated dynamically.",
     }
 
 

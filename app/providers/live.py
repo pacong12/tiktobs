@@ -73,9 +73,13 @@ class TikTokLiveProvider(TikTokProvider):
         # Load API key configuration synchronously on initialization
         sign_api_key = config.load_sign_api_key()
 
-        if sign_api_key:
+        # If Euler key is rate-limited (4429), do not pass it to WebDefaults so local scraper uses default signatures
+        if sign_api_key and not getattr(self, "ignore_sign_key", False):
             WebDefaults.tiktok_sign_api_key = sign_api_key
             logger.info("Using custom EulerStream API key for signature requests.")
+        else:
+            WebDefaults.tiktok_sign_api_key = None
+            logger.info("Local TikTokLive provider using default sign server (bypassing rate-limited API key).")
 
     async def connect(self, username: str) -> None:
         """Disconnects any existing sessions and starts a new connection loop task."""

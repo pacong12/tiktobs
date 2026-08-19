@@ -114,8 +114,28 @@ class EulerWebSocketProvider(TikTokProvider):
                     err_msg = str(e)
                     logger.exception(f"EulerStream WebSocket connection error for @{cleaned_username}")
 
-                    # Stop auto-reconnecting immediately when TikTok user is offline or stream has ended (codes 4404 / 4005)
-                    if "4404" in err_msg or "4005" in err_msg or "not currently live" in err_msg or "stream ended" in err_msg:
+                    # Auto-fallback to local TikTokLiveProvider when Euler rate limit reached (4429) or Cloud Worker error (1011)
+                    if "4429" in err_msg or "rate limit" in err_msg.lower() or "1011" in err_msg:
+                        reason = "EulerStream API rate limit reached (4429)" if ("4429" in err_msg or "rate limit" in err_msg.lower()) else "EulerStream Cloud Worker error (1011)"
+                        logger.warning(f"{reason}. Automatically failing over to local TikTokLive provider...")
+                        await self.emit_event("sys_log", {"message": f"⚠️ {reason}. Auto-failing over to local mode without API key..."})
+                        
+                        # Dynamically switch active provider to local TikTokLiveProvider and bypass signature key
+                        from app import state
+                        from app.providers.live import TikTokLiveProvider
+                        local_provider = TikTokLiveProvider()
+                        local_provider.ignore_sign_key = True
+                        from TikTokLive.client.web.web_settings import WebDefaults
+                        WebDefaults.tiktok_sign_api_key = None
+
+                        state.live_provider = local_provider
+                        state.live_provider.set_event_callback(state.handle_provider_event)
+                        
+                        # Trigger connection on the local provider for the active user
+                        asyncio.create_task(state.live_provider.connect(cleaned_username))
+                        self._should_reconnect = False
+                        break
+                    elif "4404" in err_msg or "4005" in err_msg or "not currently live" in err_msg or "stream ended" in err_msg:
                         logger.info(f"Stream for @{cleaned_username} is offline/ended. Stopping reconnection loop.")
                         await self.emit_event("sys_log", {"message": f"Stream ended or creator @{cleaned_username} is offline."})
                         await self.emit_event("connection_failed", {"error": "Creator is offline or stream has ended."})

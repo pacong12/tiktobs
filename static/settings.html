@@ -187,7 +187,7 @@
                             keyInput.placeholder = `${data.masked_key} (saved \u2014 type a new value to replace)`;
                             clearBtn.classList.remove('hidden');
                         }
-                        if (data.restart_required) restartNote.classList.remove('hidden');
+                        restartNote.classList.add('hidden');
                     }
                 } else {
                     alert('Gagal menyimpan pengaturan.');

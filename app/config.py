@@ -24,8 +24,7 @@ def load_env_file() -> None:
     Runs automatically at import time so that every module reading
     ``os.getenv`` (TIKTOBS_API_TOKEN, TIKTOBS_TEST_ENDPOINTS,
     TIKTOBS_RETENTION_DAYS, TIKTOBS_PORT, ...) picks up .env values.
-    Real environment variables always take precedence over .env entries
-    (existing keys are never overwritten).
+    Updates environment variables with values from .env.
     """
     try:
         if not os.path.exists(ENV_FILE):
@@ -37,7 +36,7 @@ def load_env_file() -> None:
                     continue
                 key, _, value = line.partition("=")
                 key = key.strip()
-                if not key or key in os.environ:
+                if not key:
                     continue
                 os.environ[key] = value.strip().strip('"').strip("'")
     except OSError:

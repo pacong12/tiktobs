@@ -53,6 +53,13 @@
                         <button id="connect-btn" class="btn primary">Connect</button>
                         <button id="disconnect-btn" class="btn danger" disabled>Disconnect</button>
                     </div>
+
+                    <!-- ERROR BANNER FOR EULER / CONNECTION ERRORS -->
+                    <div id="connection-error-banner" class="hidden" style="margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: rgba(255, 51, 51, 0.15); border: 1px solid rgba(255, 51, 51, 0.4); color: #ff8a8a; font-size: 12px; line-height: 1.4;">
+                        <strong>⚠️ Status Koneksi Error:</strong>
+                        <div id="connection-error-text" style="margin-top: 4px; color: #ffffff;">-</div>
+                    </div>
+
                     <div class="overlay-links">
                         <p class="overlay-links-title">OBS Browser Source Overlays</p>
                         <div id="overlay-links-list">
