@@ -56,9 +56,9 @@ async def test_gift_vote_maps_to_candidate():
     ok, name, added, _via = await pm.record_gift_vote("Rose", 10)
     assert ok is True
     assert name == "B"
-    assert added == 10
+    assert added == 100
     status = await pm.get_status()
-    assert status["total_votes"] == 10
+    assert status["total_votes"] == 100
     await pm.stop_poll()
 
 
@@ -102,7 +102,7 @@ async def test_vote_intent_survives_restore():
     ok, name, added, via = await pm2.record_gift_vote("Rocket", 7, username="sultan")
     assert ok is True
     assert name == "B"
-    assert added == 7
+    assert added == 70
     assert via == "2"
 
     await pm2.stop_poll()

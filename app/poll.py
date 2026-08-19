@@ -373,8 +373,8 @@ class PollManager:
                         via_comment = intent.get("comment") or ""
 
             if matched_candidate:
-                # 1 diamond = 1 vote (minimum 1 vote)
-                votes_to_add = max(1, diamond_count)
+                # 1 diamond = 10 votes (minimum 10 votes per diamond)
+                votes_to_add = max(1, diamond_count) * 10
                 matched_candidate["votes"] += votes_to_add
                 if via_comment is not None:
                     logger.info(

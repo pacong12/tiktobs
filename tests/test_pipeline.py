@@ -270,10 +270,10 @@ class TestPipeline(unittest.IsolatedAsyncioTestCase):
             # All three events still reach the live feed/DB.
             self.assertEqual(len(self.published_events), 3)
 
-            # Poll counted only the final event: 3 roses x 1 diamond = 3 votes.
+            # Poll counted only the final event: 3 roses x 1 diamond x 10 = 30 votes.
             status = await local_pm.get_status()
             merah = next(c for c in status["candidates"] if c["name"] == "Merah")
-            self.assertEqual(merah["votes"], 3)
+            self.assertEqual(merah["votes"], 30)
 
             # Leaderboard likewise sums only the final event.
             board = await database.get_session_leaderboard(session_id)
@@ -352,11 +352,11 @@ class TestPipeline(unittest.IsolatedAsyncioTestCase):
             # No false celebration: no vote broadcast for the unmatched gift.
             self.assertFalse(any(m["type"] == "poll_gift_vote" for m in stub_manager.messages))
 
-            # 2. A matched gift still counts normally and adds no ignored notice.
+            # 2. A matched gift still counts normally and adds no ignored notice. (99 diamonds x 10 = 990 votes)
             await self.processor.process_raw_event("gift", gift_payload("gift_matched_1", "Rose", 5))
             status = await local_pm.get_status()
             merah = next(c for c in status["candidates"] if c["name"] == "Merah")
-            self.assertEqual(merah["votes"], 99)
+            self.assertEqual(merah["votes"], 990)
             ignored_msgs = [m for m in stub_manager.messages if m["type"] == "poll_gift_ignored"]
             self.assertEqual(len(ignored_msgs), 1)
             self.assertTrue(any(m["type"] == "poll_gift_vote" for m in stub_manager.messages))
@@ -426,13 +426,13 @@ class TestPipeline(unittest.IsolatedAsyncioTestCase):
             status = await local_pm.get_status()
             biru = next(c for c in status["candidates"] if c["name"] == "Biru")
             merah = next(c for c in status["candidates"] if c["name"] == "Merah")
-            self.assertEqual(biru["votes"], 1 + 500)  # comment + rocket
+            self.assertEqual(biru["votes"], 1 + 5000)  # 1 comment + 5000 gift votes (500 diamonds x 10)
             self.assertEqual(merah["votes"], 0)
 
             vote_msgs = [m for m in stub_manager.messages if m["type"] == "poll_gift_vote"]
             self.assertEqual(len(vote_msgs), 1)
             self.assertEqual(vote_msgs[0]["candidate_name"], "Biru")
-            self.assertEqual(vote_msgs[0]["votes_added"], 500)
+            self.assertEqual(vote_msgs[0]["votes_added"], 5000)
             self.assertEqual(vote_msgs[0]["via_comment"], "02")
             # And no ignored notice was sent for the credited gift.
             self.assertFalse(any(m["type"] == "poll_gift_ignored" for m in stub_manager.messages))

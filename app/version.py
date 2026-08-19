@@ -8,7 +8,7 @@ Bump the version here before building a release. Follow semver:
   MAJOR.MINOR.PATCH  (e.g. 1.0.0 -> 1.1.0 for features, 1.1.1 for fixes)
 """
 
-__version__ = "1.2.4"
+__version__ = "1.2.5"
 
 
 def get_version() -> str:

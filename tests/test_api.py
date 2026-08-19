@@ -252,11 +252,11 @@ async def test_start_poll_include_history_replays_session_events(client):
 
         assert body["history_applied"]["comments"] == 3
         assert body["history_applied"]["gifts"] == 1
-        assert body["history_applied"]["votes"] == 28  # 3 comment votes + 25 diamonds
+        assert body["history_applied"]["votes"] == 253  # 3 comment votes + 250 gift votes (25 diamonds x 10)
 
         votes = {c["name"]: c["votes"] for c in body["candidates"]}
         assert votes["Merah"] == 2
-        assert votes["Biru"] == 26  # 1 comment + 25 gift votes
+        assert votes["Biru"] == 251  # 1 comment + 250 gift votes
     finally:
         client.post("/api/poll/stop")
         app_main.processor.session_id = old_session
@@ -319,10 +319,10 @@ async def test_history_replay_counts_only_final_streak_event(client):
         })
         assert resp.status_code == 200
         body = resp.json()
-        # Only the final event counts: 1 gift, 4 votes (4 x 1 diamond).
-        assert body["history_applied"] == {"comments": 0, "gifts": 1, "votes": 4}
+        # Only the final event counts: 1 gift, 40 votes (4 x 1 diamond x 10).
+        assert body["history_applied"] == {"comments": 0, "gifts": 1, "votes": 40}
         votes = {c["name"]: c["votes"] for c in body["candidates"]}
-        assert votes["Merah"] == 4
+        assert votes["Merah"] == 40
         assert votes["Biru"] == 0
     finally:
         client.post("/api/poll/stop")

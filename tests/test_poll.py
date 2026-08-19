@@ -145,29 +145,29 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(status["candidates"][0]["gift_name"], "Rose")
         self.assertEqual(status["candidates"][1]["gift_name"], "Finger Heart")
 
-        # 1. Send gift 'Rose' with 1 diamond (Alice gets 1 vote)
+        # 1. Send gift 'Rose' with 1 diamond (Alice gets 10 votes)
         success, name, votes, _via = await self.poll_manager.record_gift_vote("Rose", 1)
         self.assertTrue(success)
         self.assertEqual(name, "Alice")
-        self.assertEqual(votes, 1)
+        self.assertEqual(votes, 10)
 
-        # 2. Send gift 'Rose' with 15 diamonds (Alice gets 15 more votes)
+        # 2. Send gift 'Rose' with 15 diamonds (Alice gets 150 more votes)
         success, name, votes, _via = await self.poll_manager.record_gift_vote("Rose", 15)
         self.assertTrue(success)
         self.assertEqual(name, "Alice")
-        self.assertEqual(votes, 15)
+        self.assertEqual(votes, 150)
 
-        # 3. Send gift 'Finger Heart' with 5 diamonds (Bob gets 5 votes)
+        # 3. Send gift 'Finger Heart' with 5 diamonds (Bob gets 50 votes)
         success, name, votes, _via = await self.poll_manager.record_gift_vote("Finger Heart", 5)
         self.assertTrue(success)
         self.assertEqual(name, "Bob")
-        self.assertEqual(votes, 5)
+        self.assertEqual(votes, 50)
 
         # 4. Check status totals
         status_after = await self.poll_manager.get_status()
-        self.assertEqual(status_after["candidates"][0]["votes"], 16)  # 1 + 15 = 16
-        self.assertEqual(status_after["candidates"][1]["votes"], 5)   # 5
-        self.assertEqual(status_after["total_votes"], 21)             # 16 + 5 = 21
+        self.assertEqual(status_after["candidates"][0]["votes"], 160)  # 10 + 150 = 160
+        self.assertEqual(status_after["candidates"][1]["votes"], 50)   # 50
+        self.assertEqual(status_after["total_votes"], 210)             # 160 + 50 = 210
 
         # 5. Unrelated gift from a sender with no vote comment does nothing
         success, name, votes, _via = await self.poll_manager.record_gift_vote("Ice Cream", 1, username="random_viewer")
@@ -281,18 +281,18 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         # Sultan comments "02" -> +1 vote for Bob AND intent towards Bob.
         self.assertTrue(await self.poll_manager.record_vote("sultan", "02"))
 
-        # Unmatched gift is credited to Bob via the comment (1 diamond = 1 vote).
+        # Unmatched gift is credited to Bob via the comment (1 diamond = 10 votes).
         success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 5000, username="sultan")
         self.assertTrue(success)
         self.assertEqual(name, "Bob")
-        self.assertEqual(votes, 5000)
+        self.assertEqual(votes, 50000)
         self.assertEqual(via, "02")
 
         # A directly-matching gift never needs the fallback.
         success, name, votes, via = await self.poll_manager.record_gift_vote("Rose", 3, username="sultan")
         self.assertTrue(success)
         self.assertEqual(name, "Alice")
-        self.assertEqual(votes, 3)
+        self.assertEqual(votes, 30)
         self.assertIsNone(via)
 
         # A sender who never commented gets nothing for an unmatched gift.
@@ -303,8 +303,8 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(via)
 
         status = await self.poll_manager.get_status()
-        self.assertEqual(status["candidates"][0]["votes"], 3)          # Alice: Rose only
-        self.assertEqual(status["candidates"][1]["votes"], 1 + 5000)   # Bob: comment + Rocket
+        self.assertEqual(status["candidates"][0]["votes"], 30)          # Alice: Rose only (3 x 10 = 30)
+        self.assertEqual(status["candidates"][1]["votes"], 1 + 50000)   # Bob: comment + Rocket (5000 x 10 = 50000)
 
     async def test_gift_fallback_follows_latest_vote_comment(self):
         """The intent tracks the sender's LATEST vote comment."""
@@ -357,7 +357,7 @@ class TestPollManager(unittest.IsolatedAsyncioTestCase):
         success, name, votes, via = await self.poll_manager.record_gift_vote("Rocket", 50, username="sultan")
         self.assertTrue(success)
         self.assertEqual(name, "Bob")
-        self.assertEqual(votes, 50)
+        self.assertEqual(votes, 500)
 
     async def test_gift_fallback_requires_username(self):
         """Without a sender (e.g. legacy calls) the fallback cannot apply."""
