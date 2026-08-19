@@ -26,17 +26,27 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Extract version (with build run number fallback)
+        id: get_version
+        shell: bash
+        run: |
+          VER=$(python -c "import app.version; print(app.version.__version__)")
+          BUILD_NUM="${{ github.run_number }}"
+          # Auto-append build run number for unique automated releases
+          FULL_VER="${VER}.${BUILD_NUM}"
+          echo "version=${FULL_VER}" >> "$GITHUB_OUTPUT"
+          # Update version dynamically in app/version.py for PyInstaller metadata
+          python -c "
+          with open('app/version.py', 'r') as f: text = f.read()
+          import re
+          text = re.sub(r'__version__\s*=\s*[\"\\\'][^\"\\\']+[\"\\\']', f'__version__ = \"{FULL_VER}\"', text)
+          with open('app/version.py', 'w') as f: f.write(text)
+          "
+
       - name: Build EXE
         env:
           TIKTOK_SIGN_API_KEY: ${{ secrets.TIKTOK_SIGN_API_KEY }}
         run: python build_exe.py
-
-      - name: Extract version
-        id: get_version
-        shell: bash
-        run: |
-          VERSION=$(python -c "import app.version; print(app.version.__version__)")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
