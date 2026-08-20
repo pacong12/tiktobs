@@ -26,15 +26,12 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Extract version (with build run number fallback)
+      - name: Extract version
         id: get_version
         shell: bash
         run: |
-          VER=$(python -c "import app.version; print(app.version.__version__)")
-          BUILD_NUM="${{ github.run_number }}"
-          FULL_VER="${VER}.${BUILD_NUM}"
-          echo "version=${FULL_VER}" >> "$GITHUB_OUTPUT"
-          python -c "import re; f=open('app/version.py','r'); t=f.read(); f.close(); t=re.sub(r'__version__\s*=\s*[\"\\\'][^\"\\\']+[\"\\\']', '__version__ = \"' + '${FULL_VER}' + '\"', t); f=open('app/version.py','w'); f.write(t); f.close()"
+          VERSION=$(python -c "import app.version; print(app.version.__version__)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build EXE
         env:
