@@ -19,28 +19,47 @@ async function initOverlay() {
     connectWebSocket();
 }
 
-// Fetch current poll status on load
+// Fetch current poll status or latest archived round on load
 async function fetchPollStatus() {
     try {
         const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
         const response = await fetch(`${baseUrl}/api/poll/status`);
         const poll = await response.json();
+        
+        if (!poll || !poll.is_active) {
+            // Fetch latest archived round if active poll doesn't exist
+            const roundsRes = await fetch(`${baseUrl}/api/poll/rounds?limit=1`);
+            const roundsData = await roundsRes.json();
+            if (roundsData.rounds && roundsData.rounds.length > 0) {
+                const latestRound = roundsData.rounds[0];
+                const lastPoll = {
+                    is_active: false,
+                    is_archived: true,
+                    title: latestRound.title,
+                    round_name: latestRound.round_name,
+                    total_votes: latestRound.total_votes,
+                    candidates: latestRound.candidates
+                };
+                renderPoll(lastPoll);
+                return;
+            }
+        }
         renderPoll(poll);
     } catch (error) {
         console.error('Failed to fetch poll status:', error);
     }
 }
 
-// Render the active poll or inactive state
+// Render the active poll or inactive state (supports displaying the latest archived round)
 function renderPoll(poll) {
-    if (!poll || !poll.is_active) {
+    if (!poll || (!poll.is_active && !poll.is_archived)) {
         currentPoll = poll;
         pollContainer.classList.add('hidden');
         inactiveContainer.classList.remove('hidden');
         return;
     }
 
-    // Show active poll container
+    // Show active or archived poll container
     inactiveContainer.classList.add('hidden');
     pollContainer.classList.remove('hidden');
 
@@ -49,7 +68,7 @@ function renderPoll(poll) {
 
     // In-place update: If card elements already exist and ranking order hasn't changed, update ONLY numbers and percentages in DOM
     const existingCards = candidatesList.querySelectorAll('.candidate-card');
-    const sameRankOrder = currentPoll && currentPoll.is_active &&
+    const sameRankOrder = currentPoll && (currentPoll.is_active || currentPoll.is_archived) &&
         currentPoll.candidates.length === poll.candidates.length &&
         existingCards.length === ranked.length &&
         ranked.every((c, i) => String(c.id) === existingCards[i].dataset.candidateId);
@@ -192,7 +211,13 @@ function connectWebSocket() {
         try {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
-                renderPoll(msg.poll);
+                if (!msg.poll || !msg.poll.is_active) {
+                    fetchPollStatus();
+                } else {
+                    renderPoll(msg.poll);
+                }
+            } else if (msg.type === 'poll_round_archived') {
+                fetchPollStatus();
             }
         } catch (error) {
             console.error('Error handling WebSocket message:', error);

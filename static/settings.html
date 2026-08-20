@@ -103,6 +103,46 @@
                         </div>
                     </form>
                 </div>
+
+                <!-- RUNNING TEXT V2 CONFIGURATION CARD -->
+                <div class="glass-card settings-card" style="margin-top: 24px;">
+                    <h2>📢 OBS Running Text Overlay V2 (Marquee)</h2>
+                    <p class="section-desc">Pengaturan khusus teks berjalan untuk <code>/running-text-overlay.html</code> (terpisah dari Ticker V1).</p>
+
+                    <form id="running-text-form" style="margin-top: 20px;">
+                        <div class="input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                            <input type="checkbox" id="rt-enabled" style="width: 18px; height: 18px; cursor: pointer;" checked>
+                            <label for="rt-enabled" style="cursor: pointer; font-weight: 600; margin: 0;">Aktifkan Running Text V2</label>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight: 600; display: block; margin-bottom: 8px;">Daftar Badge Group Running Text V2</label>
+                            <div id="rt-groups-container" style="display: flex; flex-direction: column; gap: 10px;">
+                                <!-- Dynamic Badge Group Rows populated via JS -->
+                            </div>
+                            <button type="button" id="add-rt-group-btn" class="btn secondary" style="margin-top: 10px; font-size: 12px; padding: 6px 12px;">+ Tambah Group Badge</button>
+                        </div>
+
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;">
+                            <div class="input-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                                <label for="rt-speed">Kecepatan (px/s)</label>
+                                <input type="number" id="rt-speed" min="10" max="300" step="5" value="60" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px;">
+                            </div>
+                            <div class="input-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                                <label for="rt-direction">Arah Scroll</label>
+                                <select id="rt-direction" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px;">
+                                    <option value="left" style="background: #1a1a2e;">← Kanan ke Kiri</option>
+                                    <option value="right" style="background: #1a1a2e;">→ Kiri ke Kanan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <button type="submit" id="save-rt-btn" class="btn primary" style="padding: 12px 24px; font-size: 14px; font-weight: 700;">Simpan Running Text V2</button>
+                            <span id="rt-status-msg" style="font-size: 13px; font-weight: 600; color: #00ff87;" class="hidden">Tersimpan</span>
+                        </div>
+                    </form>
+                </div>
             </section>
         </main>
     </div>
@@ -290,6 +330,140 @@
                 saveTickerBtn.textContent = '💾 Save Ticker';
             }
         });
+
+        // ---------- Running Text V2 Multi-Group management ----------
+        const rtForm = document.getElementById('running-text-form');
+        const rtEnabled = document.getElementById('rt-enabled');
+        const rtGroupsContainer = document.getElementById('rt-groups-container');
+        const addRtGroupBtn = document.getElementById('add-rt-group-btn');
+        const rtSpeed = document.getElementById('rt-speed');
+        const rtDirection = document.getElementById('rt-direction');
+        const saveRtBtn = document.getElementById('save-rt-btn');
+        const rtStatusMsg = document.getElementById('rt-status-msg');
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag));
+        }
+
+        function createRtGroupRow(title = 'INFO', color = '#ff0055', message = '') {
+            const row = document.createElement('div');
+            row.className = 'rt-group-row';
+            row.style.cssText = 'display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);';
+            row.innerHTML = `
+                <input type="text" class="rt-title-input" placeholder="Judul (Kiri)" value="${escapeHTML(title)}" style="width: 100px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 6px 10px; color: #fff; font-size: 12px;">
+                <input type="color" class="rt-color-input" value="${escapeHTML(color)}" style="width: 40px; height: 30px; background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; cursor: pointer;">
+                <input type="text" class="rt-msg-input" placeholder="Pesan Running Text (Fix Putih Kanan)" value="${escapeHTML(message)}" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 6px 10px; color: #fff; font-size: 12px;">
+                <button type="button" class="rt-remove-btn" style="background: rgba(255,51,51,0.2); border: 1px solid rgba(255,51,51,0.4); color: #ff5c5c; padding: 4px 8px; border-radius: 6px; cursor: pointer;">✕</button>
+            `;
+            row.querySelector('.rt-remove-btn').addEventListener('click', () => {
+                if (rtGroupsContainer.children.length > 1) {
+                    row.remove();
+                } else {
+                    alert('Minimal harus ada 1 group badge.');
+                }
+            });
+            return row;
+        }
+
+        function showRtStatus(text, color = '#00ff87') {
+            rtStatusMsg.textContent = text;
+            rtStatusMsg.style.color = color;
+            rtStatusMsg.classList.remove('hidden');
+            setTimeout(() => rtStatusMsg.classList.add('hidden'), 4000);
+        }
+
+        async function loadRtConfig() {
+            try {
+                const res = await fetch('/api/running-text');
+                if (!res.ok) return;
+                const cfg = await res.json();
+                rtEnabled.checked = !!cfg.enabled;
+                rtSpeed.value = cfg.speed ?? 60;
+                rtDirection.value = cfg.direction === 'right' ? 'right' : 'left';
+
+                rtGroupsContainer.innerHTML = '';
+                const groups = cfg.groups && cfg.groups.length > 0
+                    ? cfg.groups
+                    : (cfg.messages || []).map(m => ({ title: cfg.header_title || 'INFO', color: cfg.header_color || '#ff0055', message: m }));
+
+                if (groups.length === 0) {
+                    groups.push({ title: 'INFO', color: '#ff0055', message: 'Follow & share live stream ini!' });
+                }
+
+                groups.forEach(g => {
+                    rtGroupsContainer.appendChild(createRtGroupRow(g.title, g.color, g.message));
+                });
+            } catch (err) {
+                console.error('Failed to load running text V2 config:', err);
+            }
+        }
+        loadRtConfig();
+
+        if (addRtGroupBtn) {
+            addRtGroupBtn.addEventListener('click', () => {
+                rtGroupsContainer.appendChild(createRtGroupRow('INFO', '#ff0055', ''));
+            });
+        }
+
+        if (rtForm) {
+            rtForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                saveRtBtn.disabled = true;
+                saveRtBtn.textContent = 'Saving...';
+
+                const groupRows = rtGroupsContainer.querySelectorAll('.rt-group-row');
+                const groupsData = [];
+                groupRows.forEach(r => {
+                    const title = r.querySelector('.rt-title-input').value.trim() || 'INFO';
+                    const color = r.querySelector('.rt-color-input').value.trim() || '#ff0055';
+                    const message = r.querySelector('.rt-msg-input').value.trim();
+                    if (message) {
+                        groupsData.push({ title, color, message });
+                    }
+                });
+
+                const body = {
+                    enabled: rtEnabled.checked,
+                    groups: groupsData,
+                    speed: parseInt(rtSpeed.value, 10) || 60,
+                    direction: rtDirection.value
+                };
+
+                try {
+                    const res = await fetch('/api/running-text', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.config && Array.isArray(data.config.groups)) {
+                            rtGroupsContainer.innerHTML = '';
+                            data.config.groups.forEach(g => {
+                                rtGroupsContainer.appendChild(createRtGroupRow(g.title, g.color, g.message));
+                            });
+                        }
+                        showRtStatus('✓ Saved! Overlay V2 updates instantly.');
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        showRtStatus(err.detail || 'Failed to save.', '#ff4a5a');
+                    }
+                } catch (err) {
+                    console.error('Running text save error:', err);
+                    showRtStatus('Failed to save.', '#ff4a5a');
+                } finally {
+                    saveRtBtn.disabled = false;
+                    saveRtBtn.textContent = 'Simpan Running Text V2';
+                }
+            });
+        }
     </script>
 </body>
 </html>

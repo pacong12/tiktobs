@@ -20,12 +20,28 @@ async function initOverlay() {
     connectWebSocket();
 }
 
-// Fetch poll status on load
+// Fetch poll status on load (or latest archived round if active poll ended)
 async function fetchPollStatus() {
     try {
         const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
         const response = await fetch(`${baseUrl}/api/poll/status`);
         const poll = await response.json();
+
+        if (!poll || !poll.is_active) {
+            // Check if there is a recently completed round
+            const roundsRes = await fetch(`${baseUrl}/api/poll/rounds?limit=1`);
+            const roundsData = await roundsRes.json();
+            if (roundsData.rounds && roundsData.rounds.length > 0) {
+                const latestRound = roundsData.rounds[0];
+                renderTimer({
+                    is_active: false,
+                    is_expired: true,
+                    title: latestRound.title || 'Voting Selesai'
+                });
+                return;
+            }
+        }
+
         renderTimer(poll);
     } catch (error) {
         console.error('Failed to fetch poll status:', error);
@@ -39,7 +55,7 @@ function renderTimer(poll) {
         countdownInterval = null;
     }
 
-    if (!poll || !poll.is_active || !poll.expires_at) {
+    if (!poll || (!poll.is_active && !poll.is_expired)) {
         timerContainer.classList.add('hidden');
         inactiveContainer.classList.remove('hidden');
         countdownClock.classList.remove('warning');
@@ -50,10 +66,21 @@ function renderTimer(poll) {
     timerContainer.classList.remove('hidden');
     inactiveContainer.classList.add('hidden');
 
-    if (poll.title) {
-        pollTitle.textContent = poll.title;
-    } else {
-        pollTitle.textContent = 'Voting Time Remaining';
+    if (pollTitle) {
+        if (poll.title) {
+            pollTitle.textContent = poll.title;
+        } else {
+            pollTitle.textContent = 'Voting Time Remaining';
+        }
+    }
+
+    // If poll was completed/expired
+    if (poll.is_expired) {
+        countdownClock.textContent = 'SELESAI';
+        countdownClock.classList.remove('warning');
+        countdownBar.style.width = '0%';
+        maxDuration = 0;
+        return;
     }
 
     const expireTime = new Date(poll.expires_at).getTime();
@@ -67,22 +94,6 @@ function renderTimer(poll) {
             maxDuration = secLeft;
         }
 
-        // Clock text
-        const mins = Math.floor(secLeft / 60).toString().padStart(2, '0');
-        const secs = (secLeft % 60).toString().padStart(2, '0');
-        countdownClock.textContent = `${mins}:${secs}`;
-
-        // Alert state warning class
-        if (secLeft <= 10 && secLeft > 0) {
-            countdownClock.classList.add('warning');
-        } else {
-            countdownClock.classList.remove('warning');
-        }
-
-        // Progress bar percentage calculation
-        const percent = maxDuration > 0 ? (secLeft / maxDuration) * 100 : 0;
-        countdownBar.style.width = `${percent}%`;
-
         // Handle expiration
         if (secLeft <= 0) {
             clearInterval(countdownInterval);
@@ -90,7 +101,13 @@ function renderTimer(poll) {
             countdownClock.textContent = 'SELESAI';
             countdownClock.classList.remove('warning');
             countdownBar.style.width = '0%';
+            return;
         }
+
+        // Clock text
+        const mins = Math.floor(secLeft / 60).toString().padStart(2, '0');
+        const secs = (secLeft % 60).toString().padStart(2, '0');
+        countdownClock.textContent = `${mins}:${secs}`;
     };
 
     updateTime();
@@ -113,7 +130,13 @@ function connectWebSocket() {
         try {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
-                renderTimer(msg.poll);
+                if (!msg.poll || !msg.poll.is_active) {
+                    fetchPollStatus();
+                } else {
+                    renderTimer(msg.poll);
+                }
+            } else if (msg.type === 'poll_round_archived') {
+                fetchPollStatus();
             }
         } catch (error) {
             console.error('Error parsing WebSocket message:', error);

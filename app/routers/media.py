@@ -206,3 +206,86 @@ async def update_ticker_api(req: TickerConfigRequest):
     await state.manager.broadcast({"type": "ticker_update", "config": cfg})
     state.logger.info(f"Ticker config updated: enabled={cfg['enabled']}, messages={len(cfg['messages'])}")
     return {"status": "success", "config": cfg}
+
+
+DEFAULT_RUNNING_TEXT_CONFIG = {
+    "enabled": True,
+    "speed": 60,
+    "direction": "left",
+    "separator": "  •  ",
+    "groups": [
+        {"title": "INFO", "color": "#ff0055", "message": "Follow & share live stream ini!"},
+        {"title": "PROMO", "color": "#00f0ff", "message": "Gift Rose untuk berikan suara!"},
+        {"title": "SOSMED", "color": "#7c4dff", "message": "Instagram: @yourhandle"}
+    ]
+}
+
+
+def _load_running_text_config():
+    cfg = dict(DEFAULT_RUNNING_TEXT_CONFIG)
+    if os.path.exists(state.RUNNING_TEXT_CONFIG_FILE):
+        try:
+            with open(state.RUNNING_TEXT_CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                cfg.update({k: data[k] for k in DEFAULT_RUNNING_TEXT_CONFIG if k in data})
+        except Exception as e:  # noqa: BLE001
+            state.logger.warning(f"Could not read running text config, using defaults: {e}")
+    return cfg
+
+
+def _save_running_text_config(cfg):
+    with open(state.RUNNING_TEXT_CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2, ensure_ascii=False)
+
+
+@router.get("/running-text")
+async def get_running_text_api():
+    """Returns the configuration for /running-text-overlay.html."""
+    return _load_running_text_config()
+
+
+@router.post("/running-text")
+async def update_running_text_api(req: TickerConfigRequest):
+    """Updates the running text V2 configuration separately."""
+    cfg = _load_running_text_config()
+
+    if req.enabled is not None:
+        cfg["enabled"] = req.enabled
+    if req.speed is not None:
+        if not 10 <= req.speed <= 300:
+            raise HTTPException(status_code=400, detail="Speed must be between 10 and 300 px/s")
+        cfg["speed"] = req.speed
+    if req.direction is not None:
+        if req.direction not in ("left", "right"):
+            raise HTTPException(status_code=400, detail="Direction must be 'left' or 'right'")
+        cfg["direction"] = req.direction
+    if req.separator is not None:
+        cfg["separator"] = req.separator[:20]
+    if req.header_title is not None:
+        cfg["header_title"] = req.header_title.strip()[:30]
+    if req.header_color is not None:
+        cfg["header_color"] = req.header_color.strip()[:20]
+    if req.groups is not None:
+        cleaned_groups = []
+        for g in req.groups[:30]:
+            t = (g.title or "INFO").strip()[:30]
+            c = (g.color or "#ff0055").strip()[:20]
+            m = (g.message or "").strip()[:500]
+            if m:
+                cleaned_groups.append({"title": t, "color": c, "message": m})
+        cfg["groups"] = cleaned_groups
+        # Also sync fallback messages array so both schemas stay consistent
+        cfg["messages"] = [g["message"] for g in cleaned_groups]
+    elif req.messages is not None:
+        cleaned = []
+        for msg in req.messages[:50]:
+            text = str(msg).strip()
+            if text:
+                cleaned.append(text[:500])
+        cfg["messages"] = cleaned
+
+    _save_running_text_config(cfg)
+    await state.manager.broadcast({"type": "running_text_update", "config": cfg})
+    state.logger.info(f"Running text V2 config updated: enabled={cfg['enabled']}, messages={len(cfg['messages'])}")
+    return {"status": "success", "config": cfg}

@@ -37,9 +37,18 @@ class SoundConfigRequest(BaseModel):
     vote_volume: float | None = None
 
 
+class BadgeGroupItem(BaseModel):
+    title: str | None = "INFO"
+    color: str | None = "#ff0055"
+    message: str | None = ""
+
+
 class TickerConfigRequest(BaseModel):
     enabled: bool | None = None
     speed: int | None = None          # pixels per second (10-300)
     direction: str | None = None      # "left" or "right"
     separator: str | None = None      # text shown between messages
     messages: list[str] | None = None  # one entry per scrolling line
+    header_title: str | None = None   # Title badge text (e.g. INFO, ANNOUNCEMENT)
+    header_color: str | None = None   # Badge color (e.g. red, blue, green, custom hex)
+    groups: list[BadgeGroupItem] | None = None  # List of custom badge groups (V2)

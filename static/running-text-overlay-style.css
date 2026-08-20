@@ -1,0 +1,118 @@
+/* Reset and OBS transparency defaults */
+body {
+    background: transparent;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* OUTER ROUNDED CARD CONTAINER — Box Melengkung Pembungkus Screen */
+.running-text-card {
+    width: 360px;
+    max-width: calc(100vw - 16px);
+    height: 44px;
+    box-sizing: border-box;
+    margin: 8px auto;
+    display: flex;
+    align-items: center;
+    background: rgba(16, 12, 34, 0.88);
+    border: 1.5px solid rgba(0, 240, 255, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    padding: 4px 6px;
+}
+
+.marquee-viewport {
+    flex: 1 1 auto;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+}
+
+.marquee-track {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    will-change: transform;
+}
+
+.marquee-track.scroll-left {
+    animation: marquee-scroll-left linear infinite;
+}
+
+.marquee-track.scroll-right {
+    animation: marquee-scroll-right linear infinite;
+}
+
+.marquee-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding-right: 16px;
+}
+
+/* DUAL CONNECTED BADGE GROUP (Berjalan di dalam kotak rounded card) */
+.badge-group {
+    display: inline-flex;
+    align-items: stretch;
+    height: 32px;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    vertical-align: middle;
+}
+
+/* BADGE 1: HEADER JUDUL (Kiri, Warna Bebas) */
+.badge-header {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    background: var(--header-bg, #ff0055);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* BADGE 2: ISI PESAN (Kanan, Nempel/Bersambung, Fix Putih Solid) */
+.badge-body {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 14px;
+    background: #ffffff;
+    color: #111111;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+@keyframes marquee-scroll-left {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+@keyframes marquee-scroll-right {
+    from { transform: translateX(-50%); }
+    to   { transform: translateX(0); }
+}

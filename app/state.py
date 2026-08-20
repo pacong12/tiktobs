@@ -32,6 +32,7 @@ SOUNDS_DIR = os.path.join(DATA_DIR, "sounds")
 os.makedirs(SOUNDS_DIR, exist_ok=True)
 SOUND_CONFIG_FILE = os.path.join(DATA_DIR, "sound_config.json")
 TICKER_CONFIG_FILE = os.path.join(DATA_DIR, "ticker_config.json")
+RUNNING_TEXT_CONFIG_FILE = os.path.join(DATA_DIR, "running_text_config.json")
 
 # --------------------------------------------------------------------------
 # Logging (file handler rotates so app.log cannot grow without bound)
