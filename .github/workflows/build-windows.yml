@@ -32,16 +32,9 @@ jobs:
         run: |
           VER=$(python -c "import app.version; print(app.version.__version__)")
           BUILD_NUM="${{ github.run_number }}"
-          # Auto-append build run number for unique automated releases
           FULL_VER="${VER}.${BUILD_NUM}"
           echo "version=${FULL_VER}" >> "$GITHUB_OUTPUT"
-          # Update version dynamically in app/version.py for PyInstaller metadata
-          python -c "
-          with open('app/version.py', 'r') as f: text = f.read()
-          import re
-          text = re.sub(r'__version__\s*=\s*[\"\\\'][^\"\\\']+[\"\\\']', f'__version__ = \"{FULL_VER}\"', text)
-          with open('app/version.py', 'w') as f: f.write(text)
-          "
+          python -c "import re; f=open('app/version.py','r'); t=f.read(); f.close(); t=re.sub(r'__version__\s*=\s*[\"\\\'][^\"\\\']+[\"\\\']', '__version__ = \"' + '${FULL_VER}' + '\"', t); f=open('app/version.py','w'); f.write(t); f.close()"
 
       - name: Build EXE
         env:
