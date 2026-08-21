@@ -1,0 +1,157 @@
+/* Reset and OBS transparency defaults */
+body {
+    background: transparent;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* FAST-TRACK VOTE OVERLAY CONTAINER — Android/Mobile compact fit */
+.fast-vote-container {
+    width: 360px;
+    max-width: calc(100vw - 16px);
+    box-sizing: border-box;
+    margin: 8px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Glassmorphism Card Base */
+.glass-card {
+    background: linear-gradient(135deg, rgba(16, 12, 34, 0.9), rgba(30, 10, 52, 0.9));
+    border: 1.5px solid rgba(255, 215, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 4px 24px rgba(255, 215, 0, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.fast-vote-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.fast-badge {
+    background: linear-gradient(90deg, #ffd700, #ff8c00);
+    color: #000000;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.fast-sub {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 215, 0, 0.85);
+    letter-spacing: 0.5px;
+}
+
+/* Fast candidate boost list */
+.fast-candidates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fast-candidate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+}
+
+.fast-candidate-row.leading {
+    border-color: #ffd700;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+    background: rgba(255, 215, 0, 0.08);
+}
+
+.fast-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fast-gift-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 215, 0, 0.15);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 8px;
+}
+
+.fast-gift-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.fast-name-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.fast-cand-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.fast-gift-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: #ffd700;
+}
+
+.fast-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.fast-votes-val {
+    font-size: 15px;
+    font-weight: 800;
+    color: #ffd700;
+    font-variant-numeric: tabular-nums;
+}
+
+.fast-pct-val {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Inactive State */
+.inactive-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+}

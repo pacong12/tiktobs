@@ -147,8 +147,9 @@ function createCandidateRow(name = '', imageUrl = '', giftPreset = null, color =
     return row;
 }
 
-// Replaces the whole candidate form with the candidates of an archived round.
-function loadCandidatesIntoForm(candidates) {
+// Replaces the whole candidate form with the candidates, title, round name & duration of an archived round.
+function loadPastRoundIntoForm(roundData) {
+    const candidates = roundData.candidates;
     if (!Array.isArray(candidates) || candidates.length < 2) {
         alert('Ronde ini tidak punya cukup kandidat untuk dipakai ulang.');
         return;
@@ -159,9 +160,21 @@ function loadCandidatesIntoForm(candidates) {
             createCandidateRow(c.name || '', c.image_url || '', c.gift_name || null, c.color || '')
         );
     });
-    // Bring the form into view so the user sees the loaded candidates.
+
+    // Reuse round name, title, and duration
+    const pollTitleInput = document.getElementById('poll-title-input');
+    const pollRoundInput = document.getElementById('poll-round-input');
+    const pollDurationInput = document.getElementById('poll-duration-input');
+
+    if (pollTitleInput && roundData.title) pollTitleInput.value = roundData.title;
+    if (pollRoundInput && roundData.round_name) pollRoundInput.value = roundData.round_name;
+    if (pollDurationInput && roundData.duration_seconds !== undefined && roundData.duration_seconds !== null) {
+        pollDurationInput.value = roundData.duration_seconds > 0 ? roundData.duration_seconds : '';
+    }
+
+    // Bring the form into view so the user sees the loaded setup.
     document.getElementById('poll-setup-section')?.scrollIntoView({ behavior: 'smooth' });
-    showToast(`${candidates.length} kandidat dari riwayat dimuat ke form.`);
+    showToast(`Pengaturan ronde '${roundData.round_name || 'Riwayat'}' dimuat ke form.`);
 }
 
 // Small transient toast for admin feedback.
@@ -301,18 +314,18 @@ function setupEventListeners() {
         stopPollBtn.addEventListener('click', handleStopPoll);
     }
 
-    // Load a past round's candidates back into the setup form
+    // Load a past round's full setup (candidates, title, round name, duration) back into the setup form
     if (roundsHistoryList) {
         roundsHistoryList.addEventListener('click', (e) => {
             const btn = e.target.closest('.round-reuse-btn');
             if (!btn) return;
             const card = btn.closest('.round-card');
-            if (!card || !card.dataset.candidates) return;
+            if (!card || !card.dataset.roundData) return;
             try {
-                const candidates = JSON.parse(card.dataset.candidates);
-                loadCandidatesIntoForm(candidates);
+                const roundData = JSON.parse(card.dataset.roundData);
+                loadPastRoundIntoForm(roundData);
             } catch (err) {
-                console.error('Failed to parse archived candidates:', err);
+                console.error('Failed to parse archived round data:', err);
             }
         });
     }
@@ -485,14 +498,18 @@ function renderRounds(rounds) {
 
         const card = document.createElement('div');
         card.className = 'round-card';
-        // Archived candidates (name, image_url, gift_name) travel with the
-        // card so the "Pakai lagi" button can refill the setup form.
-        const reusableCandidates = (r.candidates || []).map(c => ({
-            name: c.name || '',
-            image_url: c.image_url || '',
-            gift_name: c.gift_name || ''
-        }));
-        card.dataset.candidates = JSON.stringify(reusableCandidates);
+        // Archived round setup travels with the card so the "Pakai lagi" button can refill the full setup form.
+        const reusableSetup = {
+            round_name: r.round_name || '',
+            title: r.title || '',
+            duration_seconds: r.duration_seconds || 0,
+            candidates: (r.candidates || []).map(c => ({
+                name: c.name || '',
+                image_url: c.image_url || '',
+                gift_name: c.gift_name || ''
+            }))
+        };
+        card.dataset.roundData = JSON.stringify(reusableSetup);
         card.innerHTML = `
             <div class="round-card-head">
                 <div style="min-width:0;">

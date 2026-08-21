@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Fast-Track Vote Overlay</title>
+    <link rel="stylesheet" href="fast-vote-overlay-style.css?v=1">
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="fast-vote-container hidden" id="fast-vote-wrap">
+        <div class="glass-card fast-vote-card">
+            <div class="fast-vote-header">
+                <span class="fast-badge">⚡ VOTE JALUR CEPAT</span>
+                <span class="fast-sub">GIFT BOOST (1💎 = 10 VOTE)</span>
+            </div>
+            <div class="fast-candidates-list" id="fast-candidates-list">
+                <!-- Dynamically populated candidate boost cards -->
+            </div>
+            <div class="fast-live-ticker hidden" id="fast-live-ticker">
+                <!-- Live fast vote popup -->
+            </div>
+        </div>
+    </div>
+
+    <div class="inactive-state glass-card hidden" id="inactive-container">
+        <p>⚡ Waiting for fast-track voting...</p>
+    </div>
+
+    <script src="auth.js?v=1"></script>
+    <script src="gift-icons.js?v=3"></script>
+    <script src="fast-vote-overlay.js?v=1"></script>
+</body>
+</html>
