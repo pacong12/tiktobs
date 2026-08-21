@@ -43,6 +43,18 @@ async function fetchPollStatus() {
         const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
         const response = await fetch(`${baseUrl}/api/poll/status`);
         const poll = await response.json();
+        if (!poll || !poll.is_active) {
+            const roundsRes = await fetch(`${baseUrl}/api/poll/rounds?limit=1`);
+            const roundsData = await roundsRes.json();
+            if (roundsData.rounds && roundsData.rounds.length > 0) {
+                currentPoll = {
+                    is_active: false,
+                    is_archived: true,
+                    candidates: roundsData.rounds[0].candidates
+                };
+                return;
+            }
+        }
         currentPoll = poll;
     } catch (error) {
         console.error('Failed to fetch poll status:', error);
@@ -64,7 +76,13 @@ function connectWebSocket() {
         try {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
-                currentPoll = msg.poll;
+                if (!msg.poll || !msg.poll.is_active) {
+                    fetchPollStatus();
+                } else {
+                    currentPoll = msg.poll;
+                }
+            } else if (msg.type === 'poll_start' || msg.type === 'poll_stop' || msg.type === 'poll_round_archived') {
+                fetchPollStatus();
             } else if (msg.type === 'poll_gift_vote') {
                 // Candidate gift vote (real boost or the Poll Admin simulate button).
                 handlePollGiftVote(msg);
@@ -92,7 +110,7 @@ function connectWebSocket() {
 
 // Find the candidate a gift is assigned to (by normalized gift name).
 function findCandidateByGift(giftName) {
-    if (!currentPoll || !currentPoll.is_active || !currentPoll.candidates) return null;
+    if (!currentPoll || (!currentPoll.is_active && !currentPoll.is_archived) || !currentPoll.candidates) return null;
     const giftKey = normalizeGiftName(giftName);
     if (!giftKey) return null;
     return currentPoll.candidates.find(
@@ -112,13 +130,11 @@ function handleGiftEvent(giftEvent) {
     if (candidate) {
         spawnCandidateBubble(candidate, data);
         recentCandidateBubbles.set(normalizeGiftName(data.gift_name), Date.now());
-    } else if (currentPoll && currentPoll.is_active) {
-        // During a poll, unmatched gifts are surfaced by poll_gift_vote
-        // (credited via the comment fallback) or poll_gift_ignored (red
-        // bubble) — a generic gold bubble here would duplicate or mislead.
+    } else if (currentPoll && (currentPoll.is_active || currentPoll.is_archived)) {
+        // During/after a poll, unmatched gifts are surfaced by poll_gift_vote or poll_gift_ignored
         return;
     } else {
-        // No active poll — celebrate any gift with a generic bubble.
+        // No active or archived poll — celebrate any gift with a generic bubble.
         spawnGenericBubble(data, giftEvent);
     }
 }

@@ -18,22 +18,38 @@ async function initOverlay() {
     connectWebSocket();
 }
 
-// Fetch current poll status on load
+// Fetch current poll status on load (or latest archived round if active poll ended)
 async function fetchPollStatus() {
     try {
         const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
         const response = await fetch(`${baseUrl}/api/poll/status`);
         const poll = await response.json();
+
+        if (!poll || !poll.is_active) {
+            // Fetch latest archived round
+            const roundsRes = await fetch(`${baseUrl}/api/poll/rounds?limit=1`);
+            const roundsData = await roundsRes.json();
+            if (roundsData.rounds && roundsData.rounds.length > 0) {
+                const latestRound = roundsData.rounds[0];
+                renderSessionTitle({
+                    is_active: false,
+                    is_archived: true,
+                    round_name: latestRound.round_name,
+                    title: latestRound.title
+                });
+                return;
+            }
+        }
         renderSessionTitle(poll);
     } catch (error) {
         console.error('Failed to fetch poll status:', error);
     }
 }
 
-// Render session & title
+// Render session & title (supports displaying the latest archived round)
 function renderSessionTitle(poll) {
     currentPoll = poll;
-    if (!poll || !poll.is_active) {
+    if (!poll || (!poll.is_active && !poll.is_archived)) {
         sessionTitleContainer.classList.add('hidden');
         inactiveContainer.classList.remove('hidden');
         return;
@@ -64,8 +80,12 @@ function connectWebSocket() {
         try {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
-                renderSessionTitle(msg.poll);
-            } else if (msg.type === 'poll_start' || msg.type === 'poll_stop') {
+                if (!msg.poll || !msg.poll.is_active) {
+                    fetchPollStatus();
+                } else {
+                    renderSessionTitle(msg.poll);
+                }
+            } else if (msg.type === 'poll_start' || msg.type === 'poll_stop' || msg.type === 'poll_round_archived') {
                 fetchPollStatus();
             }
         } catch (error) {
