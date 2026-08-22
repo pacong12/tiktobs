@@ -85,6 +85,8 @@ function renderFastVote(poll) {
         const isLeading = maxVotes > 0 && c.votes === maxVotes;
         const giftLabel = (c.gift_name || 'Gift Boost').trim();
         const iconHtml = giftIconHtml(giftLabel, 'fast-gift-icon');
+        const wins = c.wins || 0;
+        const winHtml = wins > 0 ? `<span class="fast-win-badge">win &times;${wins}</span>` : '';
 
         const row = document.createElement('div');
         row.className = `fast-candidate-row ${isLeading ? 'leading' : ''}`;
@@ -92,7 +94,10 @@ function renderFastVote(poll) {
             <div class="fast-left">
                 <div class="fast-gift-badge">${iconHtml}</div>
                 <div class="fast-name-wrap">
-                    <span class="fast-cand-name">${escapeHTML(c.name)}</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="fast-cand-name">${escapeHTML(c.name)}</span>
+                        ${winHtml}
+                    </div>
                     <span class="fast-gift-name">Boost: ${escapeHTML(giftLabel)}</span>
                 </div>
             </div>

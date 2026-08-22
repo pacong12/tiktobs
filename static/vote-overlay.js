@@ -82,9 +82,25 @@ function renderPoll(poll) {
 
             const votesEl = card.querySelector('.candidate-votes');
             const pctEl = card.querySelector('.candidate-pct');
+            const winEl = card.querySelector('.badge-win');
 
             if (votesEl) votesEl.textContent = c.votes.toLocaleString();
             if (pctEl) pctEl.textContent = `${c.percentage}%`;
+
+            const wins = c.wins || 0;
+            if (winEl) {
+                if (wins > 0) {
+                    winEl.innerHTML = `win &times;${wins}`;
+                    winEl.parentElement.style.display = '';
+                } else {
+                    winEl.parentElement.style.display = 'none';
+                }
+            } else if (wins > 0) {
+                const edgeBadges = document.createElement('div');
+                edgeBadges.className = 'edge-badges';
+                edgeBadges.innerHTML = `<span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span>`;
+                card.insertBefore(edgeBadges, card.firstChild);
+            }
         });
         currentPoll = poll;
         return;

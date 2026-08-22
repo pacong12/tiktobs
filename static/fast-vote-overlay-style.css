@@ -119,6 +119,17 @@ body {
     color: #ffffff;
 }
 
+.fast-win-badge {
+    font-size: 9px;
+    font-weight: 800;
+    color: #00ff87;
+    background: rgba(0, 255, 135, 0.15);
+    border: 1px solid rgba(0, 255, 135, 0.4);
+    padding: 1px 5px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
 .fast-gift-name {
     font-size: 10px;
     font-weight: 600;

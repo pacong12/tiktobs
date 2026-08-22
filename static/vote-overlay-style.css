@@ -238,25 +238,23 @@ body {
     gap: 8px;
 }
 
-/* Vote count: white digits outlined in the border color */
+/* Vote count: clean bold text with crisp dark drop-shadow */
 .candidate-votes {
     font-size: 30px;
     font-weight: 800;
     line-height: 1;
     color: #ffffff;
-    -webkit-text-stroke: 1.25px var(--card-color);
-    text-shadow: 0 0 12px var(--card-glow), 0 2px 6px rgba(0, 0, 0, 0.85);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95), 0 0 12px var(--card-glow-soft);
     font-variant-numeric: tabular-nums;
 }
 
-/* Percentage beside the vote count: NO badge, same size/style as votes */
+/* Percentage beside the vote count */
 .candidate-pct {
-    font-size: 30px;
-    font-weight: 800;
+    font-size: 26px;
+    font-weight: 700;
     line-height: 1;
-    color: #ffffff;
-    -webkit-text-stroke: 1.25px var(--card-color);
-    text-shadow: 0 0 12px var(--card-glow), 0 2px 6px rgba(0, 0, 0, 0.85);
+    color: var(--card-color);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95), 0 0 10px var(--card-glow);
     font-variant-numeric: tabular-nums;
 }
 
