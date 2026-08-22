@@ -100,14 +100,6 @@ function renderPoll(poll) {
         currentPoll = poll;
         return;
     }
-                edgeBadges.className = 'edge-badges';
-                edgeBadges.innerHTML = `<span class="card-badge badge-win" title="Round wins this session">win ${wins}&times;</span>`;
-                card.insertBefore(edgeBadges, card.firstChild);
-            }
-        });
-        currentPoll = poll;
-        return;
-    }
 
     currentPoll = poll;
 
