@@ -175,6 +175,7 @@ class PollManager:
                         "color": c.get("color", ""),
                         "votes": c["votes"],
                         "percentage": pct,
+                        "wins": self.wins_cache.get(_session_key(), {}).get(_candidate_key(c["name"]), 0),
                     })
                 ended_at = datetime.now(timezone.utc)
                 try:

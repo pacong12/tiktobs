@@ -73,7 +73,7 @@ function renderPoll(poll) {
         existingCards.length === ranked.length &&
         ranked.every((c, i) => String(c.id) === existingCards[i].dataset.candidateId);
 
-    if (sameRankOrder) {
+    if (sameRankOrder && currentPoll.is_archived === poll.is_archived) {
         let maxVotes = poll.total_votes > 0 ? Math.max(...poll.candidates.map(c => c.votes)) : 0;
         ranked.forEach((c, i) => {
             const card = existingCards[i];
