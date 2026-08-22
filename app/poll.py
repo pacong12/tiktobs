@@ -161,7 +161,9 @@ class PollManager:
                     leaders = [c for c in self.candidates if c["votes"] == leader_votes]
                     if len(leaders) == 1:
                         winner_name = leaders[0]["name"]
-                        await self._record_win(leaders[0])
+                        pct = (leaders[0]["votes"] / total_votes) * 100
+                        win_amount = 2 if pct > 50.0 else 1
+                        await self._record_win(leaders[0], count=win_amount)
                 result_candidates = []
                 for c in self.candidates:
                     pct = round((c["votes"] / total_votes) * 100, 1) if total_votes > 0 else 0.0
@@ -406,24 +408,25 @@ class PollManager:
             logger.error(f"Failed to load session wins for '{session_key}': {e}")
             self.wins_cache.setdefault(session_key, {})
 
-    async def _record_win(self, candidate: dict) -> None:
-        """Persists one win for the round winner (DB + cache)."""
+    async def _record_win(self, candidate: dict, count: int = 1) -> None:
+        """Persists wins for the round winner (DB + cache)."""
         session_key = _session_key()
         key = _candidate_key(candidate["name"])
         if not key:
             return
         try:
             from app import database
-            await database.record_poll_win(
-                session_id=session_key,
-                candidate_name=candidate["name"],
-                candidate_key=key,
-                votes=candidate["votes"],
-                round_name=self.round_name or self.title,
-            )
+            for _ in range(count):
+                await database.record_poll_win(
+                    session_id=session_key,
+                    candidate_name=candidate["name"],
+                    candidate_key=key,
+                    votes=candidate["votes"],
+                    round_name=self.round_name or self.title,
+                )
             cache = self.wins_cache.setdefault(session_key, {})
-            cache[key] = cache.get(key, 0) + 1
-            logger.info(f"Win recorded: '{candidate['name']}' now has {cache[key]} win(s) in session '{session_key}'.")
+            cache[key] = cache.get(key, 0) + count
+            logger.info(f"Win recorded (+{count}): '{candidate['name']}' now has {cache[key]} win(s) in session '{session_key}'.")
         except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to record poll win: {e}")
 
