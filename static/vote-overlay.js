@@ -90,7 +90,7 @@ function renderPoll(poll) {
             const wins = Number(c.wins) || 0;
             if (winEl) {
                 if (wins > 0) {
-                    winEl.innerHTML = `win &times;${wins}`;
+                    winEl.innerHTML = `win ${wins}&times;`;
                     if (winEl.parentElement) winEl.parentElement.style.display = '';
                 } else {
                     const edgeWrap = card.querySelector('.edge-badges');
@@ -99,7 +99,7 @@ function renderPoll(poll) {
             } else if (wins > 0) {
                 const edgeBadges = document.createElement('div');
                 edgeBadges.className = 'edge-badges';
-                edgeBadges.innerHTML = `<span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span>`;
+                edgeBadges.innerHTML = `<span class="card-badge badge-win" title="Round wins this session">win ${wins}&times;</span>`;
                 card.insertBefore(edgeBadges, card.firstChild);
             }
         });
@@ -147,7 +147,7 @@ function renderPoll(poll) {
         const wins = Number(c.wins) || 0;
         const giftLabel = (c.gift_name || '').trim();
         const winHtml = wins > 0
-            ? `<div class="edge-badges"><span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span></div>`
+            ? `<div class="edge-badges"><span class="card-badge badge-win" title="Round wins this session">win ${wins}&times;</span></div>`
             : '';
         let giftHtml = '';
         if (giftLabel) {
