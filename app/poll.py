@@ -415,6 +415,8 @@ class PollManager:
         key = _candidate_key(candidate["name"])
         if not key:
             return
+        if session_key not in self.wins_cache:
+            await self._load_wins(session_key)
         try:
             from app import database
             for _ in range(count):
