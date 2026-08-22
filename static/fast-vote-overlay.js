@@ -85,7 +85,7 @@ function renderFastVote(poll) {
         const isLeading = maxVotes > 0 && c.votes === maxVotes;
         const giftLabel = (c.gift_name || 'Gift Boost').trim();
         const iconHtml = giftIconHtml(giftLabel, 'fast-gift-icon');
-        const wins = c.wins || 0;
+        const wins = Number(c.wins) || 0;
         const winHtml = wins > 0 ? `<span class="fast-win-badge">win &times;${wins}</span>` : '';
 
         const row = document.createElement('div');

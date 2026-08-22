@@ -87,13 +87,14 @@ function renderPoll(poll) {
             if (votesEl) votesEl.textContent = c.votes.toLocaleString();
             if (pctEl) pctEl.textContent = `${c.percentage}%`;
 
-            const wins = c.wins || 0;
+            const wins = Number(c.wins) || 0;
             if (winEl) {
                 if (wins > 0) {
                     winEl.innerHTML = `win &times;${wins}`;
-                    winEl.parentElement.style.display = '';
+                    if (winEl.parentElement) winEl.parentElement.style.display = '';
                 } else {
-                    winEl.parentElement.style.display = 'none';
+                    const edgeWrap = card.querySelector('.edge-badges');
+                    if (edgeWrap) edgeWrap.remove();
                 }
             } else if (wins > 0) {
                 const edgeBadges = document.createElement('div');
@@ -143,7 +144,7 @@ function renderPoll(poll) {
 
         // Win badge pins onto the top-LEFT border; the gift badge sits in the
         // top-RIGHT column directly below the number chip (thin gradient bg).
-        const wins = c.wins || 0;
+        const wins = Number(c.wins) || 0;
         const giftLabel = (c.gift_name || '').trim();
         const winHtml = wins > 0
             ? `<div class="edge-badges"><span class="card-badge badge-win" title="Round wins this session">win &times;${wins}</span></div>`
