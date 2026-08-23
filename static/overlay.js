@@ -28,10 +28,8 @@ async function fetchLeaderboard() {
     }
 }
 
-// Render list dynamically
+// Render list dynamically without flicker
 function renderLeaderboard() {
-    leaderboardList.innerHTML = '';
-
     // Sort top entries: by diamonds descending, then total gifts descending, then by username.
     leaderboard.sort((a, b) => {
         if (b.total_diamonds !== a.total_diamonds) {
@@ -50,6 +48,34 @@ function renderLeaderboard() {
         return;
     }
 
+    const empty = leaderboardList.querySelector('.empty-state');
+    if (empty) empty.remove();
+
+    const existingItems = leaderboardList.querySelectorAll('.leaderboard-item');
+    if (existingItems.length === displayEntries.length) {
+        displayEntries.forEach((entry, index) => {
+            const rank = index + 1;
+            const li = existingItems[index];
+            li.className = `leaderboard-item rank-${rank}`;
+
+            const nickEl = li.querySelector('.nickname');
+            const userEl = li.querySelector('.username');
+            const scoreEl = li.querySelector('.score-value');
+            const rankEl = li.querySelector('.rank-badge');
+
+            const nick = entry.nickname || entry.username;
+            const user = entry.username;
+            const score = entry.total_diamonds;
+
+            if (rankEl) rankEl.textContent = rank;
+            if (nickEl) nickEl.textContent = nick;
+            if (userEl) userEl.textContent = `@${user}`;
+            if (scoreEl) scoreEl.textContent = score;
+        });
+        return;
+    }
+
+    leaderboardList.innerHTML = '';
     displayEntries.forEach((entry, index) => {
         const rank = index + 1;
         const li = document.createElement('li');
