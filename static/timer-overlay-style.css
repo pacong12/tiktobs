@@ -14,7 +14,7 @@ body {
 
 /* Glassmorphism base card styling — Compact mobile size */
 .glass-card {
-    background: linear-gradient(135deg, rgba(16, 12, 34, 0.85), rgba(30, 10, 52, 0.85));
+    background: linear-gradient(135deg, rgba(16, 12, 34, 0.95), rgba(30, 10, 52, 0.95));
     border: 1.5px solid rgba(255, 0, 127, 0.2);
     border-radius: 14px;
     padding: 10px 14px;
@@ -23,12 +23,6 @@ body {
     width: 180px;
     max-width: calc(100vw - 16px);
     margin: 0 auto;
-    animation: overlay-border-glow 6s infinite ease-in-out;
-}
-
-@keyframes overlay-border-glow {
-    0%, 100% { border-color: rgba(255, 0, 127, 0.2); box-shadow: 0 0 20px rgba(255, 0, 127, 0.15); }
-    50% { border-color: rgba(0, 240, 255, 0.35); box-shadow: 0 0 30px rgba(0, 240, 255, 0.25); }
 }
 
 /* Inactive state */
