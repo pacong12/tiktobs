@@ -80,11 +80,13 @@ function renderFastVote(poll) {
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
     const maxVotes = poll.total_votes > 0 ? Math.max(...ranked.map(c => c.votes)) : 0;
 
-    // In-place update if rows already exist
+    // In-place update keyed by candidate ID to prevent layout jumps / flicker
     const existingRows = candidatesList.querySelectorAll('.fast-candidate-row');
-    if (existingRows.length === poll.candidates.length) {
-        ranked.forEach((c, i) => {
-            const row = existingRows[i];
+    const allPresent = poll.candidates.every(c => candidatesList.querySelector(`.fast-candidate-row[data-id="${c.id}"]`));
+
+    if (existingRows.length === poll.candidates.length && allPresent) {
+        ranked.forEach(c => {
+            const row = candidatesList.querySelector(`.fast-candidate-row[data-id="${c.id}"]`);
             if (!row) return;
             const isLeading = maxVotes > 0 && c.votes === maxVotes;
             row.classList.toggle('leading', isLeading);
@@ -93,8 +95,12 @@ function renderFastVote(poll) {
             const pctEl = row.querySelector('.fast-pct-val');
             const winEl = row.querySelector('.fast-win-badge');
 
-            if (votesEl) votesEl.textContent = `⚡ ${c.votes.toLocaleString()}`;
-            if (pctEl) pctEl.textContent = `${c.percentage}%`;
+            if (votesEl && votesEl.textContent !== `⚡ ${c.votes.toLocaleString()}`) {
+                votesEl.textContent = `⚡ ${c.votes.toLocaleString()}`;
+            }
+            if (pctEl && pctEl.textContent !== `${c.percentage}%`) {
+                pctEl.textContent = `${c.percentage}%`;
+            }
             const wins = Number(c.wins) || 0;
             if (winEl) winEl.innerHTML = `win ${wins}&times;`;
         });
@@ -111,6 +117,7 @@ function renderFastVote(poll) {
 
         const row = document.createElement('div');
         row.className = `fast-candidate-row ${isLeading ? 'leading' : ''}`;
+        row.dataset.id = String(c.id);
         row.innerHTML = `
             <div class="fast-left">
                 <div class="fast-gift-badge">${iconHtml}</div>
