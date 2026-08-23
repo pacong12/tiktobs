@@ -90,6 +90,7 @@ async function loadConfiguredSound() {
             if (response.ok) {
                 const arrayBuffer = await response.arrayBuffer();
                 customSoundBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                lastSoundPath = path;
                 console.log(`Web Audio decoded sound buffer successfully: ${path}`);
                 break; // Stop on first successful file
             }
@@ -99,8 +100,11 @@ async function loadConfiguredSound() {
     }
 }
 
-// Play Alert Sound via Web Audio API (0ms latency, supports unlimited simultaneous overlapping plays)
+let lastSoundPath = '';
+
+// Play Alert Sound via Web Audio API with HTML5 Audio fallback for OBS/browsers
 function playAlertSound() {
+    let played = false;
     try {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -118,12 +122,25 @@ function playAlertSound() {
             source.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             source.start(0);
-            console.log("Played custom vote-gift sound via Web Audio API!");
+            played = true;
         } else {
             playDefaultChime();
+            played = true;
         }
     } catch (err) {
-        console.error("Error playing alert sound:", err);
+        console.warn("Web Audio API play error, falling back to HTML5 Audio:", err);
+    }
+
+    if (!played || !customSoundBuffer) {
+        try {
+            if (lastSoundPath) {
+                const audio = new Audio(baseUrl + lastSoundPath);
+                audio.volume = alertVolume;
+                audio.play().catch(e => console.warn("HTML5 audio play error:", e));
+            }
+        } catch (e) {
+            console.error("HTML5 Audio fallback failed:", e);
+        }
     }
 }
 
