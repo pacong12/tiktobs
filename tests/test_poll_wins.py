@@ -99,7 +99,7 @@ async def test_wins_are_scoped_to_session(monkeypatch):
     assert await database.get_session_wins("sess-A") == {"a": 2}
     assert await database.get_session_wins("sess-B") == {"a": 2, "b": 2}
 
-    # Status only reflects the CURRENT session's wins.
+    # Status reflects current session's wins.
     await pm.start_poll("T", [{"name": "A"}, {"name": "B"}])
     status = await pm.get_status()
     by_name = {c["name"]: c["wins"] for c in status["candidates"]}

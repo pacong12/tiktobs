@@ -380,6 +380,9 @@ async def get_session_wins(session_id: str | None = None) -> dict[str, int]:
         "SELECT candidate_key, COUNT(*) FROM poll_wins WHERE session_id = ? GROUP BY candidate_key;",
         (target,),
     )
+    if not rows and target == "local":
+        # If local session has no wins yet, return overall historic wins so overlay badges show stats across restarts
+        rows = await _fetch_all("SELECT candidate_key, COUNT(*) FROM poll_wins GROUP BY candidate_key;")
     return {row[0]: row[1] for row in rows}
 
 # ---------------------------------------------------------------------------
