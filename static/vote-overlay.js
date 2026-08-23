@@ -38,7 +38,12 @@ async function fetchPollStatus() {
                     title: latestRound.title,
                     round_name: latestRound.round_name,
                     total_votes: latestRound.total_votes,
-                    candidates: latestRound.candidates
+                    candidates: (latestRound.candidates || []).map(c => ({
+                        ...c,
+                        wins: (poll && poll.candidates)
+                            ? (poll.candidates.find(pc => pc.name.trim().toLowerCase() === c.name.trim().toLowerCase())?.wins ?? c.wins ?? 0)
+                            : (c.wins ?? 0)
+                    }))
                 };
                 renderPoll(lastPoll);
                 return;
