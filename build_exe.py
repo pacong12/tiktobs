@@ -156,7 +156,7 @@ def build():
     env_key = os.getenv("TIKTOK_SIGN_API_KEY", "")
     if env_key:
         with open(env_target, "w", encoding="utf-8") as f:
-            f.write(f"# TikTobs Configuration\nTIKTOK_SIGN_API_KEY={env_key}\nTIKTOBS_TEST_ENDPOINTS=0\nTIKTOBS_RETENTION_DAYS=7\nTIKTOBS_HOST=127.0.0.1\nTIKTOBS_PORT=8000\n")
+            f.write(f"# TikTobs Configuration\nTIKTOK_SIGN_API_KEY={env_key}\nTIKTOBS_TEST_ENDPOINTS=1\nTIKTOBS_RETENTION_DAYS=7\nTIKTOBS_HOST=127.0.0.1\nTIKTOBS_PORT=8000\n")
         print(" Default .env created with API key in dist/.env")
     elif os.path.exists(os.path.join(ROOT, ".env")):
         shutil.copy2(os.path.join(ROOT, ".env"), env_target)
