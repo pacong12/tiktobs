@@ -73,6 +73,7 @@ function renderPoll(poll) {
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
     // If rank order changed or card structure not yet present, rebuild grid to reflect leader rank position smoothly
+    const existingCards = candidatesList.querySelectorAll('.candidate-card');
     const sameCandidateOrder = existingCards.length === poll.candidates.length &&
         ranked.every((c, i) => existingCards[i] && existingCards[i].dataset.candidateId === String(c.id));
 
