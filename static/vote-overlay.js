@@ -223,13 +223,25 @@ function connectWebSocket() {
         try {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
-                if (!msg.poll || !msg.poll.is_active) {
-                    fetchPollStatus();
-                } else {
+                if (msg.poll && msg.poll.is_active) {
                     renderPoll(msg.poll);
+                } else {
+                    fetchPollStatus();
                 }
             } else if (msg.type === 'poll_round_archived') {
                 fetchPollStatus();
+            } else if (msg.type === 'poll_gift_vote') {
+                handleGiftEventForToast({
+                    data: {
+                        gift_name: msg.gift_name,
+                        quantity: msg.quantity || 1,
+                        repeat_end: 1
+                    }
+                });
+            } else if (msg.type === 'poll_fallback_vote') {
+                handleFallbackVoteToast(msg);
+            } else if (msg.type === 'poll_gift_ignored') {
+                handleIgnoredGiftToast(msg);
             }
         } catch (error) {
             console.error('Error handling WebSocket message:', error);
