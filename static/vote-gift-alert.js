@@ -1,6 +1,7 @@
 // State management
 let socket = null;
 const alertQueue = [];
+const MAX_QUEUE = 25;
 let isAlertActive = false;
 
 // DOM Elements
@@ -210,6 +211,7 @@ function connectWebSocket() {
                     console.error("Audio playback crashed during WS event:", soundErr);
                 }
 
+                if (alertQueue.length >= MAX_QUEUE) alertQueue.shift();
                 alertQueue.push({
                     sender: msg.nickname || msg.username,
                     giftName: msg.gift_name,

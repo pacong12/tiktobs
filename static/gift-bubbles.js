@@ -27,6 +27,16 @@ const MAX_BUBBLES = 18;
 const recentCandidateBubbles = new Map();
 const DEDUP_MS = 1500;
 
+// Purge expired recent candidate bubbles every 60s to prevent Map growth in long streams
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, ts] of recentCandidateBubbles.entries()) {
+        if (now - ts > 10000) {
+            recentCandidateBubbles.delete(key);
+        }
+    }
+}, 60000);
+
 const stage = document.getElementById('bubble-stage');
 
 document.addEventListener('DOMContentLoaded', () => {
