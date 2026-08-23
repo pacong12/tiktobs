@@ -592,30 +592,50 @@ function updatePollUI(poll) {
             }
         };
         
-        updateCountdown();
-        pollTimerInterval = setInterval(updateCountdown, 1000);
+        if (!pollTimerInterval) {
+            updateCountdown();
+            pollTimerInterval = setInterval(updateCountdown, 1000);
+        }
     } else {
         countdownRow.classList.add('hidden');
     }
 
-    pollActiveResults.innerHTML = '';
+    const existingRows = pollActiveResults.querySelectorAll('.poll-result-row');
     const maxVotes = Math.max(0, ...poll.candidates.map(c => c.votes));
-    poll.candidates.forEach(c => {
-        const row = document.createElement('div');
-        row.className = 'poll-result-row';
-        if (maxVotes > 0 && c.votes === maxVotes) row.classList.add('is-leading');
-        const giftTriggerText = c.gift_name ? ` <span class="result-boost">(Boost: ${giftIconInline(c.gift_name)} ${escapeHTML(c.gift_name)})</span>` : '';
-        row.innerHTML = `
-            <div class="result-top">
-                <span class="result-name">${c.id}. ${escapeHTML(c.name)}${giftTriggerText}</span>
-                <span class="result-votes">${c.votes} suara (${c.percentage}%)</span>
-            </div>
-            <div class="progress-track">
-                <div class="progress-fill" style="width: ${c.percentage}%;"></div>
-            </div>
-        `;
-        pollActiveResults.appendChild(row);
-    });
+
+    if (existingRows.length === poll.candidates.length) {
+        poll.candidates.forEach((c, i) => {
+            const row = existingRows[i];
+            if (!row) return;
+            if (maxVotes > 0 && c.votes === maxVotes) {
+                row.classList.add('is-leading');
+            } else {
+                row.classList.remove('is-leading');
+            }
+            const votesEl = row.querySelector('.result-votes');
+            const fillEl = row.querySelector('.progress-fill');
+            if (votesEl) votesEl.textContent = `${c.votes} suara (${c.percentage}%)`;
+            if (fillEl) fillEl.style.width = `${c.percentage}%`;
+        });
+    } else {
+        pollActiveResults.innerHTML = '';
+        poll.candidates.forEach(c => {
+            const row = document.createElement('div');
+            row.className = 'poll-result-row';
+            if (maxVotes > 0 && c.votes === maxVotes) row.classList.add('is-leading');
+            const giftTriggerText = c.gift_name ? ` <span class="result-boost">(Boost: ${giftIconInline(c.gift_name)} ${escapeHTML(c.gift_name)})</span>` : '';
+            row.innerHTML = `
+                <div class="result-top">
+                    <span class="result-name">${c.id}. ${escapeHTML(c.name)}${giftTriggerText}</span>
+                    <span class="result-votes">${c.votes} suara (${c.percentage}%)</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: ${c.percentage}%;"></div>
+                </div>
+            `;
+            pollActiveResults.appendChild(row);
+        });
+    }
 }
 
 function connectWebSocket() {

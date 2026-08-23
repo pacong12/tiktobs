@@ -341,8 +341,8 @@ function handleWSMessage(msg) {
         // Update raw live developer panel
         updateRawEventDebug(normalized.event_type, event);
 
-        // Render stream
-        renderEventStream();
+        // Render stream with requestAnimationFrame throttling to prevent main thread blocking
+        scheduleRenderEventStream();
     }
 }
 
@@ -587,6 +587,16 @@ function updatePollTimerDOM(poll) {
 
     updateClock();
     dashboardTimerInterval = setInterval(updateClock, 1000);
+}
+
+let renderEventStreamScheduled = false;
+function scheduleRenderEventStream() {
+    if (renderEventStreamScheduled) return;
+    renderEventStreamScheduled = true;
+    requestAnimationFrame(() => {
+        renderEventStreamScheduled = false;
+        renderEventStream();
+    });
 }
 
 // EVENT TABLE DRAWING (Render top 50 recent items to prevent UI freeze during high-traffic streams)
