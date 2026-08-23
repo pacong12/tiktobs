@@ -80,6 +80,27 @@ function renderFastVote(poll) {
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
     const maxVotes = poll.total_votes > 0 ? Math.max(...ranked.map(c => c.votes)) : 0;
 
+    // In-place update if rows already exist
+    const existingRows = candidatesList.querySelectorAll('.fast-candidate-row');
+    if (existingRows.length === poll.candidates.length) {
+        ranked.forEach((c, i) => {
+            const row = existingRows[i];
+            if (!row) return;
+            const isLeading = maxVotes > 0 && c.votes === maxVotes;
+            row.classList.toggle('leading', isLeading);
+
+            const votesEl = row.querySelector('.fast-votes-val');
+            const pctEl = row.querySelector('.fast-pct-val');
+            const winEl = row.querySelector('.fast-win-badge');
+
+            if (votesEl) votesEl.textContent = `⚡ ${c.votes.toLocaleString()}`;
+            if (pctEl) pctEl.textContent = `${c.percentage}%`;
+            const wins = Number(c.wins) || 0;
+            if (winEl) winEl.innerHTML = `win ${wins}&times;`;
+        });
+        return;
+    }
+
     candidatesList.innerHTML = '';
     ranked.forEach(c => {
         const isLeading = maxVotes > 0 && c.votes === maxVotes;
