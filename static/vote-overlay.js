@@ -76,7 +76,7 @@ function renderPoll(poll) {
     const sameCandidateSet = existingCards.length === poll.candidates.length &&
         ranked.every(c => candidatesList.querySelector(`.candidate-card[data-candidate-id="${c.id}"]`));
 
-    if (sameCandidateSet && currentPoll && currentPoll.is_archived === poll.is_archived) {
+    if (sameCandidateSet) {
         let maxVotes = poll.total_votes > 0 ? Math.max(...poll.candidates.map(c => c.votes)) : 0;
         ranked.forEach(c => {
             const card = candidatesList.querySelector(`.candidate-card[data-candidate-id="${c.id}"]`);
