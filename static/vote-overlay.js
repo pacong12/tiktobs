@@ -1,3 +1,121 @@
+// --- Audio Alert for TikTok LIVE Studio & Web Browsers ---------------------
+let audioCtx = null;
+let customSoundBuffer = null;
+let alertVolume = 1.0;
+let lastSoundPath = '';
+
+const fallbackSoundPaths = [
+    'sounds/dragon-studio-thud-sound-effect-405470.mp3',
+    'sounds/vote-gift-alert.wav',
+    'sounds/vote-gift-alert.mp3'
+];
+
+async function initWebAudio() {
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+        console.error("Web Audio init error:", e);
+    }
+    await loadConfiguredSound();
+}
+
+async function loadConfiguredSound() {
+    const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000/' : '';
+    let filesToTry = fallbackSoundPaths;
+    try {
+        const res = await fetch(baseUrl + 'api/sounds');
+        if (res.ok) {
+            const data = await res.json();
+            const cfg = data.config || {};
+            if (typeof cfg.vote_volume === 'number') alertVolume = cfg.vote_volume;
+            if (cfg.vote_sound) {
+                filesToTry = ['sounds/' + cfg.vote_sound];
+            } else if (data.sounds && data.sounds.length > 0) {
+                filesToTry = data.sounds.map(f => 'sounds/' + f);
+            }
+        }
+    } catch (e) {
+        console.warn("Could not fetch sounds list:", e);
+    }
+
+    customSoundBuffer = null;
+    if (audioCtx) {
+        for (const path of filesToTry) {
+            try {
+                const response = await fetch(baseUrl + path);
+                if (response.ok) {
+                    const arrayBuffer = await response.arrayBuffer();
+                    customSoundBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    lastSoundPath = path;
+                    break;
+                }
+            } catch (err) {
+                console.warn(`Could not decode audio ${path}:`, err);
+            }
+        }
+    }
+}
+
+function playAlertSound() {
+    const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000/' : '';
+    let played = false;
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (customSoundBuffer) {
+            const source = audioCtx.createBufferSource();
+            source.buffer = customSoundBuffer;
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = alertVolume;
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            source.start(0);
+            played = true;
+        } else {
+            playDefaultChime();
+            played = true;
+        }
+    } catch (err) {
+        console.warn("Web Audio API play error:", err);
+    }
+
+    if (!played || !customSoundBuffer) {
+        try {
+            if (lastSoundPath) {
+                const audio = new Audio(baseUrl + lastSoundPath);
+                audio.volume = alertVolume;
+                audio.play().catch(e => console.warn("HTML5 Audio play error:", e));
+            }
+        } catch (e) {
+            console.error("Audio playback error:", e);
+        }
+    }
+}
+
+function playDefaultChime() {
+    try {
+        if (!audioCtx) return;
+        const playNote = (freq, delay, duration) => {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+            gainNode.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + delay + 0.04);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + delay + duration);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + delay);
+            osc.stop(audioCtx.currentTime + delay + duration);
+        };
+        playNote(523.25, 0.0, 0.5);
+        playNote(659.25, 0.12, 0.5);
+        playNote(783.99, 0.24, 0.7);
+    } catch (err) {
+        console.error('Synth sound failed:', err);
+    }
+}
+
 // State variables
 let socket = null;
 let currentPoll = null;
@@ -16,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initOverlay() {
     await fetchPollStatus();
+    initWebAudio();
     connectWebSocket();
 }
 
@@ -237,6 +356,7 @@ function connectWebSocket() {
             } else if (msg.type === 'poll_round_archived') {
                 fetchPollStatus();
             } else if (msg.type === 'poll_gift_vote') {
+                playAlertSound();
                 handleGiftEventForToast({
                     data: {
                         gift_name: msg.gift_name,
@@ -245,6 +365,7 @@ function connectWebSocket() {
                     }
                 });
             } else if (msg.type === 'poll_fallback_vote') {
+                playAlertSound();
                 handleFallbackVoteToast(msg);
             } else if (msg.type === 'poll_gift_ignored') {
                 handleIgnoredGiftToast(msg);
