@@ -69,8 +69,12 @@ async function loadConfiguredSound() {
             if (cfg.vote_sound) {
                 filesToTry = ['sounds/' + cfg.vote_sound];
             } else if (cfg.vote_sound === '') {
-                customSoundBuffer = null;
-                return;
+                // When empty, fallback to sound catalog or synthesized chime
+                if (data.sounds && data.sounds.length > 0) {
+                    filesToTry = data.sounds.map(f => 'sounds/' + f);
+                } else {
+                    filesToTry = fallbackSoundPaths;
+                }
             } else if (data.sounds && data.sounds.length > 0) {
                 filesToTry = data.sounds.map(f => 'sounds/' + f);
             }

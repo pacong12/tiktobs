@@ -68,9 +68,11 @@ async function loadConfiguredSound() {
                 // Explicit selection wins.
                 filesToTry = ['sounds/' + cfg.gift_sound];
             } else if (cfg.gift_sound === '') {
-                // Explicitly set to default synth chime.
-                customSoundBuffer = null;
-                return;
+                if (data.sounds && data.sounds.length > 0) {
+                    filesToTry = data.sounds.map(f => 'sounds/' + f);
+                } else {
+                    filesToTry = fallbackSoundPaths;
+                }
             } else if (data.sounds && data.sounds.length > 0) {
                 filesToTry = data.sounds.map(f => 'sounds/' + f);
             }
