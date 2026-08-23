@@ -68,6 +68,7 @@ async def test_restore_recovers_votes_and_voters():
                          duration_seconds=600, round_name="RR")
     await pm1.record_vote("alice", "1")
     await pm1.record_gift_vote("nope", 5)
+    await pm1.flush_persisted_state()
 
     # Simulate restart with a brand-new manager.
     pm2 = await _fresh()
@@ -94,6 +95,7 @@ async def test_vote_intent_survives_restore():
         {"name": "B", "gift_name": "Galaxy"},
     ], duration_seconds=600, round_name="RI")
     assert await pm1.record_vote("sultan", "2") is True
+    await pm1.flush_persisted_state()
 
     # Simulate restart.
     pm2 = await _fresh()

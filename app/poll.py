@@ -70,6 +70,8 @@ class PollManager:
         self.duration_seconds = None  # int | None
         self.timer_task = None  # asyncio.Task | None
         self.lock = asyncio.Lock()
+        self._persist_dirty = False
+        self._persist_task = None
         # Per-session win counts: session_key -> {candidate_key -> wins}.
         # Lazily loaded from the DB the first time a session is used.
         self.wins_cache: dict[str, dict[str, int]] = {}
@@ -311,7 +313,7 @@ class PollManager:
                     "at": datetime.now(timezone.utc).isoformat(),
                 }
                 logger.info(f"Vote recorded: User @{username_key} voted for {matched_candidate['name']}.")
-                await self._persist_state()
+                self._schedule_persist()
                 return True
 
             return False
@@ -387,7 +389,7 @@ class PollManager:
                     )
                 else:
                     logger.info(f"Gift vote recorded: {votes_to_add} votes added to {matched_candidate['name']} via gift '{gift_name}'.")
-                await self._persist_state()
+                self._schedule_persist()
                 return True, matched_candidate["name"], votes_to_add, via_comment
 
             # INFO (not debug): a real viewer just spent coins on a gift that
@@ -432,6 +434,29 @@ class PollManager:
             logger.info(f"Win recorded (+{count}): '{candidate['name']}' now has {cache[key]} win(s) in session '{session_key}'.")
         except Exception as e:  # noqa: BLE001
             logger.error(f"Failed to record poll win: {e}")
+
+    async def flush_persisted_state(self) -> None:
+        """Forces an immediate disk write if state is dirty (used before shutdown/test checks)."""
+        if self._persist_dirty and self.is_active:
+            self._persist_dirty = False
+            await self._persist_state()
+
+    def _schedule_persist(self) -> None:
+        """Debounces disk writes so high-frequency voting does not lock SQLite I/O."""
+        self._persist_dirty = True
+        if self._persist_task is None or self._persist_task.done():
+            self._persist_task = asyncio.create_task(self._debounced_persist_loop())
+
+    async def _debounced_persist_loop(self) -> None:
+        try:
+            await asyncio.sleep(0.5)
+            if self._persist_dirty and self.is_active:
+                self._persist_dirty = False
+                await self._persist_state()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error in debounced persist: {e}")
 
     async def _persist_state(self) -> None:
         """Saves the current poll state to the DB so it survives app restarts."""
