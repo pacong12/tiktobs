@@ -66,17 +66,16 @@ function renderPoll(poll) {
     // Rank candidates: most votes first. Sort a copy descending.
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
-    // In-place update: If card elements already exist and ranking order hasn't changed, update ONLY numbers and percentages in DOM
+    // In-place update: if cards exist for all candidates, update numbers, percentage, leading status, and win badge directly in DOM (no full redraw)
     const existingCards = candidatesList.querySelectorAll('.candidate-card');
-    const sameRankOrder = currentPoll && (currentPoll.is_active || currentPoll.is_archived) &&
-        currentPoll.candidates.length === poll.candidates.length &&
-        existingCards.length === ranked.length &&
-        ranked.every((c, i) => String(c.id) === existingCards[i].dataset.candidateId);
+    const sameCandidateSet = existingCards.length === poll.candidates.length &&
+        ranked.every(c => candidatesList.querySelector(`.candidate-card[data-candidate-id="${c.id}"]`));
 
-    if (sameRankOrder && currentPoll.is_archived === poll.is_archived) {
+    if (sameCandidateSet && currentPoll && currentPoll.is_archived === poll.is_archived) {
         let maxVotes = poll.total_votes > 0 ? Math.max(...poll.candidates.map(c => c.votes)) : 0;
-        ranked.forEach((c, i) => {
-            const card = existingCards[i];
+        ranked.forEach(c => {
+            const card = candidatesList.querySelector(`.candidate-card[data-candidate-id="${c.id}"]`);
+            if (!card) return;
             const isLeading = maxVotes > 0 && c.votes === maxVotes;
             card.classList.toggle('leading', isLeading);
 
@@ -84,8 +83,12 @@ function renderPoll(poll) {
             const pctEl = card.querySelector('.candidate-pct');
             const winEl = card.querySelector('.badge-win');
 
-            if (votesEl) votesEl.textContent = c.votes.toLocaleString();
-            if (pctEl) pctEl.textContent = `${c.percentage}%`;
+            if (votesEl && votesEl.textContent !== c.votes.toLocaleString()) {
+                votesEl.textContent = c.votes.toLocaleString();
+            }
+            if (pctEl && pctEl.textContent !== `${c.percentage}%`) {
+                pctEl.textContent = `${c.percentage}%`;
+            }
 
             const wins = Number(c.wins) || 0;
             if (winEl) {
