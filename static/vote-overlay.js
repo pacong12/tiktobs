@@ -72,15 +72,14 @@ function renderPoll(poll) {
     // Rank candidates: most votes first. Sort a copy descending.
     const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
 
-    // In-place update: if cards exist for all candidates, update numbers, percentage, leading status, and win badge directly in DOM (no full redraw)
-    const existingCards = candidatesList.querySelectorAll('.candidate-card');
-    const sameCandidateSet = existingCards.length === poll.candidates.length &&
-        ranked.every(c => candidatesList.querySelector(`.candidate-card[data-candidate-id="${c.id}"]`));
+    // If rank order changed or card structure not yet present, rebuild grid to reflect leader rank position smoothly
+    const sameCandidateOrder = existingCards.length === poll.candidates.length &&
+        ranked.every((c, i) => existingCards[i] && existingCards[i].dataset.candidateId === String(c.id));
 
-    if (sameCandidateSet) {
+    if (sameCandidateOrder) {
         let maxVotes = poll.total_votes > 0 ? Math.max(...poll.candidates.map(c => c.votes)) : 0;
-        ranked.forEach(c => {
-            const card = candidatesList.querySelector(`.candidate-card[data-candidate-id="${c.id}"]`);
+        ranked.forEach((c, i) => {
+            const card = existingCards[i];
             if (!card) return;
             const isLeading = maxVotes > 0 && c.votes === maxVotes;
             card.classList.toggle('leading', isLeading);
