@@ -32,7 +32,12 @@ async function fetchPollStatus() {
                     is_archived: true,
                     title: latestRound.title,
                     total_votes: latestRound.total_votes,
-                    candidates: latestRound.candidates
+                    candidates: (latestRound.candidates || []).map(c => ({
+                        ...c,
+                        wins: (poll && poll.candidates)
+                            ? (poll.candidates.find(pc => pc.name.trim().toLowerCase() === c.name.trim().toLowerCase())?.wins ?? c.wins ?? 0)
+                            : (c.wins ?? 0)
+                    }))
                 });
                 return;
             }
@@ -153,10 +158,10 @@ function connectWebSocket() {
         try {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
-                if (!msg.poll || !msg.poll.is_active) {
-                    fetchPollStatus();
-                } else {
+                if (msg.poll && msg.poll.is_active) {
                     renderFastVote(msg.poll);
+                } else {
+                    fetchPollStatus();
                 }
             } else if (msg.type === 'poll_start' || msg.type === 'poll_stop' || msg.type === 'poll_round_archived') {
                 fetchPollStatus();
