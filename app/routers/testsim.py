@@ -16,9 +16,11 @@ from app.poll import poll_manager
 
 router = APIRouter(prefix="/api/test", tags=["test-simulation"])
 
+TEST_ENDPOINTS_ENABLED = True
+
+
 def _require_test_endpoints():
-    enabled = os.getenv("TIKTOBS_TEST_ENDPOINTS", "0").strip().lower() in ("1", "true", "yes", "on")
-    if not enabled:
+    if not TEST_ENDPOINTS_ENABLED:
         raise HTTPException(
             status_code=403,
             detail="Test endpoints are disabled. Set TIKTOBS_TEST_ENDPOINTS=1 to enable them.",
