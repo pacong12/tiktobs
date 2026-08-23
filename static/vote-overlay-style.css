@@ -79,6 +79,7 @@ body {
    (number chip, votes outline, percentage, win badge) follows
    --card-color, set per card from the Poll Admin color picker.
    ============================================================ */
+/* Candidate Card */
 .candidate-card {
     --card-color: #00e5ff;
     --card-glow: rgba(0, 229, 255, 0.55);
@@ -92,13 +93,7 @@ body {
     border: 2px solid var(--card-color);
     border-radius: 16px;
     box-shadow: 0 0 14px var(--card-glow-soft), inset 0 0 16px var(--card-glow-soft);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    animation: card-pop-in 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes card-pop-in {
-    from { opacity: 0; transform: scale(0.9) translateY(12px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+    will-change: transform;
 }
 
 /* Leading card: same candidate color, just a stronger neon presence */
