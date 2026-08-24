@@ -58,7 +58,6 @@ async function loadConfiguredSound() {
 
 function playAlertSound() {
     const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000/' : '';
-    let played = false;
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -70,25 +69,11 @@ function playAlertSound() {
             source.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             source.start(0);
-            played = true;
         } else {
             playDefaultChime();
-            played = true;
         }
     } catch (err) {
         console.warn("Web Audio API play error:", err);
-    }
-
-    if (!played || !customSoundBuffer) {
-        try {
-            if (lastSoundPath) {
-                const audio = new Audio(baseUrl + lastSoundPath);
-                audio.volume = alertVolume;
-                audio.play().catch(e => console.warn("HTML5 Audio play error:", e));
-            }
-        } catch (e) {
-            console.error("Audio playback error:", e);
-        }
     }
 }
 
