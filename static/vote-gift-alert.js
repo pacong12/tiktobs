@@ -102,9 +102,8 @@ async function loadConfiguredSound() {
 
 let lastSoundPath = '';
 
-// Play Alert Sound via Web Audio API with HTML5 Audio fallback for OBS/browsers
+// Play Alert Sound via Web Audio API non-blocking
 function playAlertSound() {
-    let played = false;
     try {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -122,25 +121,11 @@ function playAlertSound() {
             source.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             source.start(0);
-            played = true;
         } else {
             playDefaultChime();
-            played = true;
         }
     } catch (err) {
-        console.warn("Web Audio API play error, falling back to HTML5 Audio:", err);
-    }
-
-    if (!played || !customSoundBuffer) {
-        try {
-            if (lastSoundPath) {
-                const audio = new Audio(baseUrl + lastSoundPath);
-                audio.volume = alertVolume;
-                audio.play().catch(e => console.warn("HTML5 audio play error:", e));
-            }
-        } catch (e) {
-            console.error("HTML5 Audio fallback failed:", e);
-        }
+        console.warn("Web Audio API play error:", err);
     }
 }
 
