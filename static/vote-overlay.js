@@ -341,6 +341,9 @@ function connectWebSocket() {
             } else if (msg.type === 'poll_round_archived') {
                 fetchPollStatus();
             } else if (msg.type === 'poll_gift_vote') {
+                if (msg.poll && msg.poll.is_active) {
+                    renderPoll(msg.poll);
+                }
                 playAlertSound();
                 handleGiftEventForToast({
                     data: {

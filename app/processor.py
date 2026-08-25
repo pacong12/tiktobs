@@ -121,12 +121,10 @@ class EventProcessor:
                         )
                         if success:
                             poll_status = await poll_manager.get_status()
-                            await manager.broadcast({
-                                "type": "poll_update",
-                                "poll": poll_status
-                            })
+                            # Single atomic broadcast carrying both poll status update and gift alert payload
                             await manager.broadcast({
                                 "type": "poll_gift_vote",
+                                "poll": poll_status,
                                 "username": event.username,
                                 "nickname": event.nickname or event.username,
                                 "gift_name": gift_name,
@@ -134,12 +132,7 @@ class EventProcessor:
                                 "quantity": quantity,
                                 "candidate_name": candidate_name,
                                 "votes_added": votes_added,
-                                # Sender's profile picture (when TikTok
-                                # provides one) for overlays.
                                 "avatar_url": event.data.get("avatar_url", ""),
-                                # Set only for comment-fallback votes: the gift
-                                # matched no candidate and was credited via the
-                                # sender's last vote comment.
                                 "via_comment": via_comment
                             })
                         elif poll_manager.is_active and normalize_gift_name(gift_name):

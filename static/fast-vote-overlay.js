@@ -157,7 +157,7 @@ function connectWebSocket() {
     socket.onmessage = (event) => {
         try {
             const msg = JSON.parse(event.data);
-            if (msg.type === 'poll_update') {
+            if (msg.type === 'poll_update' || msg.type === 'poll_gift_vote') {
                 if (msg.poll && msg.poll.is_active) {
                     renderFastVote(msg.poll);
                 } else {
