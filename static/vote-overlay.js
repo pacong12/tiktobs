@@ -483,16 +483,12 @@ function handleGiftEventForToast(giftEvent) {
         <span class="combo-toast-count">&times;${quantity}</span>
         <span class="combo-toast-target">&#10148; ${escapeHTML(candidate.name)}</span>
     `;
-    toast.classList.remove('show', 'combo-pulse', 'final');
-    void toast.offsetWidth; // restart animations
-    toast.classList.add('show', 'combo-pulse');
+    toast.classList.add('show');
     if (isFinal) toast.classList.add('final');
 
     clearTimeout(comboToastTimer);
-    // Mid-combo: stay until the next increment arrives (or the combo stalls).
-    // Final: linger a moment so the landing is visible.
     comboToastTimer = setTimeout(
-        () => toast.classList.remove('show'),
+        () => toast.classList.remove('show', 'final'),
         isFinal ? 2500 : 9000
     );
 }
@@ -516,9 +512,7 @@ function handleFallbackVoteToast(msg) {
         <span class="combo-toast-target">&#10148; ${escapeHTML(msg.candidate_name)}</span>
         <span class="combo-toast-note">via komentar "${escapeHTML(msg.via_comment)}"</span>
     `;
-    toast.classList.remove('show', 'combo-pulse', 'final');
-    void toast.offsetWidth; // restart animations
-    toast.classList.add('show', 'combo-pulse', 'final');
+    toast.classList.add('show');
 
     clearTimeout(comboToastTimer);
     comboToastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
@@ -540,8 +534,6 @@ function handleIgnoredGiftToast(msg) {
         <span>${icon} ${escapeHTML(msg.gift_name)} dari ${escapeHTML(msg.nickname || msg.username)}
         <b>tidak dihitung</b> &mdash; komentar nomor/nama kandidat dulu, baru gift!</span>
     `;
-    toast.classList.remove('show');
-    void toast.offsetWidth; // restart transition
     toast.classList.add('show');
 
     clearTimeout(ignoredToastTimer);
