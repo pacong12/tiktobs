@@ -85,12 +85,16 @@ class ConnectionManager:
             logger.info(f"WebSocket client disconnected. Total clients: {len(self.active_connections)}")
 
     async def broadcast(self, message: dict):
-        for connection in self.active_connections:
+        if not self.active_connections:
+            return
+        # Broadcast concurrently to all connected overlay clients
+        async def _send(ws: WebSocket):
             try:
-                await connection.send_json(message)
+                await ws.send_json(message)
             except Exception as e:  # noqa: BLE001
-                # Client disconnected or connection is broken, it will be cleaned up
                 logger.debug(f"Failed to send websocket message to a client: {e}")
+
+        await asyncio.gather(*[_send(ws) for ws in list(self.active_connections)], return_exceptions=True)
 
 manager = ConnectionManager()
 
