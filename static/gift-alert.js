@@ -297,8 +297,6 @@ function renderAlert(alert) {
 function updateShownAlert(alert) {
     shownAlert = alert;
     renderAlert(alert);
-    alertCard.classList.remove('combo-pulse');
-    void alertCard.offsetWidth; // restart the CSS animation
     alertCard.classList.add('combo-pulse');
     scheduleHide(); // keep it visible while the combo grows
 }

@@ -117,8 +117,6 @@ function addGiftToFeed(gift) {
         if (existing && existing.isConnected) {
             const mult = existing.querySelector('.gift-multiplier');
             if (mult) mult.textContent = `x${gift.quantity}`;
-            existing.classList.remove('combo-pulse');
-            void existing.offsetWidth; // restart the CSS animation
             existing.classList.add('combo-pulse');
             if (gift.final) activeCombos.delete(key);
             return;
