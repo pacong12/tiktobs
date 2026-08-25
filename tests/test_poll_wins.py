@@ -100,11 +100,12 @@ async def test_wins_are_scoped_to_session(monkeypatch):
     assert await database.get_session_wins("sess-B") == {"a": 2, "b": 2}
 
     # Status reflects current session's wins.
-    await pm.start_poll("T", [{"name": "A"}, {"name": "B"}])
-    status = await pm.get_status()
+    pm_b = PollManager()
+    await pm_b.start_poll("T", [{"name": "A"}, {"name": "B"}])
+    status = await pm_b.get_status()
     by_name = {c["name"]: c["wins"] for c in status["candidates"]}
     assert by_name == {"A": 2, "B": 2}
-    await pm.stop_poll()
+    await pm_b.stop_poll()
 
 
 async def test_wins_survive_fresh_poll_manager():

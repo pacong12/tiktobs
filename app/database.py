@@ -374,14 +374,19 @@ async def clear_poll_wins(session_id: str | None = None) -> None:
         await _execute_write("DELETE FROM poll_wins WHERE session_id = ?;", (session_id,))
 
 async def get_session_wins(session_id: str | None = None) -> dict[str, int]:
-    """Returns win counts keyed by candidate_key for one session."""
+    """Returns win counts keyed by candidate_key.
+
+    If a specific live session has wins, returns those. Otherwise returns
+    all recorded wins so candidate win badges persist across restarts
+    and new sessions.
+    """
     target = session_id or "local"
     rows = await _fetch_all(
         "SELECT candidate_key, COUNT(*) FROM poll_wins WHERE session_id = ? GROUP BY candidate_key;",
         (target,),
     )
-    if not rows and target == "local":
-        # If local session has no wins yet, return overall historic wins so overlay badges show stats across restarts
+    if not rows:
+        # Fallback to all recorded wins across sessions so badges survive restarts
         rows = await _fetch_all("SELECT candidate_key, COUNT(*) FROM poll_wins GROUP BY candidate_key;")
     return {row[0]: row[1] for row in rows}
 
