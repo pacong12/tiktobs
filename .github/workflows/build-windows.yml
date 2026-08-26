@@ -38,10 +38,14 @@ jobs:
           TIKTOK_SIGN_API_KEY: ${{ secrets.TIKTOK_SIGN_API_KEY }}
         run: python build_exe.py
 
+      - name: Verify dist folder
+        shell: bash
+        run: |
+          ls -la dist/
+
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: TikTokOBS-v${{ steps.get_version.outputs.version }}-windows
-          path: |
-            dist/TikTokOBS-*.exe
+          path: dist/TikTokOBS-*.exe
           if-no-files-found: error
