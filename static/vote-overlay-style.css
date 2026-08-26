@@ -1,4 +1,11 @@
 /* Reset and OBS transparency defaults */
+*, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
 body {
     background: transparent;
     color: #ffffff;
@@ -12,14 +19,13 @@ body {
     display: none !important;
 }
 
-/* OVERLAY CONTAINER — transparan untuk OBS (background & border dihapus).
-   Fluid up to 500px so it also fits small/Android screens. */
+/* OVERLAY CONTAINER — Crisp vector dimensions for OBS HD (1080p / 720p) canvas */
 .overlay-container {
-    width: 500px;
+    width: 520px;
     max-width: calc(100vw - 20px);
     box-sizing: border-box;
     padding: 20px;
-    margin: 10px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -130,6 +136,10 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 .candidate-bg.default-avatar {
