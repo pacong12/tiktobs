@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TikTok LIVE - Poll & Voting Manager</title>
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
     <!-- Google Fonts: Outfit and Fira Code for logs -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,9 +43,9 @@
                         <!-- round cards injected here -->
                     </div>
                     <div id="rounds-pagination" class="history-pagination" style="display:none; justify-content:center; align-items:center; gap:12px; margin-top:16px;">
-                        <button id="rounds-prev-btn" class="btn secondary" style="font-size:12px; padding:6px 12px;">← Sebelumnya</button>
+                        <button id="rounds-prev-btn" class="btn secondary" style="font-size:12px; padding:6px 12px;">Sebelumnya</button>
                         <span id="rounds-page-info" style="font-size:12px; color:rgba(255,255,255,0.7);">Halaman 1 / 1</span>
-                        <button id="rounds-next-btn" class="btn secondary" style="font-size:12px; padding:6px 12px;">Selanjutnya →</button>
+                        <button id="rounds-next-btn" class="btn secondary" style="font-size:12px; padding:6px 12px;">Selanjutnya</button>
                     </div>
                     <div id="rounds-empty" class="rounds-empty">
                         Belum ada ronde tersimpan. Hasil voting otomatis tersimpan di sini setelah ronde dihentikan.
@@ -215,7 +215,9 @@
                             <!-- Progress rows inserted dynamically -->
                         </div>
 
-                        <button id="stop-poll-btn" class="btn danger btn-block" style="margin-top:0;">Hentikan &amp; Simpan Ronde</button>
+                        <div style="display:flex; justify-content:center; margin-top:14px;">
+                            <button id="stop-poll-btn" class="btn danger" style="padding: 10px 24px; font-size: 13px; font-weight: 700;">Hentikan &amp; Simpan Ronde</button>
+                        </div>
 
                         <!-- TEST SIMULATION PANEL -->
                         <div id="simulation-panel" class="sim-panel hidden">
@@ -236,6 +238,6 @@
     <script src="auth.js?v=1"></script>
     <script src="gift-icons.js?v=3"></script>
     <script src="gift-prices.js?v=1"></script>
-    <script src="poll-admin.js?v=14"></script>
+    <script src="poll-admin.js?v=15"></script>
 </body>
 </html>
