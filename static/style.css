@@ -154,7 +154,7 @@ body {
     display: grid;
     grid-template-columns: 350px 1fr;
     gap: 24px;
-    flex-grow: 1;
+    align-items: start;
 }
 
 @media (max-width: 1024px) {
@@ -1235,7 +1235,6 @@ body {
 
 /* Results panel */
 .results-card {
-    height: 100%;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -1286,12 +1285,11 @@ body {
 
 /* Empty / preview state */
 .poll-preview {
-    flex-grow: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 250px;
+    padding: 30px 20px;
     color: rgba(255, 255, 255, 0.4);
     text-align: center;
 }
