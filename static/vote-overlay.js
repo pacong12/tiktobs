@@ -101,6 +101,22 @@ function playDefaultChime() {
     }
 }
 
+// Throttle DOM updates with requestAnimationFrame to eliminate lag during spam/high vote bursts
+let pendingPollData = null;
+let rafId = null;
+
+function scheduleRenderPoll(poll) {
+    pendingPollData = poll;
+    if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+            rafId = null;
+            if (pendingPollData) {
+                renderPoll(pendingPollData);
+            }
+        });
+    }
+}
+
 // State variables
 let socket = null;
 let currentPoll = null;
@@ -318,7 +334,11 @@ function renderPoll(poll) {
     }
 }
 
+let reconnectTimeout = null;
+
 function connectWebSocket() {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
     const wsUrl = window.location.protocol === 'file:' 
         ? 'ws://127.0.0.1:8000/ws' 
         : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
@@ -334,7 +354,7 @@ function connectWebSocket() {
             const msg = JSON.parse(event.data);
             if (msg.type === 'poll_update') {
                 if (msg.poll && msg.poll.is_active) {
-                    renderPoll(msg.poll);
+                    scheduleRenderPoll(msg.poll);
                 } else {
                     fetchPollStatus();
                 }
@@ -342,7 +362,7 @@ function connectWebSocket() {
                 fetchPollStatus();
             } else if (msg.type === 'poll_gift_vote') {
                 if (msg.poll && msg.poll.is_active) {
-                    renderPoll(msg.poll);
+                    scheduleRenderPoll(msg.poll);
                 }
                 playAlertSound();
                 handleGiftEventForToast({
@@ -362,10 +382,10 @@ function connectWebSocket() {
             console.error('Error handling WebSocket message:', error);
         }
     };
-
     socket.onclose = () => {
         console.log('Poll overlay WebSocket disconnected. Reconnecting in 3 seconds...');
-        setTimeout(connectWebSocket, 3000);
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = setTimeout(connectWebSocket, 3000);
     };
 
     socket.onerror = (err) => {

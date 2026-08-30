@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from typing import Any
@@ -24,11 +25,14 @@ class EventBus:
 
     async def publish(self, event: TikTokEvent):
         """Publishes an event to all registered subscribers concurrently."""
-        for subscriber in self._subscribers:
+        if not self._subscribers:
+            return
+        async def _safe_call(subscriber):
             try:
                 await subscriber(event)
             except Exception:
                 logger.exception(f"Error publishing event to subscriber {subscriber}")
 
+        await asyncio.gather(*[_safe_call(sub) for sub in list(self._subscribers)], return_exceptions=True)
 # Singleton instance
 event_bus = EventBus()

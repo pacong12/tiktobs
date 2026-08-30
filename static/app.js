@@ -624,10 +624,8 @@ function renderEventStream() {
 
         // Formats cells
         const timeStr = evt.timestamp.toLocaleTimeString();
-        const displayUser = evt.username ? `@${evt.username}` : 'System';
-        const displayNick = evt.nickname ? `<span class="nickname">${evt.nickname}</span>` : '';
-        
-        let displayData = '';
+        const displayUser = evt.username ? `@${escapeHTML(evt.username)}` : 'System';
+        const displayNick = evt.nickname ? `<span class="nickname">${escapeHTML(evt.nickname)}</span>` : '';
         if (evt.event_type === 'comment') {
             displayData = evt.data.comment || '';
         } else if (evt.event_type === 'gift') {

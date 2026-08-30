@@ -179,6 +179,12 @@ function handleWSMessage(msg) {
         entry.total_diamonds += diamondsAdded;
         entry.total_gifts += quantity;
 
+        // Prune in-memory array to top 200 items to avoid memory creep during marathon streams
+        if (leaderboard.length > 250) {
+            leaderboard.sort((a, b) => b.total_diamonds - a.total_diamonds);
+            leaderboard = leaderboard.slice(0, 100);
+        }
+
         renderLeaderboard();
     }
 }

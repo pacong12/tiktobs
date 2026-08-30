@@ -18,14 +18,21 @@ router = APIRouter(prefix="/api/test", tags=["test-simulation"])
 
 TEST_ENDPOINTS_ENABLED = True
 
+def _test_endpoints_enabled() -> bool:
+    if not TEST_ENDPOINTS_ENABLED:
+        return False
+    val = os.getenv("TIKTOBS_TEST_ENDPOINTS", "0").strip().lower()
+    # Default: if TIKTOBS_TEST_ENDPOINTS not set or 1, check flags
+    if os.getenv("TIKTOBS_TEST_ENDPOINTS") is None:
+        return TEST_ENDPOINTS_ENABLED
+    return val in ("1", "true", "yes", "on")
 
 def _require_test_endpoints():
-    if not TEST_ENDPOINTS_ENABLED:
+    if not _test_endpoints_enabled():
         raise HTTPException(
             status_code=403,
             detail="Test endpoints are disabled. Set TIKTOBS_TEST_ENDPOINTS=1 to enable them.",
         )
-
 
 @router.post("/comment-vote")
 async def simulate_comment_vote():

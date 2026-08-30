@@ -257,15 +257,16 @@ class PollManager:
         if not self.is_active or not username_key:
             return False
 
-        # Fast path check for expired poll
-        if self.expires_at and datetime.now(timezone.utc) > self.expires_at:
-            await self.stop_poll()
-            return False
-
         async with self.lock:
+            if not self.is_active:
+                return False
+            # Check for expired poll inside lock
+            if self.expires_at and datetime.now(timezone.utc) > self.expires_at:
+                asyncio.create_task(self.stop_poll())
+                return False
+
             clean_comment = comment_text.strip().lower()
             clean_comment_no_hash = clean_comment.removeprefix("#").strip()
-
             # Rule 1: bare sequence number, leading zeros allowed ("01" -> 1)
             vote_number = None
             if clean_comment_no_hash.isdigit():
@@ -345,12 +346,14 @@ class PollManager:
         if not self.is_active or not gift_name:
             return False, None, 0, None
 
-        # Fast path check for expired poll
-        if self.expires_at and datetime.now(timezone.utc) > self.expires_at:
-            await self.stop_poll()
-            return False, None, 0, None
-
         async with self.lock:
+            if not self.is_active:
+                return False, None, 0, None
+            # Check for expired poll inside lock
+            if self.expires_at and datetime.now(timezone.utc) > self.expires_at:
+                asyncio.create_task(self.stop_poll())
+                return False, None, 0, None
+
             matched_candidate = None
             clean_gift = normalize_gift_name(gift_name)
             if not clean_gift:
