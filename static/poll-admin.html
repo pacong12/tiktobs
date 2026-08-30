@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TikTok LIVE - Poll & Voting Manager</title>
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=7">
     <!-- Google Fonts: Outfit and Fira Code for logs -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,79 +28,27 @@
         <!-- MAIN LAYOUT -->
         <main class="app-body">
 
-            <!-- LEFT COLUMN: POLL CONFIGURATION -->
+            <!-- LEFT COLUMN: ROUND HISTORY & SOUND SETTINGS -->
             <section class="control-sidebar">
+                <!-- ROUND HISTORY / ARCHIVE -->
                 <div class="glass-card">
-                    <h2 class="card-title">Poll Configuration</h2>
-                    <p class="card-subtext">
-                        Buat sesi voting real-time. Penonton memilih dengan mengirim nomor pilihan (mis. 1, 2), nama pilihan, atau gift boost di chat.
-                    </p>
-
-                    <details class="rules-collapsible">
-                        <summary class="rules-summary">
-                            <span>📖 Lihat Aturan Voting Chat &amp; Gift</span>
-                            <span class="rules-arrow">▼</span>
-                        </summary>
-                        <div class="voting-rules-hint">
-                            <ul>
-                                <li>Komentar: ketik nomor urut (<code>1</code>, <code>01</code>, <code>#01</code>) atau nama kandidat. <strong>Setiap komentar dihitung 1 suara</strong>.</li>
-                                <li>Gift: hanya dihitung jika nama Gift Boost <strong>persis sama</strong>. 1 diamond = 1 suara.</li>
-                                <li>Satu gift hanya boleh dipakai oleh satu kandidat.</li>
-                            </ul>
+                    <div class="history-head">
+                        <h2 class="card-title">Riwayat Ronde</h2>
+                        <div style="display:flex; gap:8px; flex-grow:0;">
+                            <a href="/api/poll/rounds/export.csv" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; text-decoration:none;">CSV</a>
+                            <button id="clear-rounds-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; border-color: rgba(255,74,90,0.3); color: #ff4a5a;">Hapus Semua</button>
                         </div>
-                    </details>
-
-                    <div id="poll-setup-section">
-                        <div class="input-group">
-                            <label for="poll-round-input">Nama Ronde / Sesi</label>
-                            <input type="text" id="poll-round-input" class="field-input" placeholder="e.g. Ronde 1, Babak Final">
-                        </div>
-
-                        <div class="input-group" style="margin-top: 15px;">
-                            <label for="poll-title-input">Judul / Pertanyaan Voting</label>
-                            <input type="text" id="poll-title-input" class="field-input" placeholder="e.g. Siapa karakter favoritmu?">
-                        </div>
-
-                        <div class="input-group" style="margin-top: 15px;">
-                            <label class="label-inline">
-                                <span>Kandidat (Pilihan)</span>
-                                <button id="add-candidate-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 10px;">+ Tambah</button>
-                            </label>
-                            <div id="candidates-input-list" style="margin-top: 8px;">
-                                <div class="candidate-input-row">
-                                    <input type="text" class="field-input candidate-name-input" placeholder="Pilihan 1 (mis. Alice)">
-                                    <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
-                                    <div class="candidate-gift-cell"></div>
-                                    <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
-                                </div>
-                                <div class="candidate-input-row">
-                                    <input type="text" class="field-input candidate-name-input" placeholder="Pilihan 2 (mis. Bob)">
-                                    <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
-                                    <div class="candidate-gift-cell"></div>
-                                    <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="input-group" style="margin-top: 15px;">
-                            <label for="poll-duration-input">Durasi dalam Detik (opsional)</label>
-                            <input type="number" id="poll-duration-input" class="field-input" min="5" placeholder="e.g. 60 (kosongkan = tanpa batas)">
-                            <div class="duration-hint" id="duration-hint">Kosongkan untuk voting tanpa batas waktu.</div>
-                        </div>
-
-                        <div class="input-group" style="margin-top: 15px;">
-                            <label class="label-inline" style="cursor: pointer;">
-                                <input type="checkbox" id="include-history-check" style="flex-grow: 0; width: auto;">
-                                <span>Hitung juga riwayat sesi ini (komentar & gift yang sudah masuk sebelum voting dimulai)</span>
-                            </label>
-                        </div>
-
-                        <button id="start-poll-btn" class="btn primary btn-block">Mulai Voting Live</button>
                     </div>
-
-                    <div id="poll-active-config-hint" class="config-hint hidden">
-                        <p>Voting sedang berjalan.</p>
-                        <p>Untuk mengubah konfigurasi, hentikan ronde yang aktif terlebih dahulu.</p>
+                    <div id="rounds-history-list" class="rounds-list">
+                        <!-- round cards injected here -->
+                    </div>
+                    <div id="rounds-pagination" class="history-pagination" style="display:none; justify-content:center; align-items:center; gap:12px; margin-top:16px;">
+                        <button id="rounds-prev-btn" class="btn secondary" style="font-size:12px; padding:6px 12px;">← Sebelumnya</button>
+                        <span id="rounds-page-info" style="font-size:12px; color:rgba(255,255,255,0.7);">Halaman 1 / 1</span>
+                        <button id="rounds-next-btn" class="btn secondary" style="font-size:12px; padding:6px 12px;">Selanjutnya →</button>
+                    </div>
+                    <div id="rounds-empty" class="rounds-empty">
+                        Belum ada ronde tersimpan. Hasil voting otomatis tersimpan di sini setelah ronde dihentikan.
                     </div>
                 </div>
 
@@ -151,9 +99,86 @@
                 </div>
             </section>
 
-            <!-- RIGHT COLUMN: LIVE RESULTS & OBS OVERLAY LINKS -->
+            <!-- RIGHT COLUMN: POLL CONFIGURATION & LIVE RESULTS -->
             <section class="content-area">
-                <div class="glass-card results-card">
+                <!-- POLL CONFIGURATION (In Main/Wide Area) -->
+                <div class="glass-card">
+                    <h2 class="card-title">Poll Configuration</h2>
+                    <p class="card-subtext">
+                        Buat sesi voting real-time. Penonton memilih dengan mengirim nomor pilihan (mis. 1, 2), nama pilihan, atau gift boost di chat.
+                    </p>
+
+                    <details class="rules-collapsible">
+                        <summary class="rules-summary">
+                            <span>📖 Lihat Aturan Voting Chat &amp; Gift</span>
+                            <span class="rules-arrow">▼</span>
+                        </summary>
+                        <div class="voting-rules-hint">
+                            <ul>
+                                <li>Komentar: ketik nomor urut (<code>1</code>, <code>01</code>, <code>#01</code>) atau nama kandidat. <strong>Setiap komentar dihitung 1 suara</strong>.</li>
+                                <li>Gift: hanya dihitung jika nama Gift Boost <strong>persis sama</strong>. 1 diamond = 1 suara.</li>
+                                <li>Satu gift hanya boleh dipakai oleh satu kandidat.</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <div id="poll-setup-section">
+                        <div style="display:grid; grid-template-columns:1fr 1.5fr; gap:16px;">
+                            <div class="input-group">
+                                <label for="poll-round-input">Nama Ronde / Sesi</label>
+                                <input type="text" id="poll-round-input" class="field-input" placeholder="e.g. Ronde 1, Babak Final">
+                            </div>
+                            <div class="input-group">
+                                <label for="poll-title-input">Judul / Pertanyaan Voting</label>
+                                <input type="text" id="poll-title-input" class="field-input" placeholder="e.g. Siapa karakter favoritmu?">
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-top: 15px;">
+                            <label class="label-inline">
+                                <span>Kandidat (Pilihan)</span>
+                                <button id="add-candidate-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 10px;">+ Tambah</button>
+                            </label>
+                            <div id="candidates-input-list" style="margin-top: 8px;">
+                                <div class="candidate-input-row">
+                                    <input type="text" class="field-input candidate-name-input" placeholder="Pilihan 1 (mis. Alice)">
+                                    <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
+                                    <div class="candidate-gift-cell"></div>
+                                    <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
+                                </div>
+                                <div class="candidate-input-row">
+                                    <input type="text" class="field-input candidate-name-input" placeholder="Pilihan 2 (mis. Bob)">
+                                    <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
+                                    <div class="candidate-gift-cell"></div>
+                                    <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-top: 15px;">
+                            <label for="poll-duration-input">Durasi dalam Detik (opsional)</label>
+                            <input type="number" id="poll-duration-input" class="field-input" min="5" placeholder="e.g. 60 (kosongkan = tanpa batas)">
+                            <div class="duration-hint" id="duration-hint">Kosongkan untuk voting tanpa batas waktu.</div>
+                        </div>
+
+                        <div class="input-group" style="margin-top: 15px;">
+                            <label class="label-inline" style="cursor: pointer;">
+                                <input type="checkbox" id="include-history-check" style="flex-grow: 0; width: auto;">
+                                <span>Hitung juga riwayat sesi ini (komentar & gift yang sudah masuk sebelum voting dimulai)</span>
+                            </label>
+                        </div>
+
+                        <button id="start-poll-btn" class="btn primary btn-block">Mulai Voting Live</button>
+                    </div>
+
+                    <div id="poll-active-config-hint" class="config-hint hidden">
+                        <p>Voting sedang berjalan.</p>
+                        <p>Untuk mengubah konfigurasi, hentikan ronde yang aktif terlebih dahulu.</p>
+                    </div>
+                </div>
+
+                <!-- LIVE RESULTS & OBS OVERLAY LINKS -->
+                <div class="glass-card results-card" style="margin-top: 24px;">
                     <div class="panel-head">
                         <h2 style="margin:0;">Status &amp; Hasil Voting Live</h2>
                         <div class="overlay-btn-group">
@@ -170,7 +195,7 @@
                     <!-- POLL INACTIVE PREVIEW STATE -->
                     <div id="poll-setup-preview" class="poll-preview">
                         <p class="lead">Tidak ada sesi voting aktif</p>
-                        <p class="sub">Atur kandidat di kolom kiri, lalu klik "Mulai Voting Live" untuk memulai.</p>
+                        <p class="sub">Atur kandidat di form atas, lalu klik "Mulai Voting Live" untuk memulai.</p>
                     </div>
 
                     <!-- POLL ACTIVE STATUS & PREVIEW -->
@@ -202,28 +227,6 @@
                             </div>
                             <button id="test-gift-normal-btn" class="btn secondary" style="font-size: 11px; width: 100%; margin-top: 10px; border-color: rgba(0,240,255,0.25); color: #00f0ff;">Test Regular Gift</button>
                         </div>
-                    </div>
-                </div>
-
-                <!-- ROUND HISTORY / ARCHIVE -->
-                <div class="glass-card" style="margin-top: 24px;">
-                    <div class="history-head">
-                        <h2 class="card-title">Riwayat Ronde</h2>
-                        <div style="display:flex; gap:8px; flex-grow:0;">
-                            <a href="/api/poll/rounds/export.csv" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; text-decoration:none;">CSV</a>
-                            <button id="clear-rounds-btn" class="btn secondary" style="flex-grow:0; font-size: 11px; padding: 5px 12px; border-color: rgba(255,74,90,0.3); color: #ff4a5a;">Hapus Semua</button>
-                        </div>
-                    </div>
-                    <div id="rounds-history-list" class="rounds-list">
-                        <!-- round cards injected here -->
-                    </div>
-                    <div id="rounds-pagination" class="history-pagination" style="display:none; justify-content:center; align-items:center; gap:12px; margin-top:16px;">
-                        <button id="rounds-prev-btn" class="btn secondary" style="font-size:12px; padding:6px 12px;">← Sebelumnya</button>
-                        <span id="rounds-page-info" style="font-size:12px; color:rgba(255,255,255,0.7);">Halaman 1 / 1</span>
-                        <button id="rounds-next-btn" class="btn secondary" style="font-size:12px; padding:6px 12px;">Selanjutnya →</button>
-                    </div>
-                    <div id="rounds-empty" class="rounds-empty">
-                        Belum ada ronde tersimpan. Hasil voting otomatis tersimpan di sini setelah ronde dihentikan.
                     </div>
                 </div>
             </section>

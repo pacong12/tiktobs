@@ -984,13 +984,13 @@ body {
     color: rgba(255, 255, 255, 0.3);
 }
 
-/* Layout Grid Form Admin - Lebarkan kolom input agar lega */
+/* Layout Grid Form Admin */
 .control-sidebar {
-    width: 600px;
+    width: 380px;
     flex-shrink: 0;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
     .control-sidebar {
         width: 100%;
     }
