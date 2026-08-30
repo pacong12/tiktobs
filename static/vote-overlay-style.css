@@ -21,23 +21,23 @@ body {
 
 /* OVERLAY CONTAINER — Crisp vector dimensions for OBS HD (1080p / 720p) canvas */
 .overlay-container {
-    width: 480px;
+    width: 600px;
     max-width: 100vw;
     box-sizing: border-box;
-    padding: 10px;
+    padding: 12px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 /* Glassmorphism base card styling (header / inactive state only) */
 .glass-card {
     background: rgba(16, 12, 34, 0.90);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 14px;
+    border-radius: 16px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    padding: 14px 18px;
+    padding: 16px 20px;
 }
 
 /* Candidates List — layout tiers:
@@ -47,27 +47,26 @@ body {
    - 5+ candidates    : BENTO grid — rank #1 spans a huge 2x2 square,
                         ranks #2/#3 fill the right column as squares, the
                         rest render as small squares below.
-   Row heights match the column widths of the fixed 460px content area
-   so regular cells stay square. */
+   Row heights scaled up for high readability in 1080p stream. */
 .candidates-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .candidate-grid {
     display: grid;
-    gap: 6px;
+    gap: 8px;
 }
 
-/* Square cells: (460 - gaps) / columns */
-.candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 224px; }
-.candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 145px; }
-.candidate-grid.grid-rest  { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 107px; gap: 6px; }
+/* Square cells: scaled up for 600px width */
+.candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 284px; }
+.candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 184px; }
+.candidate-grid.grid-rest  { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 136px; gap: 8px; }
 
-/* 3 candidates: champion spans a wide card on top (460 x 224), the other
+/* 3 candidates: champion spans a wide card on top, the other
    two render as squares below it */
-.candidate-grid.grid-top3 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 224px; }
+.candidate-grid.grid-top3 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 284px; }
 .candidate-grid.grid-top3 .candidate-card.rank-1 { grid-column: span 2; }
 
 /* Bento: rank #1 takes a 2x2 square (very large), #2/#3 stack on the right */
@@ -174,14 +173,14 @@ body {
 
 .candidate-info {
     position: absolute;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 6px;
+    gap: 8px;
     z-index: 6;
     pointer-events: none;
 }
@@ -191,7 +190,7 @@ body {
     display: flex;
     align-items: baseline;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
     max-width: 100%;
 }
 
@@ -204,7 +203,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 6px;
+    gap: 8px;
     z-index: 7;
     pointer-events: none;
 }
@@ -214,14 +213,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 34px;
-    height: 32px;
-    padding: 0 7px;
+    min-width: 42px;
+    height: 38px;
+    padding: 0 9px;
     background: rgba(8, 8, 15, 0.85);
     border: 1.5px solid var(--card-color);
-    border-radius: 0 14px 7px 7px;
+    border-radius: 0 16px 8px 8px;
     color: var(--card-color);
-    font-size: 16px;
+    font-size: 19px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.5px;
@@ -233,12 +232,12 @@ body {
 .candidate-votes-row {
     display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: 12px;
 }
 
 /* Vote count: crisp outer border-color stroke via paint-order */
 .candidate-votes {
-    font-size: 28px;
+    font-size: 34px;
     font-weight: 800;
     line-height: 1;
     color: #ffffff;
@@ -251,7 +250,7 @@ body {
 
 /* Percentage beside the vote count */
 .candidate-pct {
-    font-size: 24px;
+    font-size: 30px;
     font-weight: 800;
     line-height: 1;
     color: #ffffff;
@@ -266,7 +265,7 @@ body {
 .candidate-name {
     min-width: 0;
     max-width: 100%;
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 800;
     color: #ffffff;
     white-space: nowrap;
@@ -314,12 +313,12 @@ body {
 .card-badge.badge-win {
     position: relative;
     color: var(--card-color);
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1.7px;
-    padding: 6px 16px 6px 12px;
-    border-radius: 14px 0 7px 7px;
+    padding: 7px 18px 7px 14px;
+    border-radius: 16px 0 8px 8px;
     background:
         linear-gradient(120deg, var(--card-fill-gift) 0%, rgba(8, 8, 15, 0.92) 42%, rgba(8, 8, 15, 0.85) 100%),
         #000;
