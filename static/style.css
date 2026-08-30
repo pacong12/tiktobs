@@ -1093,6 +1093,49 @@ body {
 .config-hint p:first-child { font-size: 14px; }
 .config-hint p + p { font-size: 11px; margin-top: 6px; }
 
+/* Collapsible rules to save vertical space */
+.rules-collapsible {
+    margin-bottom: 16px;
+    background: rgba(0, 240, 255, 0.03);
+    border: 1px solid rgba(0, 240, 255, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.rules-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #00f0ff;
+    cursor: pointer;
+    user-select: none;
+}
+
+.rules-summary::-webkit-details-marker {
+    display: none;
+}
+
+.rules-arrow {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.rules-collapsible[open] .rules-arrow {
+    transform: rotate(180deg);
+}
+
+.rules-collapsible .voting-rules-hint {
+    margin-top: 0;
+    border: none;
+    border-top: 1px solid rgba(0, 240, 255, 0.1);
+    border-radius: 0;
+    background: transparent;
+    padding: 10px 14px;
+}
+
 /* Voting rules hint box (poll setup) */
 .voting-rules-hint {
     margin-top: 12px;

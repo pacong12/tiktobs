@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TikTok LIVE - Poll & Voting Manager</title>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
     <!-- Google Fonts: Outfit and Fira Code for logs -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,14 +36,19 @@
                         Buat sesi voting real-time. Penonton memilih dengan mengirim nomor pilihan (mis. 1, 2), nama pilihan, atau gift boost di chat.
                     </p>
 
-                    <div class="voting-rules-hint">
-                        <strong>Aturan voting:</strong>
-                        <ul>
-                            <li>Komentar: ketik nomor urut (boleh <code>1</code>, <code>01</code>, <code>#01</code>) atau nama kandidat. <strong>Setiap komentar dihitung</strong> — 1 user boleh voting berkali-kali.</li>
-                            <li>Gift: hanya dihitung untuk kandidat yang Gift Boost-nya <strong>persis sama</strong> dengan nama gift yang masuk. Gift lain tidak dihitung untuk siapa pun (tidak bocor ke kandidat lain). 1 diamond = 1 suara.</li>
-                            <li>Satu gift hanya boleh dipakai oleh satu kandidat (duplikat akan ditolak).</li>
-                        </ul>
-                    </div>
+                    <details class="rules-collapsible">
+                        <summary class="rules-summary">
+                            <span>📖 Lihat Aturan Voting Chat &amp; Gift</span>
+                            <span class="rules-arrow">▼</span>
+                        </summary>
+                        <div class="voting-rules-hint">
+                            <ul>
+                                <li>Komentar: ketik nomor urut (<code>1</code>, <code>01</code>, <code>#01</code>) atau nama kandidat. <strong>Setiap komentar dihitung 1 suara</strong>.</li>
+                                <li>Gift: hanya dihitung jika nama Gift Boost <strong>persis sama</strong>. 1 diamond = 1 suara.</li>
+                                <li>Satu gift hanya boleh dipakai oleh satu kandidat.</li>
+                            </ul>
+                        </div>
+                    </details>
 
                     <div id="poll-setup-section">
                         <div class="input-group">
