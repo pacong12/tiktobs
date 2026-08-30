@@ -249,10 +249,18 @@ const startPollBtn = document.getElementById('start-poll-btn');
 const stopPollBtn = document.getElementById('stop-poll-btn');
 const pollActiveRound = document.getElementById('poll-active-round');
 
-// Round history
+// Round history state & pagination
 const roundsHistoryList = document.getElementById('rounds-history-list');
 const roundsEmpty = document.getElementById('rounds-empty');
 const clearRoundsBtn = document.getElementById('clear-rounds-btn');
+const roundsPagination = document.getElementById('rounds-pagination');
+const roundsPrevBtn = document.getElementById('rounds-prev-btn');
+const roundsNextBtn = document.getElementById('rounds-next-btn');
+const roundsPageInfo = document.getElementById('rounds-page-info');
+
+let allRoundsData = [];
+let currentRoundsPage = 1;
+const ROUNDS_PER_PAGE = 5;
 
 // Simulation Controls
 const simulationPanel = document.getElementById('simulation-panel');
@@ -351,6 +359,25 @@ function setupEventListeners() {
     // Clear round history
     if (clearRoundsBtn) {
         clearRoundsBtn.addEventListener('click', handleClearRounds);
+    }
+
+    // Pagination buttons for round history
+    if (roundsPrevBtn) {
+        roundsPrevBtn.addEventListener('click', () => {
+            if (currentRoundsPage > 1) {
+                currentRoundsPage--;
+                renderRounds();
+            }
+        });
+    }
+    if (roundsNextBtn) {
+        roundsNextBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(allRoundsData.length / ROUNDS_PER_PAGE) || 1;
+            if (currentRoundsPage < totalPages) {
+                currentRoundsPage++;
+                renderRounds();
+            }
+        });
     }
 
     // Simulation tool buttons
@@ -477,23 +504,32 @@ async function loadRounds() {
         const res = await fetch('/api/poll/rounds');
         if (!res.ok) return;
         const data = await res.json();
-        renderRounds(data.rounds || []);
+        allRoundsData = data.rounds || [];
+        renderRounds();
     } catch (error) {
         console.error('Failed to load rounds:', error);
     }
 }
 
-function renderRounds(rounds) {
+function renderRounds() {
     if (!roundsHistoryList) return;
     roundsHistoryList.innerHTML = '';
 
-    if (!rounds.length) {
+    if (!allRoundsData.length) {
         if (roundsEmpty) roundsEmpty.style.display = 'block';
+        if (roundsPagination) roundsPagination.style.display = 'none';
         return;
     }
     if (roundsEmpty) roundsEmpty.style.display = 'none';
 
-    rounds.forEach(r => {
+    const totalPages = Math.ceil(allRoundsData.length / ROUNDS_PER_PAGE) || 1;
+    if (currentRoundsPage > totalPages) currentRoundsPage = totalPages;
+    if (currentRoundsPage < 1) currentRoundsPage = 1;
+
+    const startIdx = (currentRoundsPage - 1) * ROUNDS_PER_PAGE;
+    const pageRounds = allRoundsData.slice(startIdx, startIdx + ROUNDS_PER_PAGE);
+
+    pageRounds.forEach(r => {
         const winner = (r.candidates || []).reduce((best, c) => (!best || c.votes > best.votes ? c : best), null);
         const endedStr = r.ended_at ? new Date(r.ended_at).toLocaleString() : '';
         const durText = r.duration_seconds ? `${r.duration_seconds}s` : 'manual';
@@ -544,6 +580,18 @@ function renderRounds(rounds) {
         `;
         roundsHistoryList.appendChild(card);
     });
+
+    // Update Pagination UI
+    if (roundsPagination) {
+        if (totalPages > 1) {
+            roundsPagination.style.display = 'flex';
+            if (roundsPageInfo) roundsPageInfo.textContent = `Halaman ${currentRoundsPage} / ${totalPages} (${allRoundsData.length} total)`;
+            if (roundsPrevBtn) roundsPrevBtn.disabled = currentRoundsPage <= 1;
+            if (roundsNextBtn) roundsNextBtn.disabled = currentRoundsPage >= totalPages;
+        } else {
+            roundsPagination.style.display = 'none';
+        }
+    }
 
     roundsHistoryList.querySelectorAll('.round-delete-btn').forEach(btn => {
         btn.addEventListener('click', () => deleteRound(parseInt(btn.dataset.id)));
