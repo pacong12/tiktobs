@@ -264,7 +264,7 @@ const roundsPageInfo = document.getElementById('rounds-page-info');
 
 let allRoundsData = [];
 let currentRoundsPage = 1;
-const ROUNDS_PER_PAGE = 5;
+const ROUNDS_PER_PAGE = 2;
 
 // Simulation Controls
 const simulationPanel = document.getElementById('simulation-panel');
