@@ -1,17 +1,10 @@
 /* Reset and OBS transparency defaults */
-*, *::before, *::after {
-    box-sizing: border-box;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-}
-
 body {
     background: transparent;
     color: #ffffff;
     font-family: 'Outfit', sans-serif;
     margin: 0;
-    padding: 10px;
+    padding: 15px;
     overflow: hidden;
 }
 
@@ -19,25 +12,28 @@ body {
     display: none !important;
 }
 
-/* OVERLAY CONTAINER — Crisp vector dimensions for OBS HD (1080p / 720p) canvas */
+/* OVERLAY CONTAINER — transparan untuk OBS (background & border dihapus).
+   Fluid up to 500px so it also fits small/Android screens. */
 .overlay-container {
-    width: 600px;
-    max-width: 100vw;
+    width: 500px;
+    max-width: calc(100vw - 20px);
     box-sizing: border-box;
-    padding: 12px;
-    margin: 0 auto;
+    padding: 20px;
+    margin: 10px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
 }
 
 /* Glassmorphism base card styling (header / inactive state only) */
 .glass-card {
-    background: rgba(16, 12, 34, 0.90);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    padding: 14px 18px;
 }
 
 /* Candidates List — layout tiers:
@@ -47,26 +43,27 @@ body {
    - 5+ candidates    : BENTO grid — rank #1 spans a huge 2x2 square,
                         ranks #2/#3 fill the right column as squares, the
                         rest render as small squares below.
-   Row heights scaled up for high readability in 1080p stream. */
+   Row heights match the column widths of the fixed 460px content area
+   so regular cells stay square. */
 .candidates-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .candidate-grid {
     display: grid;
-    gap: 8px;
+    gap: 6px;
 }
 
-/* Square cells: scaled up for 600px width */
-.candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 284px; }
-.candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 184px; }
-.candidate-grid.grid-rest  { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 136px; gap: 8px; }
+/* Square cells: (460 - gaps) / columns */
+.candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 224px; }
+.candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 145px; }
+.candidate-grid.grid-rest  { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 107px; gap: 6px; }
 
-/* 3 candidates: champion spans a wide card on top, the other
+/* 3 candidates: champion spans a wide card on top (460 x 224), the other
    two render as squares below it */
-.candidate-grid.grid-top3 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 284px; }
+.candidate-grid.grid-top3 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 224px; }
 .candidate-grid.grid-top3 .candidate-card.rank-1 { grid-column: span 2; }
 
 /* Bento: rank #1 takes a 2x2 square (very large), #2/#3 stack on the right */
@@ -82,7 +79,6 @@ body {
    (number chip, votes outline, percentage, win badge) follows
    --card-color, set per card from the Poll Admin color picker.
    ============================================================ */
-/* Candidate Card */
 .candidate-card {
     --card-color: #00e5ff;
     --card-glow: rgba(0, 229, 255, 0.55);
@@ -96,16 +92,24 @@ body {
     border: 2px solid var(--card-color);
     border-radius: 16px;
     box-shadow: 0 0 14px var(--card-glow-soft), inset 0 0 16px var(--card-glow-soft);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: card-pop-in 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes card-pop-in {
+    from { opacity: 0; transform: scale(0.9) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* Leading card: same candidate color, just a stronger neon presence */
 .candidate-card.leading {
     border-width: 3px;
     box-shadow: 0 0 24px var(--card-glow), inset 0 0 20px var(--card-glow-soft);
+    transform: scale(1.02);
     z-index: 5;
 }
 
-/* Floating crown on leader: static crisp drop-shadow (no continuous loop) */
+/* FLOATING CROWN */
 .candidate-card.leading::before {
     content: "👑";
     position: absolute;
@@ -115,6 +119,12 @@ body {
     z-index: 10;
     transform: translateX(-50%) rotate(-12deg);
     filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.95));
+    animation: crown-float-anim 1.5s infinite ease-in-out;
+}
+
+@keyframes crown-float-anim {
+    0%, 100% { transform: translateX(-50%) rotate(-12deg) translateY(0); }
+    50% { transform: translateX(-50%) rotate(-6deg) translateY(-5px); }
 }
 
 /* Photo fills the whole card (clipped by .candidate-media so the crown and
@@ -133,8 +143,6 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    image-rendering: high-quality;
-    image-rendering: -webkit-optimize-contrast;
 }
 
 .candidate-bg.default-avatar {
@@ -169,14 +177,14 @@ body {
 
 .candidate-info {
     position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 8px;
+    gap: 6px;
     z-index: 6;
     pointer-events: none;
 }
@@ -186,7 +194,7 @@ body {
     display: flex;
     align-items: baseline;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     max-width: 100%;
 }
 
@@ -199,7 +207,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 8px;
+    gap: 6px;
     z-index: 7;
     pointer-events: none;
 }
@@ -209,14 +217,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 42px;
-    height: 38px;
-    padding: 0 9px;
+    min-width: 34px;
+    height: 32px;
+    padding: 0 7px;
     background: rgba(8, 8, 15, 0.85);
     border: 1.5px solid var(--card-color);
-    border-radius: 0 16px 8px 8px;
+    border-radius: 0 14px 7px 7px;
     color: var(--card-color);
-    font-size: 19px;
+    font-size: 16px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.5px;
@@ -228,12 +236,12 @@ body {
 .candidate-votes-row {
     display: flex;
     align-items: baseline;
-    gap: 12px;
+    gap: 10px;
 }
 
 /* Vote count: crisp outer border-color stroke via paint-order */
 .candidate-votes {
-    font-size: 34px;
+    font-size: 28px;
     font-weight: 800;
     line-height: 1;
     color: #ffffff;
@@ -246,7 +254,7 @@ body {
 
 /* Percentage beside the vote count */
 .candidate-pct {
-    font-size: 30px;
+    font-size: 24px;
     font-weight: 800;
     line-height: 1;
     color: #ffffff;
@@ -261,7 +269,7 @@ body {
 .candidate-name {
     min-width: 0;
     max-width: 100%;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
     color: #ffffff;
     white-space: nowrap;
@@ -271,12 +279,17 @@ body {
     text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95), 0 0 10px var(--card-glow-soft);
 }
 
-/* Leader fire indicator */
+/* FLICKERING FIRE EFFECT FOR LEADER */
 .candidate-card.leading .candidate-votes::after {
     content: " 🔥";
     font-size: 0.55em;
     display: inline-block;
-    filter: drop-shadow(0 0 4px #ff8c00);
+    animation: fire-flicker-anim 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes fire-flicker-anim {
+    0% { transform: scale(1); filter: drop-shadow(0 0 2px #ff4500); }
+    100% { transform: scale(1.2); filter: drop-shadow(0 0 8px #ff8c00); }
 }
 
 /* ============================================================
@@ -305,16 +318,18 @@ body {
     box-shadow: 0 0 14px var(--card-glow), 0 3px 8px rgba(0, 0, 0, 0.55);
 }
 
-/* Win badge: futuristic HUD tag pinned in the top-left corner */
+/* Win badge: futuristic HUD tag pinned in the top-left corner, in the
+   border color — diagonal gradient, neon glow, and a slow light sweep */
 .card-badge.badge-win {
     position: relative;
     color: var(--card-color);
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1.7px;
-    padding: 7px 18px 7px 14px;
-    border-radius: 16px 0 8px 8px;
+    padding: 6px 16px 6px 12px;
+    border-radius: 14px 0 7px 7px;
+    /* gradient on top of a solid black base so the badge reads dense/opaque */
     background:
         linear-gradient(120deg, var(--card-fill-gift) 0%, rgba(8, 8, 15, 0.92) 42%, rgba(8, 8, 15, 0.85) 100%),
         #000;
@@ -324,6 +339,23 @@ body {
         0 2px 6px rgba(0, 0, 0, 0.5);
     text-shadow: 0 0 10px var(--card-glow), 0 0 2px var(--card-color);
     overflow: hidden;
+}
+/* Diagonal light sweep drifting across the badge for a live HUD feel */
+.card-badge.badge-win::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: 0;
+    width: 45%;
+    background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.16) 50%, transparent 100%);
+    transform: translateX(-140%) skewX(-22deg);
+    animation: win-sweep 3.8s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes win-sweep {
+    0% { transform: translateX(-140%) skewX(-22deg); }
+    60%, 100% { transform: translateX(320%) skewX(-22deg); }
 }
 
 /* Gift badge: bare official icon, NO background / frame */
