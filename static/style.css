@@ -996,6 +996,37 @@ body {
     }
 }
 
+/* Duration Quick Preset Buttons */
+.duration-presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.preset-btn:hover {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.4);
+    color: #00f0ff;
+}
+
+.preset-btn.active {
+    background: #00f0ff;
+    border-color: #00f0ff;
+    color: #0b0f19;
+}
+
 /* Candidate Card Form Box */
 .candidate-input-row {
     display: flex;

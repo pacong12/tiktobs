@@ -313,12 +313,15 @@ function setupEventListeners() {
         });
     }
 
-    // Live "menit" hint for the duration input
+    // Live "menit" hint for the duration input + Preset buttons
     const durationInput = document.getElementById('poll-duration-input');
     const durationHint = document.getElementById('duration-hint');
+    const presetBtns = document.querySelectorAll('.preset-btn');
+
     if (durationInput && durationHint) {
         durationInput.addEventListener('input', () => {
             const v = parseInt(durationInput.value);
+            presetBtns.forEach(b => b.classList.toggle('active', parseInt(b.dataset.sec) === (v || 0)));
             if (!v || v < 5) {
                 durationHint.textContent = 'Kosongkan untuk voting tanpa batas waktu.';
                 durationHint.classList.remove('warn');
@@ -331,6 +334,14 @@ function setupEventListeners() {
                 durationHint.textContent = `≈ ${parts.join(' ')}`;
                 durationHint.classList.remove('warn');
             }
+        });
+
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sec = parseInt(btn.dataset.sec);
+                durationInput.value = sec > 0 ? sec : '';
+                durationInput.dispatchEvent(new Event('input'));
+            });
         });
     }
 

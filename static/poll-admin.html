@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TikTok LIVE - Poll & Voting Manager</title>
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
     <!-- Google Fonts: Outfit and Fira Code for logs -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -156,7 +156,16 @@
                         </div>
 
                         <div class="input-group" style="margin-top: 15px;">
-                            <label for="poll-duration-input">Durasi dalam Detik (opsional)</label>
+                            <div class="label-inline">
+                                <label for="poll-duration-input">Durasi Voting (opsional)</label>
+                                <div class="duration-presets" style="display:flex; gap:6px;">
+                                    <button type="button" class="preset-btn" data-sec="30">30s</button>
+                                    <button type="button" class="preset-btn" data-sec="60">60s</button>
+                                    <button type="button" class="preset-btn" data-sec="120">2m</button>
+                                    <button type="button" class="preset-btn" data-sec="300">5m</button>
+                                    <button type="button" class="preset-btn" data-sec="0">Tanpa Batas</button>
+                                </div>
+                            </div>
                             <input type="number" id="poll-duration-input" class="field-input" min="5" placeholder="e.g. 60 (kosongkan = tanpa batas)">
                             <div class="duration-hint" id="duration-hint">Kosongkan untuk voting tanpa batas waktu.</div>
                         </div>
@@ -238,6 +247,6 @@
     <script src="auth.js?v=1"></script>
     <script src="gift-icons.js?v=3"></script>
     <script src="gift-prices.js?v=1"></script>
-    <script src="poll-admin.js?v=20"></script>
+    <script src="poll-admin.js?v=21"></script>
 </body>
 </html>
