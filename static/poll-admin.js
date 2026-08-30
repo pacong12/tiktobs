@@ -133,13 +133,43 @@ function createCandidateRow(name = '', imageUrl = '', giftPreset = null, color =
     row.className = 'candidate-input-row';
     row.innerHTML = `
         <input type="text" class="field-input candidate-name-input" placeholder="Pilihan ${rowCount}">
-        <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
+        <div style="display:flex; gap:4px; align-items:center; flex:1;">
+            <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)" style="flex:1;">
+            <label class="btn secondary" style="cursor:pointer; padding:6px 10px; font-size:12px; margin:0;" title="Upload foto HD dari komputer">
+                📁 Upload
+                <input type="file" accept="image/*" class="candidate-file-upload" style="display:none;">
+            </label>
+        </div>
         <div class="candidate-gift-cell"></div>
         <input type="color" class="candidate-color-input" title="Warna border kartu overlay" value="">
         <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
     `;
     row.querySelector('.candidate-name-input').value = name;
-    row.querySelector('.candidate-image-input').value = imageUrl || '';
+    const imgInput = row.querySelector('.candidate-image-input');
+    imgInput.value = imageUrl || '';
+    
+    // File upload handler for HD local photos
+    const fileUpload = row.querySelector('.candidate-file-upload');
+    fileUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.url) {
+                imgInput.value = data.url;
+                showToast(`Foto HD '${file.name}' berhasil diunggah!`);
+            } else {
+                alert('Gagal mengunggah foto: ' + (data.detail || 'Error'));
+            }
+        } catch (err) {
+            console.error('Upload image error:', err);
+            alert('Gagal mengunggah foto.');
+        }
+    });
+
     // Default to the palette color for this row index unless reusing a saved one.
     row.querySelector('.candidate-color-input').value =
         color || CARD_PALETTE[(rowCount - 1) % CARD_PALETTE.length];

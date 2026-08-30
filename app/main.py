@@ -124,7 +124,10 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.exception("WebSocket connection error")
         state.manager.disconnect(websocket)
 
-# Mount static files (Frontend Dashboard)
+# Mount static files (Frontend Dashboard & Uploads)
+IMAGES_DIR = os.path.join(state.DATA_DIR, "images")
+os.makedirs(IMAGES_DIR, exist_ok=True)
+app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
 app.mount("/sounds", StaticFiles(directory=state.SOUNDS_DIR), name="sounds")
 app.mount("/", StaticFiles(directory=state.get_static_dir(), html=True), name="static")
 

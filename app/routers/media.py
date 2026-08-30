@@ -140,6 +140,36 @@ async def upload_sound_api(file: UploadFile = File(...)):
 
 
 # ---------------------------------------------------------------------------
+# Candidate image upload endpoint
+# ---------------------------------------------------------------------------
+IMAGES_DIR = os.path.join(state.DATA_DIR, "images")
+os.makedirs(IMAGES_DIR, exist_ok=True)
+
+@router.post("/upload-image")
+async def upload_image_api(file: UploadFile = File(...)):
+    """Uploads a candidate photo directly in full resolution HD."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+        raise HTTPException(status_code=400, detail="Only image files (.png, .jpg, .jpeg, .webp, .gif) are allowed")
+
+    import uuid
+    safe_name = f"{uuid.uuid4().hex[:12]}{ext}"
+    save_path = os.path.join(IMAGES_DIR, safe_name)
+    content = await file.read()
+    if len(content) > 15 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image file too large (max 15 MB)")
+
+    with open(save_path, "wb") as f:
+        f.write(content)
+
+    state.logger.info(f"Candidate image uploaded: {safe_name}")
+    return {"status": "success", "url": f"/images/{safe_name}"}
+
+
+# ---------------------------------------------------------------------------
 # Running Text / Ticker overlay
 # ---------------------------------------------------------------------------
 DEFAULT_TICKER_CONFIG = {
