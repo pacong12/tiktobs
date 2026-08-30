@@ -57,7 +57,6 @@ async function loadConfiguredSound() {
 }
 
 function playAlertSound() {
-    const baseUrl = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000/' : '';
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -101,7 +100,7 @@ function playDefaultChime() {
     }
 }
 
-// Throttle DOM updates with requestAnimationFrame to eliminate lag during spam/high vote bursts
+// Throttle DOM updates with requestAnimationFrame
 let pendingPollData = null;
 let rafId = null;
 
@@ -122,6 +121,11 @@ let socket = null;
 let currentPoll = null;
 let comboToastTimer = null;
 let ignoredToastTimer = null;
+
+// Pagination state
+let currentOverlayPage = 0;
+const ITEMS_PER_PAGE = 4;
+let paginationInterval = null;
 
 // DOM Elements
 const pollContainer = document.getElementById('poll-container');
@@ -147,7 +151,6 @@ async function fetchPollStatus() {
         const poll = await response.json();
         
         if (!poll || !poll.is_active) {
-            // Fetch latest archived round if active poll doesn't exist
             const roundsRes = await fetch(`${baseUrl}/api/poll/rounds?limit=1`);
             const roundsData = await roundsRes.json();
             if (roundsData.rounds && roundsData.rounds.length > 0) {
@@ -176,71 +179,60 @@ async function fetchPollStatus() {
     }
 }
 
-// Render the active poll or inactive state (supports displaying the latest archived round)
+function startPaginationTimer(totalCandidates) {
+    if (paginationInterval) {
+        clearInterval(paginationInterval);
+        paginationInterval = null;
+    }
+    const totalPages = Math.ceil(totalCandidates / ITEMS_PER_PAGE);
+    if (totalPages > 1) {
+        paginationInterval = setInterval(() => {
+            currentOverlayPage = (currentOverlayPage + 1) % totalPages;
+            if (currentPoll) {
+                renderPollView(currentPoll);
+            }
+        }, 7000); // Ganti halaman setiap 7 detik secara halus
+    } else {
+        currentOverlayPage = 0;
+    }
+}
+
 function renderPoll(poll) {
     if (!poll || (!poll.is_active && !poll.is_archived)) {
         currentPoll = poll;
+        if (paginationInterval) clearInterval(paginationInterval);
         pollContainer.classList.add('hidden');
         inactiveContainer.classList.remove('hidden');
         return;
     }
 
-    // Show active or archived poll container
+    const prevCandidateCount = currentPoll ? currentPoll.candidates.length : 0;
+    currentPoll = poll;
+
+    if (prevCandidateCount !== poll.candidates.length) {
+        startPaginationTimer(poll.candidates.length);
+    }
+
     inactiveContainer.classList.add('hidden');
     pollContainer.classList.remove('hidden');
 
-    // Rank candidates: most votes first. Sort a copy descending.
-    const ranked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
+    renderPollView(poll);
+}
 
-    // If rank order changed or card structure not yet present, rebuild grid to reflect leader rank position smoothly
-    const existingCards = candidatesList.querySelectorAll('.candidate-card');
-    const sameCandidateOrder = existingCards.length === poll.candidates.length &&
-        ranked.every((c, i) => existingCards[i] && existingCards[i].dataset.candidateId === String(c.id));
+function renderPollView(poll) {
+    const allRanked = [...poll.candidates].sort((a, b) => b.votes - a.votes);
+    const maxVotes = poll.total_votes > 0 ? Math.max(...allRanked.map(c => c.votes)) : 0;
+    const totalCandidates = allRanked.length;
+    const totalPages = Math.ceil(totalCandidates / ITEMS_PER_PAGE);
 
-    if (sameCandidateOrder) {
-        let maxVotes = poll.total_votes > 0 ? Math.max(...poll.candidates.map(c => c.votes)) : 0;
-        ranked.forEach((c, i) => {
-            const card = existingCards[i];
-            if (!card) return;
-            const isLeading = maxVotes > 0 && c.votes === maxVotes;
-            card.classList.toggle('leading', isLeading);
-
-            const votesEl = card.querySelector('.candidate-votes');
-            const pctEl = card.querySelector('.candidate-pct');
-            const winEl = card.querySelector('.badge-win');
-
-            if (votesEl && votesEl.textContent !== c.votes.toLocaleString()) {
-                votesEl.textContent = c.votes.toLocaleString();
-            }
-            if (pctEl && pctEl.textContent !== `${c.percentage}%`) {
-                pctEl.textContent = `${c.percentage}%`;
-            }
-
-            const wins = Number(c.wins) || 0;
-            if (winEl) {
-                winEl.innerHTML = `win ${wins}&times;`;
-            } else {
-                const edgeBadges = document.createElement('div');
-                edgeBadges.className = 'edge-badges';
-                edgeBadges.innerHTML = `<span class="card-badge badge-win" title="Round wins this session">win ${wins}&times;</span>`;
-                card.insertBefore(edgeBadges, card.firstChild);
-            }
-        });
-        currentPoll = poll;
-        return;
+    if (currentOverlayPage >= totalPages) {
+        currentOverlayPage = 0;
     }
 
-    currentPoll = poll;
+    // Ambil maksimal 4 kandidat per halaman
+    const startIdx = currentOverlayPage * ITEMS_PER_PAGE;
+    const pageCandidates = allRanked.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
-    // Determine the leading candidate's vote count
-    let maxVotes = 0;
-    if (poll.total_votes > 0) {
-        maxVotes = Math.max(...poll.candidates.map(c => c.votes));
-    }
-
-    const count = ranked.length;
-
-    candidatesList.className = 'candidates-list';
     candidatesList.innerHTML = '';
 
     const buildCard = (c, rankIdx) => {
@@ -250,30 +242,15 @@ function renderPoll(poll) {
         card.className = `candidate-card ${isLeading ? 'leading' : ''}`;
         card.dataset.candidateId = String(c.id);
         card.style.setProperty('--card-color', cardColor);
-        card.style.setProperty('--card-glow', hexToRgba(cardColor, 0.55));
-        card.style.setProperty('--card-glow-soft', hexToRgba(cardColor, 0.26));
-        // Thin (subtle) color gradient so the transparent card is not empty,
-        // yet still lets the no-bg PNG photo show through.
-        // Thin background gradient tinted with the BORDER color so each card
-        // clearly carries its candidate color (still subtle enough for no-bg PNGs).
-        card.style.setProperty('--card-fill-a', hexToRgba(cardColor, 0.20));
-        card.style.setProperty('--card-fill-b', hexToRgba(cardColor, 0.06));
-        card.style.setProperty('--card-fill-gift', hexToRgba(cardColor, 0.30));
-        card.style.setProperty('--card-fill-panel', hexToRgba(cardColor, 0.80));
 
         const bgHtml = c.image_url
             ? `<img src="${escapeHTML(c.image_url)}" class="candidate-bg" alt="">`
-            : `<div class="candidate-bg default-avatar" style="background: ${getGradientForName(c.name)};">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
+            : `<div class="candidate-bg default-avatar">${escapeHTML(c.name.charAt(0).toUpperCase())}</div>`;
 
-        // Win badge pins onto the top-LEFT border; the gift badge sits in the
-        // top-RIGHT column directly below the number chip (thin gradient bg).
         const wins = Number(c.wins) || 0;
         const giftLabel = (c.gift_name || '').trim();
-        const winHtml = `<div class="edge-badges"><span class="card-badge badge-win" title="Round wins this session">win ${wins}&times;</span></div>`;
         let giftHtml = '';
         if (giftLabel) {
-            // Icon only (no text); hover shows the gift name. Falls back to
-            // the emoji alone when the gift has no known icon.
             const icon = giftIconHtml(giftLabel, 'gift-icon');
             const labelHtml = icon || getGiftEmoji(giftLabel);
             giftHtml = `<span class="card-badge badge-gift" title="${escapeHTML(giftLabel)}">${labelHtml}</span>`;
@@ -301,39 +278,23 @@ function renderPoll(poll) {
         return card;
     };
 
-    if (count >= 5) {
-        const bentoGrid = document.createElement('div');
-        bentoGrid.className = 'candidate-grid grid-bento';
-        ranked.slice(0, 3).forEach((c, i) => {
-            const card = buildCard(c, i);
-            if (i === 0) card.classList.add('rank-1');
-            bentoGrid.appendChild(card);
-        });
-        candidatesList.appendChild(bentoGrid);
+    const grid = document.createElement('div');
+    grid.className = 'candidate-grid cols-2';
+    pageCandidates.forEach((c, idx) => {
+        grid.appendChild(buildCard(c, startIdx + idx));
+    });
+    candidatesList.appendChild(grid);
 
-        const rest = ranked.slice(3);
-        if (rest.length > 0) {
-            const restGrid = document.createElement('div');
-            restGrid.className = 'candidate-grid grid-rest';
-            rest.forEach((c, i) => restGrid.appendChild(buildCard(c, i + 3)));
-            candidatesList.appendChild(restGrid);
+    // Indicator pagination dot jika lebih dari 1 halaman
+    if (totalPages > 1) {
+        const pageDots = document.createElement('div');
+        pageDots.className = 'pagination-indicator';
+        for (let i = 0; i < totalPages; i++) {
+            const dot = document.createElement('span');
+            dot.className = `page-dot ${i === currentOverlayPage ? 'active' : ''}`;
+            pageDots.appendChild(dot);
         }
-    } else if (count === 3) {
-        // Champion (most votes) gets the big wide card on top; the other
-        // two render as squares directly below it.
-        const grid = document.createElement('div');
-        grid.className = 'candidate-grid grid-top3';
-        ranked.forEach((c, i) => {
-            const card = buildCard(c, i);
-            if (i === 0) card.classList.add('rank-1');
-            grid.appendChild(card);
-        });
-        candidatesList.appendChild(grid);
-    } else {
-        const grid = document.createElement('div');
-        grid.className = 'candidate-grid cols-2';
-        ranked.forEach((c, i) => grid.appendChild(buildCard(c, i)));
-        candidatesList.appendChild(grid);
+        candidatesList.appendChild(pageDots);
     }
 }
 
@@ -396,38 +357,8 @@ function connectWebSocket() {
     };
 }
 
-// Futuristic neon palette — fallback border color per candidate when the
-// host did not pick one in the Poll Admin.
 const CARD_PALETTE = ['#00e5ff', '#ff2d78', '#ffd60a', '#7c4dff', '#00ff9d', '#ff9100'];
 
-// Converts #rrggbb (or #rgb) to an rgba() string for glow effects.
-function hexToRgba(hex, alpha) {
-    let h = String(hex || '').trim().replace('#', '');
-    if (h.length === 3) h = h.split('').map(ch => ch + ch).join('');
-    if (!/^[0-9a-fA-F]{6}$/.test(h)) return `rgba(0, 229, 255, ${alpha})`;
-    const n = parseInt(h, 16);
-    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
-}
-
-// Generate deterministic linear gradients based on candidate name string hash
-function getGradientForName(name) {
-    const colors = [
-        ['#00f0ff', '#0072ff'],
-        ['#ffd700', '#ff8c00'],
-        ['#ff007f', '#7f00ff'],
-        ['#00ff87', '#60efff'],
-        ['#f5576c', '#f093fb'],
-        ['#4facfe', '#00f2fe']
-    ];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const idx = Math.abs(hash) % colors.length;
-    return `linear-gradient(135deg, ${colors[idx][0]}, ${colors[idx][1]})`;
-}
-
-// Helper: Escape HTML
 function escapeHTML(str) {
     if (!str) return '';
     return str.replace(/[&<>'"]/g, 
@@ -441,124 +372,97 @@ function escapeHTML(str) {
     );
 }
 
-// --- Live combo toast -------------------------------------------------------
-// Streakable gifts (gift_type === 1) emit one event per combo increment.
-// While votes are only tallied once at the final event (repeat_end === 1),
-// this toast gives instant visual feedback: the counter climbs live and the
-// candidate receiving the combo is named.
-
 function normalizeGiftName(name) {
     return ((name || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
 }
 
-// Normalized key for the GIFT_ICONS map (same rules as the backend:
-// lowercase, emoji/punctuation stripped, whitespace collapsed).
 function giftIconKey(name) {
     return ((name || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim());
 }
 
-// Returns an <img> tag with the official TikTok gift icon, or '' when the
-// gift has no known icon (callers fall back to the emoji mapping).
 function giftIconHtml(giftName, cls) {
     const icons = window.GIFT_ICONS || {};
-    const url = icons[giftIconKey(giftName)];
+    const key = giftIconKey(giftName);
+    const url = icons[key];
     if (!url) return '';
-    return `<img class="${cls}" src="${url}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+    return `<img class="${cls}" src="${url}" alt="" loading="lazy">`;
 }
 
-function getGiftEmoji(giftName) {
-    if (!giftName) return '🎁';
-    const name = giftName.toLowerCase();
-    if (name.includes('rose') || name.includes('mawar')) return '🌹';
-    if (name.includes('heart') || name.includes('hati')) return '❤️';
-    if (name.includes('finger')) return '🫰';
-    if (name.includes('corona') || name.includes('crown')) return '👑';
-    if (name.includes('diamond') || name.includes('berlian')) return '💎';
-    if (name.includes('perfume') || name.includes('parfum')) return '💖';
-    if (name.includes('ice cream') || name.includes('es krim')) return '🍦';
-    if (name.includes('fire') || name.includes('api')) return '🔥';
+function getGiftEmoji(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('rose')) return '🌹';
+    if (n.includes('heart')) return '❤️';
+    if (n.includes('lion')) return '🦁';
+    if (n.includes('galaxy') || n.includes('universe')) return '🌌';
+    if (n.includes('diamond')) return '💎';
+    if (n.includes('gg')) return '🎮';
+    if (n.includes('ice cream')) return '🍦';
+    if (n.includes('coffee')) return '☕';
     return '🎁';
 }
 
-function handleGiftEventForToast(giftEvent) {
-    if (!currentPoll || !currentPoll.is_active || !currentPoll.candidates) return;
-    const data = giftEvent.data || {};
-    const giftKey = normalizeGiftName(data.gift_name);
-    if (!giftKey) return;
+function handleGiftEventForToast(event) {
+    const data = event.data || {};
+    const giftName = data.gift_name || '';
+    const quantity = Number(data.quantity) || 1;
+    const isStreakEnd = Number(data.repeat_end) === 1;
+    
+    let matchedName = '';
+    if (currentPoll && currentPoll.candidates) {
+        const norm = normalizeGiftName(giftName);
+        const cand = currentPoll.candidates.find(c => normalizeGiftName(c.gift_name) === norm);
+        if (cand) matchedName = cand.name;
+    }
+    if (!matchedName) return;
 
-    // Only gifts assigned to a candidate deserve the spotlight.
-    const candidate = currentPoll.candidates.find(
-        c => normalizeGiftName(c.gift_name) === giftKey
-    );
-    if (!candidate) return;
+    showComboToast(giftName, quantity, matchedName, isStreakEnd);
+}
 
+function showComboToast(giftName, count, targetName, isFinal) {
     const toast = document.getElementById('combo-toast');
     if (!toast) return;
 
-    const isFinal = data.repeat_end === 1;
-    const quantity = data.quantity || 1;
-    const toastIcon = giftIconHtml(data.gift_name, 'gift-icon gift-icon-toast');
-    const toastGift = toastIcon
-        ? `${toastIcon} ${escapeHTML(data.gift_name)}`
-        : `${getGiftEmoji(data.gift_name)} ${escapeHTML(data.gift_name)}`;
-    toast.innerHTML = `
-        <span class="combo-toast-gift">${toastGift}</span>
-        <span class="combo-toast-count">&times;${quantity}</span>
-        <span class="combo-toast-target">&#10148; ${escapeHTML(candidate.name)}</span>
-    `;
-    toast.classList.add('show');
-    if (isFinal) toast.classList.add('final');
+    const countEl = toast.querySelector('.combo-count');
+    const targetEl = toast.querySelector('.combo-target');
+    const iconEl = toast.querySelector('.combo-icon');
+
+    if (countEl) countEl.textContent = count;
+    if (targetEl) targetEl.textContent = targetName;
+    if (iconEl) {
+        const icon = giftIconHtml(giftName, 'gift-icon-toast');
+        iconEl.innerHTML = icon || getGiftEmoji(giftName);
+    }
+
+    toast.classList.remove('hidden');
+    toast.classList.add('active');
 
     clearTimeout(comboToastTimer);
-    comboToastTimer = setTimeout(
-        () => toast.classList.remove('show', 'final'),
-        isFinal ? 2500 : 9000
-    );
+    comboToastTimer = setTimeout(() => {
+        toast.classList.remove('active');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+    }, isFinal ? 3500 : 2000);
 }
-
-// --- Comment-fallback vote toast --------------------------------------------
-// A gift that matched no candidate was credited via the sender's last vote
-// comment. Show it on the combo toast with a "via komentar" note so viewers
-// understand where the votes came from.
 
 function handleFallbackVoteToast(msg) {
-    const toast = document.getElementById('combo-toast');
-    if (!toast) return;
-
-    const toastIcon = giftIconHtml(msg.gift_name, 'gift-icon gift-icon-toast');
-    const toastGift = toastIcon
-        ? `${toastIcon} ${escapeHTML(msg.gift_name)}`
-        : `${getGiftEmoji(msg.gift_name)} ${escapeHTML(msg.gift_name)}`;
-    toast.innerHTML = `
-        <span class="combo-toast-gift">${toastGift}</span>
-        <span class="combo-toast-count">+${msg.votes_added}</span>
-        <span class="combo-toast-target">&#10148; ${escapeHTML(msg.candidate_name)}</span>
-        <span class="combo-toast-note">via komentar "${escapeHTML(msg.via_comment)}"</span>
-    `;
-    toast.classList.add('show');
-
-    clearTimeout(comboToastTimer);
-    comboToastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+    showIgnoredToast(`✨ Vote via Komentar: +${msg.votes} untuk ${msg.candidate}`);
 }
 
-// --- Ignored gift toast -------------------------------------------------------
-// Gift counted for NOBODY (no candidate owns it and the sender never voted by
-// comment this round). Shown on-stream so the sender gets direct feedback and
-// learns the correct flow: comment the candidate number first, then gift.
-
 function handleIgnoredGiftToast(msg) {
-    const toast = document.getElementById('ignored-toast');
-    if (!toast) return;
+    showIgnoredToast(`⚠️ Gift '${msg.gift_name}' tidak terdaftar`);
+}
 
-    const icon = giftIconHtml(msg.gift_name, 'gift-icon gift-icon-toast')
-        || getGiftEmoji(msg.gift_name);
-    toast.innerHTML = `
-        <span class="ignored-toast-badge">&#9888;&#65039;</span>
-        <span>${icon} ${escapeHTML(msg.gift_name)} dari ${escapeHTML(msg.nickname || msg.username)}
-        <b>tidak dihitung</b> &mdash; komentar nomor/nama kandidat dulu, baru gift!</span>
-    `;
+function showIgnoredToast(text) {
+    let toast = document.getElementById('ignored-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'ignored-toast';
+        toast.className = 'ignored-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = text;
     toast.classList.add('show');
-
     clearTimeout(ignoredToastTimer);
-    ignoredToastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
+    ignoredToastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2800);
 }
