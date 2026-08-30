@@ -25,9 +25,9 @@ body {
     display: none !important;
 }
 
-/* OVERLAY CONTAINER — Jumbo Large size for 1080p full stream layout */
+/* OVERLAY CONTAINER — Wider container for perfect square cards (1:1 aspect ratio) */
 .overlay-container {
-    width: 760px;
+    width: 860px;
     max-width: 100vw;
     box-sizing: border-box;
     padding: 16px 16px 40px 16px;
@@ -60,23 +60,23 @@ body {
 .candidates-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
 }
 
 .candidate-grid {
     display: grid;
-    gap: 12px;
+    gap: 14px;
 }
 
-/* Square cells: Balanced Dynamic Bento layout */
-.candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 420px; }
-.candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 320px; }
-.candidate-grid.grid-rest  { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 320px; gap: 12px; }
+/* Square cells: (Width - Gaps) / Columns => Perfect Square 1:1 Cards */
+.candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 405px; }
+.candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 265px; }
+.candidate-grid.grid-rest  { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 265px; gap: 14px; }
 
-/* 3 candidates: champion spans a wide card on top (760 x 380), the other
-   two render as balanced cards below it */
-.candidate-grid.grid-top3 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 400px; }
-.candidate-grid.grid-top3 .candidate-card.rank-1 { grid-column: span 2; height: 420px; }
+/* 3 candidates: champion spans a wide card on top, the other
+   two render as balanced square cards below it */
+.candidate-grid.grid-top3 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 405px; }
+.candidate-grid.grid-top3 .candidate-card.rank-1 { grid-column: span 2; height: 380px; }
 
 /* Bento: rank #1 takes a large 2x2 showcase area, ranks #2 & #3 stack neatly */
 .candidate-grid.grid-bento .candidate-card.rank-1 {
