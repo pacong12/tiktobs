@@ -1,27 +1,39 @@
 /* Reset and OBS transparency defaults */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     background: transparent;
     color: #ffffff;
     font-family: 'Outfit', sans-serif;
-    margin: 0;
-    padding: 15px;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* OVERLAY CONTAINER — Jumbo Large size for 1080p full stream layout */
+/* OVERLAY CONTAINER — Full 100% Page Responsive layout */
 .overlay-container {
-    width: 760px;
-    max-width: 100vw;
+    width: 100%;
+    height: 100%;
     box-sizing: border-box;
-    padding: 16px;
-    margin: 0 auto;
+    padding: 24px;
+    margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    justify-content: center;
 }
 
 /* Glassmorphism base card styling (header / inactive state only) */
@@ -32,43 +44,52 @@ body {
     -webkit-backdrop-filter: blur(12px);
     border-radius: 18px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    padding: 20px 24px;
+    padding: 24px 32px;
 }
 
-/* Candidates List — layout tiers:
-   - 2 or 4 candidates: square grid (2 cols; 2x2 for four)
-   - 3 candidates     : champion gets a big wide card on top (.grid-top3),
-                        the other two sit below as squares
-   - 5+ candidates    : BENTO grid — rank #1 spans a huge 2x2 square,
-                        ranks #2/#3 fill the right column as squares, the
-                        rest render as small squares below.
-   Row heights match the column widths of the fixed 460px content area
-   so regular cells stay square. */
+/* Candidates List — Full responsive height */
 .candidates-list {
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    justify-content: center;
 }
 
 .candidate-grid {
+    width: 100%;
+    height: 100%;
     display: grid;
-    gap: 12px;
+    gap: 16px;
 }
 
-/* Square cells: scaled up for 760px width */
-.candidate-grid.cols-2     { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 350px; }
-.candidate-grid.grid-bento { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 230px; }
-.candidate-grid.grid-rest  { grid-template-columns: repeat(4, 1fr); grid-auto-rows: 170px; gap: 10px; }
+/* 2 or 4 candidates: Full viewport 2-column grid */
+.candidate-grid.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+}
 
-/* 3 candidates: champion spans a wide card on top (760 x 350), the other
-   two render as squares below it */
-.candidate-grid.grid-top3 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 350px; }
+/* 3 candidates: champion spans a wide card on top, the other two below */
+.candidate-grid.grid-top3 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1.2fr 1fr;
+}
 .candidate-grid.grid-top3 .candidate-card.rank-1 { grid-column: span 2; }
 
 /* Bento: rank #1 takes a 2x2 square (very large), #2/#3 stack on the right */
+.candidate-grid.grid-bento {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
 .candidate-grid.grid-bento .candidate-card.rank-1 {
     grid-column: span 2;
     grid-row: span 2;
+}
+
+.candidate-grid.grid-rest {
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(140px, 1fr);
+    gap: 12px;
 }
 
 /* ============================================================
