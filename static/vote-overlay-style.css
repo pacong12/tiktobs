@@ -1,20 +1,19 @@
 /* ============================================================
-   TIKTOBS - PRO ESPORTS HUD VOTE OVERLAY
-   Ultra-HD, High Contrast, Anti-Blur, Premium Typography
+   TIKTOBS - CLEAN STREAM OVERLAY (ANTI-OVERLAP & HD READY)
    ============================================================ */
 
 *, *::before, *::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
 body {
     background: transparent;
     color: #ffffff;
-    font-family: 'Outfit', sans-serif;
-    margin: 0;
-    padding: 16px;
+    font-family: 'Outfit', -apple-system, sans-serif;
+    padding: 12px;
     overflow: hidden;
 }
 
@@ -22,68 +21,52 @@ body {
     display: none !important;
 }
 
-/* Base Canvas for OBS (Optimized for 1080p stream) */
 .overlay-container {
-    width: 620px;
+    width: 600px;
     max-width: 100vw;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
 }
 
-/* Glassmorphism empty state */
+/* Inactive State */
 .inactive-state {
-    background: rgba(12, 10, 24, 0.88);
-    border: 1.5px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-    padding: 24px;
+    background: rgba(10, 10, 20, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 20px;
     text-align: center;
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 600;
     color: rgba(255, 255, 255, 0.6);
-    letter-spacing: 0.5px;
-    animation: pulse-glow 2.5s infinite ease-in-out;
 }
 
-@keyframes pulse-glow {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-}
-
-/* Grid Layouts */
+/* Candidates Grid */
 .candidates-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.candidate-grid {
     display: grid;
     gap: 12px;
 }
 
-/* 2 or 4 candidates: 2 columns square cards */
+/* 2 or 4 candidates: clean 2-column grid */
 .candidate-grid.cols-2 {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 280px;
+    gap: 12px;
 }
 
-/* 3 candidates: Rank 1 top wide champion card, ranks 2 & 3 below */
+/* 3 candidates: top card full width, 2 cards below */
 .candidate-grid.grid-top3 {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 260px;
+    gap: 12px;
 }
 .candidate-grid.grid-top3 .candidate-card.rank-1 {
     grid-column: span 2;
-    height: 300px;
 }
 
 /* 5+ Bento grid */
 .candidate-grid.grid-bento {
+    display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-auto-rows: 175px;
+    gap: 10px;
 }
 .candidate-grid.grid-bento .candidate-card.rank-1 {
     grid-column: span 2;
@@ -91,46 +74,35 @@ body {
 }
 
 .candidate-grid.grid-rest {
+    display: grid;
     grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: 125px;
-    gap: 10px;
+    gap: 8px;
+    margin-top: 8px;
 }
 
 /* ============================================================
-   CANDIDATE CARD (High-Contrast Cyberpunk HUD)
+   CANDIDATE CARD (Structured layout - Zero overlap)
    ============================================================ */
 .candidate-card {
     --card-color: #00f0ff;
-    --card-glow: rgba(0, 240, 255, 0.45);
-    --card-glow-soft: rgba(0, 240, 255, 0.2);
     position: relative;
-    height: 100%;
-    border-radius: 18px;
-    background: #080711;
+    height: 270px;
+    border-radius: 16px;
+    background: #0d0e15;
     border: 2px solid var(--card-color);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px var(--card-glow-soft);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     overflow: hidden;
 }
 
-/* Leader Highlight */
 .candidate-card.leading {
     border-width: 3px;
-    box-shadow: 0 0 28px var(--card-glow), 0 8px 30px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4), 0 6px 20px rgba(0, 0, 0, 0.7);
 }
 
-/* Leader Crown */
-.candidate-card.leading::before {
-    content: "👑";
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 26px;
-    z-index: 12;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.9));
-}
-
-/* Candidate Photo / Background */
+/* Candidate Photo */
 .candidate-media {
     position: absolute;
     inset: 0;
@@ -148,88 +120,81 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 52px;
+    font-size: 54px;
     font-weight: 800;
     color: #ffffff;
-    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    background: linear-gradient(135deg, #1e2030, #0d0e15);
 }
 
-/* Top Corner HUD Badges */
-.edge-badges {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+/* TOP HEADER ROW: Badges placed with proper margins */
+.card-header-bar {
+    position: relative;
     z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 10px;
+}
+
+.edge-badges {
     display: flex;
     gap: 6px;
 }
 
 .card-badge.badge-win {
-    background: rgba(5, 5, 12, 0.92);
+    background: rgba(10, 12, 22, 0.92);
     border: 1.5px solid var(--card-color);
-    border-radius: 8px;
-    padding: 4px 10px;
-    font-size: 13px;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 12px;
     font-weight: 800;
     color: var(--card-color);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    letter-spacing: 0.5px;
 }
 
-/* Top-Right Column (Number & Gift Badge) */
 .top-right-col {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
     gap: 6px;
 }
 
 .candidate-number {
-    background: rgba(5, 5, 12, 0.92);
+    background: rgba(10, 12, 22, 0.92);
     border: 1.5px solid var(--card-color);
-    border-radius: 8px;
-    padding: 4px 10px;
-    font-size: 15px;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 13px;
     font-weight: 800;
     color: var(--card-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
 .card-badge.badge-gift {
-    background: rgba(5, 5, 12, 0.9);
-    border: 1.5px solid rgba(255, 215, 0, 0.5);
-    border-radius: 8px;
-    padding: 3px 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    background: rgba(10, 12, 22, 0.92);
+    border: 1.5px solid rgba(255, 215, 0, 0.6);
+    border-radius: 6px;
+    padding: 2px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .card-badge .gift-icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     object-fit: contain;
-    display: block;
 }
 
-/* ============================================================
-   BOTTOM HUD PANEL (Glass Card for Name, Votes, & Percentage)
-   ============================================================ */
+/* BOTTOM FOOTER PANEL: Clean solid gradient background for high contrast */
 .candidate-info-bg {
-    position: absolute;
-    inset: auto 0 0 0;
-    height: 44%;
-    background: linear-gradient(180deg, transparent 0%, rgba(5, 5, 12, 0.75) 30%, rgba(5, 5, 12, 0.96) 100%);
-    z-index: 5;
+    display: none; /* Ditiadakan agar tidak menumpuk */
 }
 
 .candidate-info {
-    position: absolute;
-    inset: auto 10px 10px 10px;
-    z-index: 8;
+    position: relative;
+    z-index: 10;
+    background: linear-gradient(180deg, rgba(10, 12, 22, 0) 0%, rgba(10, 12, 22, 0.85) 30%, rgba(10, 12, 22, 0.98) 100%);
+    padding: 28px 10px 10px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -237,63 +202,52 @@ body {
     text-align: center;
 }
 
-/* Votes + Percentage Row */
 .candidate-info-row {
     display: flex;
     align-items: baseline;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .candidate-votes {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 800;
     line-height: 1;
     color: #ffffff;
-    letter-spacing: 0.5px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 16px var(--card-glow);
-    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
 }
 
 .candidate-card.leading .candidate-votes::after {
     content: " 🔥";
     font-size: 0.6em;
-    filter: drop-shadow(0 0 4px #ff8c00);
 }
 
 .candidate-pct {
-    font-size: 26px;
+    font-size: 20px;
     font-weight: 800;
     line-height: 1;
     color: var(--card-color);
-    letter-spacing: 0.5px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 14px var(--card-glow);
-    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
 }
 
 .candidate-name {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 800;
     color: #ffffff;
     max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    letter-spacing: 0.4px;
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
-/* Scale adjustments for Bento Rank 1 */
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-votes { font-size: 42px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-pct { font-size: 34px; }
-.candidate-grid.grid-bento .candidate-card.rank-1 .candidate-name { font-size: 26px; }
+/* Sizing adjustments for smaller grid cells */
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) { height: 165px; }
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-votes { font-size: 20px; }
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-pct { font-size: 16px; }
+.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name { font-size: 13px; }
 
-/* Scale adjustments for Bento Small cells */
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-votes { font-size: 22px; }
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-pct { font-size: 18px; }
-.candidate-grid.grid-bento .candidate-card:not(.rank-1) .candidate-name { font-size: 15px; }
-
-/* Scale adjustments for Rest cells */
-.candidate-grid.grid-rest .candidate-votes { font-size: 16px; }
-.candidate-grid.grid-rest .candidate-pct { font-size: 13px; }
-.candidate-grid.grid-rest .candidate-name { font-size: 13px; }
+.candidate-grid.grid-rest .candidate-card { height: 120px; }
+.candidate-grid.grid-rest .candidate-votes { font-size: 15px; }
+.candidate-grid.grid-rest .candidate-pct { font-size: 12px; }
+.candidate-grid.grid-rest .candidate-name { font-size: 12px; }

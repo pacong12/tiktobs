@@ -281,12 +281,15 @@ function renderPoll(poll) {
 
         card.innerHTML = `
             <div class="candidate-media">${bgHtml}</div>
-            ${winHtml}
-            <div class="top-right-col">
-                <div class="candidate-number">${String(c.id).padStart(2, '0')}</div>
-                ${giftHtml}
+            <div class="card-header-bar">
+                <div class="edge-badges">
+                    <span class="card-badge badge-win" title="Round wins this session">win ${wins}&times;</span>
+                </div>
+                <div class="top-right-col">
+                    <div class="candidate-number">${String(c.id).padStart(2, '0')}</div>
+                    ${giftHtml}
+                </div>
             </div>
-            <div class="candidate-info-bg"></div>
             <div class="candidate-info">
                 <div class="candidate-info-row">
                     <span class="candidate-votes">${c.votes.toLocaleString()}</span>
