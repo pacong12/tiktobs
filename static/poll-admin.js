@@ -133,9 +133,9 @@ function createCandidateRow(name = '', imageUrl = '', giftPreset = null, color =
     row.className = 'candidate-input-row';
     row.innerHTML = `
         <input type="text" class="field-input candidate-name-input" placeholder="Pilihan ${rowCount}">
-        <div style="display:flex; gap:4px; align-items:center; flex:1;">
-            <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)" style="flex:1;">
-            <label class="btn secondary" style="cursor:pointer; padding:6px 10px; font-size:12px; margin:0;" title="Upload foto HD dari komputer">
+        <div class="candidate-photo-group">
+            <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
+            <label class="candidate-upload-btn" title="Upload foto HD dari komputer">
                 📁 Upload
                 <input type="file" accept="image/*" class="candidate-file-upload" style="display:none;">
             </label>

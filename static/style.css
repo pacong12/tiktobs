@@ -987,16 +987,51 @@ body {
 /* Candidate rows */
 .candidate-input-row {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 44px auto;
+    grid-template-columns: 1.1fr 1.4fr 1.1fr 40px 36px;
     gap: 8px;
     margin-bottom: 10px;
     align-items: center;
 }
 
+.candidate-photo-group {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    min-width: 0;
+}
+
+.candidate-photo-group .candidate-image-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.candidate-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    color: #00f0ff;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+    height: 36px;
+}
+
+.candidate-upload-btn:hover {
+    background: rgba(0, 240, 255, 0.2);
+    border-color: rgba(0, 240, 255, 0.5);
+}
+
 /* Card border color picker */
 .candidate-color-input {
-    width: 44px;
-    height: 34px;
+    width: 40px;
+    height: 36px;
     padding: 2px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
