@@ -169,40 +169,10 @@ function renderPoll(poll) {
         return card;
     };
 
-    if (count >= 5) {
-        const bentoGrid = document.createElement('div');
-        bentoGrid.className = 'candidate-grid grid-bento';
-        ranked.slice(0, 3).forEach((c, i) => {
-            const card = buildCard(c, i);
-            if (i === 0) card.classList.add('rank-1');
-            bentoGrid.appendChild(card);
-        });
-        candidatesList.appendChild(bentoGrid);
-
-        const rest = ranked.slice(3);
-        if (rest.length > 0) {
-            const restGrid = document.createElement('div');
-            restGrid.className = 'candidate-grid grid-rest';
-            rest.forEach((c, i) => restGrid.appendChild(buildCard(c, i + 3)));
-            candidatesList.appendChild(restGrid);
-        }
-    } else if (count === 3) {
-        // Champion (most votes) gets the big wide card on top; the other
-        // two render as squares directly below it.
-        const grid = document.createElement('div');
-        grid.className = 'candidate-grid grid-top3';
-        ranked.forEach((c, i) => {
-            const card = buildCard(c, i);
-            if (i === 0) card.classList.add('rank-1');
-            grid.appendChild(card);
-        });
-        candidatesList.appendChild(grid);
-    } else {
-        const grid = document.createElement('div');
-        grid.className = 'candidate-grid cols-2';
-        ranked.forEach((c, i) => grid.appendChild(buildCard(c, i)));
-        candidatesList.appendChild(grid);
-    }
+    const grid = document.createElement('div');
+    grid.className = 'candidate-grid cols-2';
+    ranked.forEach((c, i) => grid.appendChild(buildCard(c, i)));
+    candidatesList.appendChild(grid);
 }
 
 function connectWebSocket() {
