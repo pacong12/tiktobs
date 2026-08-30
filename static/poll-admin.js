@@ -132,17 +132,21 @@ function createCandidateRow(name = '', imageUrl = '', giftPreset = null, color =
     const row = document.createElement('div');
     row.className = 'candidate-input-row';
     row.innerHTML = `
-        <input type="text" class="field-input candidate-name-input" placeholder="Pilihan ${rowCount}">
-        <div class="candidate-photo-group">
-            <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
-            <label class="candidate-upload-btn" title="Upload foto HD dari komputer">
-                📁 Upload
-                <input type="file" accept="image/*" class="candidate-file-upload" style="display:none;">
-            </label>
+        <div class="candidate-row-top">
+            <input type="text" class="field-input candidate-name-input" placeholder="Nama Pilihan ${rowCount} (mis. Alice)" style="flex:1;">
         </div>
-        <div class="candidate-gift-cell"></div>
-        <input type="color" class="candidate-color-input" title="Warna border kartu overlay" value="">
-        <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
+        <div class="candidate-row-bottom">
+            <div class="candidate-photo-group">
+                <input type="text" class="field-input candidate-image-input" placeholder="URL Foto (opsional)">
+                <label class="candidate-upload-btn" title="Upload foto HD dari komputer">
+                    📁 Upload
+                    <input type="file" accept="image/*" class="candidate-file-upload" style="display:none;">
+                </label>
+            </div>
+            <div class="candidate-gift-cell"></div>
+            <input type="color" class="candidate-color-input" title="Warna border kartu overlay" value="">
+            <button class="candidate-remove-btn" title="Hapus pilihan" type="button">✕</button>
+        </div>
     `;
     row.querySelector('.candidate-name-input').value = name;
     const imgInput = row.querySelector('.candidate-image-input');

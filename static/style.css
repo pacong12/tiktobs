@@ -984,20 +984,54 @@ body {
     color: rgba(255, 255, 255, 0.3);
 }
 
-/* Candidate rows */
+/* Layout Grid Form Admin - Lebarkan kolom input agar lega */
+.control-sidebar {
+    width: 600px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+    .control-sidebar {
+        width: 100%;
+    }
+}
+
+/* Candidate Card Form Box */
 .candidate-input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s ease;
+}
+
+.candidate-input-row:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.candidate-row-top {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.candidate-row-bottom {
     display: grid;
-    grid-template-columns: 1.1fr 1.4fr 1.1fr 40px 36px;
-    gap: 8px;
-    margin-bottom: 10px;
+    grid-template-columns: 1.5fr 1.2fr 44px 38px;
+    gap: 10px;
     align-items: center;
 }
 
 .candidate-photo-group {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
     min-width: 0;
+    width: 100%;
 }
 
 .candidate-photo-group .candidate-image-input {
@@ -1013,14 +1047,15 @@ body {
     background: rgba(0, 240, 255, 0.08);
     border: 1px solid rgba(0, 240, 255, 0.25);
     color: #00f0ff;
-    padding: 8px 10px;
+    padding: 8px 12px;
     border-radius: 8px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.18s ease;
-    height: 36px;
+    height: 38px;
+    flex-shrink: 0;
 }
 
 .candidate-upload-btn:hover {
@@ -1030,29 +1065,31 @@ body {
 
 /* Card border color picker */
 .candidate-color-input {
-    width: 40px;
-    height: 36px;
+    width: 44px;
+    height: 38px;
     padding: 2px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.04);
     cursor: pointer;
+    flex-shrink: 0;
 }
 .candidate-color-input::-webkit-color-swatch-wrapper { padding: 2px; }
 .candidate-color-input::-webkit-color-swatch { border-radius: 5px; border: none; }
 
 .candidate-input-row .field-input {
     margin-top: 0;
-    font-size: 12px;
-    padding: 9px 10px;
+    font-size: 13px;
+    padding: 9px 12px;
+    height: 38px;
 }
 
 .candidate-remove-btn {
     background: rgba(255, 74, 90, 0.08);
     border: 1px solid rgba(255, 74, 90, 0.25);
     color: #ff4a5a;
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
