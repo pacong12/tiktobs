@@ -96,14 +96,12 @@ body {
     border: 2px solid var(--card-color);
     border-radius: 16px;
     box-shadow: 0 0 14px var(--card-glow-soft), inset 0 0 16px var(--card-glow-soft);
-    will-change: transform;
 }
 
 /* Leading card: same candidate color, just a stronger neon presence */
 .candidate-card.leading {
     border-width: 3px;
     box-shadow: 0 0 24px var(--card-glow), inset 0 0 20px var(--card-glow-soft);
-    transform: scale(1.02);
     z-index: 5;
 }
 
@@ -135,10 +133,8 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    image-rendering: auto;
+    image-rendering: high-quality;
     image-rendering: -webkit-optimize-contrast;
-    transform: translateZ(0);
-    backface-visibility: hidden;
 }
 
 .candidate-bg.default-avatar {
