@@ -266,22 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initPollAdmin() {
-    // Populate the two initial candidate rows' Gift Boost dropdowns.
-    document.querySelectorAll('.candidate-gift-cell').forEach(cell => {
-        cell.replaceWith(buildGiftControl());
-    });
-
-    // Ensure every candidate row has a border-color picker (the two initial
-    // rows are hardcoded in HTML without one). Palette defaults by row index.
-    candidatesInputList.querySelectorAll('.candidate-input-row').forEach((row, i) => {
-        if (row.querySelector('.candidate-color-input')) return;
-        const colorInput = document.createElement('input');
-        colorInput.type = 'color';
-        colorInput.className = 'candidate-color-input';
-        colorInput.title = 'Warna border kartu overlay';
-        colorInput.value = CARD_PALETTE[i % CARD_PALETTE.length];
-        row.insertBefore(colorInput, row.querySelector('.candidate-remove-btn'));
-    });
+    // Re-render initial candidate rows dynamically using createCandidateRow so upload buttons exist
+    candidatesInputList.innerHTML = '';
+    candidatesInputList.appendChild(createCandidateRow());
+    candidatesInputList.appendChild(createCandidateRow());
 
     setupEventListeners();
     setupSoundEvents();
