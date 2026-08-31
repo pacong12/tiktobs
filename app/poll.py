@@ -72,9 +72,32 @@ class PollManager:
         self.lock = asyncio.Lock()
         self._persist_dirty = False
         self._persist_task = None
+        self._broadcast_dirty = False
+        self._broadcast_task = None
         # Per-session win counts: session_key -> {candidate_key -> wins}.
         # Lazily loaded from the DB the first time a session is used.
         self.wins_cache: dict[str, dict[str, int]] = {}
+
+    def schedule_broadcast(self) -> None:
+        """Throttles WebSocket poll updates (50ms debounce) to prevent network and overlay lag during chat spam."""
+        self._broadcast_dirty = True
+        if self._broadcast_task is None or self._broadcast_task.done():
+            self._broadcast_task = asyncio.create_task(self._debounced_broadcast_loop())
+
+    async def _debounced_broadcast_loop(self) -> None:
+        try:
+            await asyncio.sleep(0.05) # 50ms batching (up to 20 fps poll updates)
+            if self._broadcast_dirty and self.is_active:
+                self._broadcast_dirty = False
+                poll_status = await self.get_status()
+                await manager.broadcast({
+                    "type": "poll_update",
+                    "poll": poll_status
+                })
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error in debounced broadcast loop: {e}")
 
     async def start_poll(self, title: str, candidates: list[dict], duration_seconds: int | None = None, round_name: str = "") -> None:
         """Starts a new poll and resets all existing votes and voters.

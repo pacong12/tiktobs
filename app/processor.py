@@ -92,11 +92,7 @@ class EventProcessor:
                     comment_text = event.data.get("comment", "")
                     is_vote_registered = await poll_manager.record_vote(event.username, comment_text)
                     if is_vote_registered:
-                        poll_status = await poll_manager.get_status()
-                        await manager.broadcast({
-                            "type": "poll_update",
-                            "poll": poll_status
-                        })
+                        poll_manager.schedule_broadcast()
                 elif event.event_type == "gift":
                     gift_name = event.data.get("gift_name", "")
                     diamond_count = int(event.data.get("diamond_count") or 0)
